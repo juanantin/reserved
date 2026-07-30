@@ -22,7 +22,7 @@ export const tokenInfo = {
   redeemUrl: "",
 
   // Community links — set once these exist.
-  xUrl: "https://x.com/ReservedFund",
+  xUrl: "https://x.com/ReservedFund_",
   telegramUrl: "https://t.me/ReservedPortal",
 };
 
