@@ -38,10 +38,10 @@ export function Hero() {
           <FadeIn delay={0.32}>
             <div className="flex flex-wrap gap-4 pt-2">
               <a
-                href="#treasury"
+                href="#how-it-works"
                 className="rounded-md bg-rsvd-gold px-6 py-3 text-sm font-semibold text-rsvd-black transition-opacity hover:opacity-90 focus-gold"
               >
-                View Treasury
+                How It Works
               </a>
               <a
                 href="#vault"

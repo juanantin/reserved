@@ -1,6 +1,7 @@
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
-import { TreasurySection } from "@/components/TreasurySection";
+import { HowItWorksSection } from "@/components/HowItWorksSection";
+import { TokenomicsSection } from "@/components/TokenomicsSection";
 import { VaultSection } from "@/components/VaultSection";
 import { TransparencySection } from "@/components/TransparencySection";
 import { GovernanceSection } from "@/components/GovernanceSection";
@@ -14,7 +15,8 @@ export default function Home() {
       <Navbar />
       <main>
         <Hero />
-        <TreasurySection />
+        <HowItWorksSection />
+        <TokenomicsSection />
         <VaultSection />
         <TransparencySection />
         <GovernanceSection />

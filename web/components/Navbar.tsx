@@ -12,7 +12,7 @@ function DashboardLink({ className }: { className?: string }) {
   if (dashboardReady) {
     return (
       <a
-        href={tokenInfo.buyUrl || "#treasury"}
+        href={tokenInfo.buyUrl || "#tokenomics"}
         className={`rounded-md bg-rsvd-gold px-4 py-2 text-sm font-semibold text-rsvd-black transition-opacity hover:opacity-90 focus-gold ${className ?? ""}`}
       >
         View Dashboard
@@ -22,7 +22,7 @@ function DashboardLink({ className }: { className?: string }) {
 
   return (
     <a
-      href="#treasury"
+      href="#tokenomics"
       className={`rounded-md border border-rsvd-gold/40 px-4 py-2 text-sm font-semibold text-rsvd-gold/80 transition-colors hover:border-rsvd-gold hover:text-rsvd-gold focus-gold ${className ?? ""}`}
       title="Dashboard goes live once the contracts are deployed"
     >
