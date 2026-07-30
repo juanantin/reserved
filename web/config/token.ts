@@ -18,6 +18,9 @@ export const tokenInfo = {
   chartUrl: "",
   explorerBaseUrl: "https://bscscan.com/address/",
 
+  // Set once the vault contract is deployed and a redeem UI exists.
+  redeemUrl: "",
+
   // Community links — set once these exist.
   xUrl: "",
   telegramUrl: "",

@@ -10,7 +10,7 @@ const items = [
 
 export function FeatureStrip() {
   return (
-    <section className="border-t border-white/10 bg-rsvd-black px-6 py-14">
+    <section className="border-t border-white/10 px-6 py-14">
       <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 md:grid-cols-4">
         {items.map(({ icon: Icon, title, body }, i) => (
           <FadeIn key={title} delay={i * 0.08} className="flex flex-col items-start gap-2">

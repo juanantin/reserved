@@ -2,10 +2,9 @@ import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { HowItWorksSection } from "@/components/HowItWorksSection";
 import { TokenomicsSection } from "@/components/TokenomicsSection";
-import { VaultSection } from "@/components/VaultSection";
+import { TreasurySection } from "@/components/TreasurySection";
 import { TransparencySection } from "@/components/TransparencySection";
 import { GovernanceSection } from "@/components/GovernanceSection";
-import { FAQ } from "@/components/FAQ";
 import { FeatureStrip } from "@/components/FeatureStrip";
 import { Footer } from "@/components/Footer";
 
@@ -17,10 +16,9 @@ export default function Home() {
         <Hero />
         <HowItWorksSection />
         <TokenomicsSection />
-        <VaultSection />
+        <TreasurySection />
         <TransparencySection />
         <GovernanceSection />
-        <FAQ />
         <FeatureStrip />
       </main>
       <Footer />

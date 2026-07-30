@@ -46,10 +46,10 @@ export function Hero() {
                 How It Works
               </a>
               <a
-                href="#vault"
+                href="#treasury"
                 className="rounded-md border border-white/20 px-6 py-3 text-sm font-semibold text-rsvd-offwhite transition-colors hover:border-rsvd-gold hover:text-rsvd-gold focus-gold"
               >
-                View Vault
+                View Treasury
               </a>
             </div>
           </FadeIn>
