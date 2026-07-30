@@ -1,6 +1,6 @@
 export const navLinks = [
   { label: "Treasury", href: "#treasury" },
-  { label: "Portfolio", href: "#portfolio" },
+  { label: "Vault", href: "#vault" },
   { label: "Transparency", href: "#transparency" },
   { label: "Governance", href: "#governance" },
 ];

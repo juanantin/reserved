@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { faq } from "@/config/site";
+import { FadeIn } from "./FadeIn";
 
 export function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
@@ -10,9 +11,11 @@ export function FAQ() {
   return (
     <section id="faq" className="border-t border-white/10 bg-rsvd-navy px-6 py-20">
       <div className="mx-auto max-w-3xl">
-        <h2 className="text-3xl font-bold md:text-4xl">FAQ</h2>
+        <FadeIn>
+          <h2 className="text-3xl font-bold md:text-4xl">FAQ</h2>
+        </FadeIn>
 
-        <div className="mt-8 divide-y divide-white/10 rounded-lg border border-white/10">
+        <FadeIn delay={0.1} className="mt-8 divide-y divide-white/10 rounded-lg border border-white/10">
           {faq.map((item, i) => {
             const isOpen = openIndex === i;
             return (
@@ -33,7 +36,7 @@ export function FAQ() {
               </div>
             );
           })}
-        </div>
+        </FadeIn>
       </div>
     </section>
   );

@@ -1,7 +1,7 @@
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { TreasurySection } from "@/components/TreasurySection";
-import { PortfolioSection } from "@/components/PortfolioSection";
+import { VaultSection } from "@/components/VaultSection";
 import { TransparencySection } from "@/components/TransparencySection";
 import { GovernanceSection } from "@/components/GovernanceSection";
 import { FAQ } from "@/components/FAQ";
@@ -15,7 +15,7 @@ export default function Home() {
       <main>
         <Hero />
         <TreasurySection />
-        <PortfolioSection />
+        <VaultSection />
         <TransparencySection />
         <GovernanceSection />
         <FAQ />
