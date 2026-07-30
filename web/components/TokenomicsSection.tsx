@@ -1,5 +1,6 @@
-import { plannedReserveAssets, tokenInfo } from "@/config/token";
+import { tokenInfo } from "@/config/token";
 import { FadeIn } from "./FadeIn";
+import { AllocationDonut } from "./AllocationDonut";
 
 const tokenomics = [
   { label: "Ticker", value: tokenInfo.ticker },
@@ -30,20 +31,12 @@ export function TokenomicsSection() {
           ))}
         </div>
 
-        <FadeIn delay={0.2} className="mt-10">
+        <FadeIn delay={0.2} className="mt-10 rounded-lg border border-white/10 bg-white/5 p-6">
           <h3 className="text-sm uppercase tracking-widest text-rsvd-offwhite/40">
             Planned reserve assets
           </h3>
-          <div className="mt-4 flex flex-wrap gap-3">
-            {plannedReserveAssets.map((asset) => (
-              <div
-                key={asset.symbol}
-                className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm"
-              >
-                <span className="font-mono text-rsvd-gold">{asset.symbol}</span>
-                <span className="ml-2 text-rsvd-offwhite/60">{asset.name}</span>
-              </div>
-            ))}
+          <div className="mt-5">
+            <AllocationDonut />
           </div>
         </FadeIn>
       </div>

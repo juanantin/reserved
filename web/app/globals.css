@@ -35,10 +35,10 @@ body {
   color: var(--color-rsvd-black);
 }
 
-.bg-grid {
-  background-image: linear-gradient(rgba(212, 175, 55, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(212, 175, 55, 0.08) 1px, transparent 1px);
-  background-size: 32px 32px;
+@media (prefers-reduced-motion: reduce) {
+  .travel-dot {
+    display: none;
+  }
 }
 
 .focus-gold:focus-visible {

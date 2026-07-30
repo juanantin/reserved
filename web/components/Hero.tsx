@@ -1,12 +1,14 @@
 import { StatusBadge } from "./StatusBadge";
 import { Logo } from "./Logo";
 import { FadeIn } from "./FadeIn";
+import { BlockchainBackground } from "./BlockchainBackground";
 import { tokenInfo } from "@/config/token";
 
 export function Hero() {
   return (
-    <section id="top" className="bg-grid relative overflow-hidden px-6 pb-24 pt-20 md:pt-28">
-      <div className="mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2">
+    <section id="top" className="relative overflow-hidden px-6 pb-24 pt-20 md:pt-28">
+      <BlockchainBackground className="pointer-events-none absolute inset-0 h-full w-full" />
+      <div className="relative mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2">
         <div className="flex flex-col items-start gap-6">
           <FadeIn delay={0}>
             <StatusBadge />
