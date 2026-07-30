@@ -5,6 +5,7 @@ import { PortfolioSection } from "@/components/PortfolioSection";
 import { TransparencySection } from "@/components/TransparencySection";
 import { GovernanceSection } from "@/components/GovernanceSection";
 import { FAQ } from "@/components/FAQ";
+import { FeatureStrip } from "@/components/FeatureStrip";
 import { Footer } from "@/components/Footer";
 
 export default function Home() {
@@ -18,6 +19,7 @@ export default function Home() {
         <TransparencySection />
         <GovernanceSection />
         <FAQ />
+        <FeatureStrip />
       </main>
       <Footer />
     </>

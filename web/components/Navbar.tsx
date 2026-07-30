@@ -38,7 +38,7 @@ export function Navbar() {
     <header className="sticky top-0 z-40 border-b border-white/10 bg-rsvd-black/80 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <a href="#top" className="flex items-center gap-2 focus-gold" onClick={() => setOpen(false)}>
-          <Logo className="h-7 w-7 text-rsvd-gold" />
+          <Logo size={32} />
           <span className="text-lg font-semibold tracking-wide">RESERVED</span>
         </a>
 

@@ -6,7 +6,7 @@ export function Footer() {
     <footer className="border-t border-white/10 px-6 py-12 text-sm text-rsvd-offwhite/50">
       <div className="mx-auto flex max-w-6xl flex-col gap-6">
         <div className="flex items-center gap-2">
-          <Logo className="h-5 w-5 text-rsvd-gold" />
+          <Logo size={22} />
           <span className="font-semibold text-rsvd-offwhite/80">RESERVED</span>
         </div>
 
