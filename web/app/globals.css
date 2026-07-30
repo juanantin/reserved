@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-rsvd-gold: #d4af37;
+  --color-rsvd-navy: #0d1b2a;
+  --color-rsvd-navylight: #1b263b;
+  --color-rsvd-black: #0a0a14;
+  --color-rsvd-offwhite: #f5f5f5;
+
+  --font-display: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  background: var(--color-rsvd-black);
+  color: var(--color-rsvd-offwhite);
+  font-family: var(--font-display);
+}
+
+* {
+  border-color: rgba(245, 245, 245, 0.1);
+}
+
+::selection {
+  background: var(--color-rsvd-gold);
+  color: var(--color-rsvd-black);
+}
+
+.bg-grid {
+  background-image: linear-gradient(rgba(212, 175, 55, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 175, 55, 0.08) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.focus-gold:focus-visible {
+  outline: 2px solid var(--color-rsvd-gold);
+  outline-offset: 3px;
+}
+
+.text-gradient-gold {
+  background: linear-gradient(90deg, #d4af37, #f2d989 50%, #d4af37);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
