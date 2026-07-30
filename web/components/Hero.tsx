@@ -1,4 +1,5 @@
 import { StatusBadge } from "./StatusBadge";
+import { ChainBadge } from "./ChainBadge";
 import { Logo } from "./Logo";
 import { FadeIn } from "./FadeIn";
 import { BlockchainBackground } from "./BlockchainBackground";
@@ -11,7 +12,10 @@ export function Hero() {
       <div className="relative mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2">
         <div className="flex flex-col items-start gap-6">
           <FadeIn delay={0}>
-            <StatusBadge />
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusBadge />
+              <ChainBadge />
+            </div>
           </FadeIn>
 
           <FadeIn delay={0.08}>

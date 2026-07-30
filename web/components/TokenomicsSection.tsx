@@ -1,5 +1,6 @@
 import { tokenInfo } from "@/config/token";
 import { FadeIn } from "./FadeIn";
+import { BNBLogo } from "./icons/BNBLogo";
 
 const tokenomics = [
   { label: "Ticker", value: tokenInfo.ticker },
@@ -27,7 +28,10 @@ export function TokenomicsSection() {
           {tokenomics.map((fact, i) => (
             <FadeIn key={fact.label} delay={i * 0.06} className="rounded-lg border border-white/10 bg-white/5 p-4">
               <div className="text-xs uppercase tracking-widest text-rsvd-offwhite/40">{fact.label}</div>
-              <div className="mt-1 text-lg font-semibold text-rsvd-gold">{fact.value}</div>
+              <div className="mt-1 flex items-center gap-1.5 text-lg font-semibold text-rsvd-gold">
+                {fact.label === "Chain" && <BNBLogo className="h-4 w-4 shrink-0" />}
+                {fact.value}
+              </div>
             </FadeIn>
           ))}
         </div>
