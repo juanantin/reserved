@@ -42,13 +42,13 @@ export function BlockchainBackground({ className = "" }: { className?: string })
           x2={e.x2}
           y2={e.y2}
           stroke="#D4AF37"
-          strokeOpacity="0.18"
+          strokeOpacity="0.08"
           strokeWidth="1"
         />
       ))}
 
       {nodes.map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r={2 + (i % 3)} fill="#D4AF37" fillOpacity="0.45" />
+        <circle key={i} cx={x} cy={y} r={2 + (i % 3)} fill="#D4AF37" fillOpacity="0.22" />
       ))}
 
       {travelEdgeIndexes.map((edgeIdx, i) => {
@@ -59,7 +59,7 @@ export function BlockchainBackground({ className = "" }: { className?: string })
           <circle key={edgeIdx} r="2.5" fill="#F2D989" className="travel-dot">
             <animate attributeName="cx" values={`${e.x1};${e.x2};${e.x1}`} dur={`${dur}s`} begin={`${begin}s`} repeatCount="indefinite" />
             <animate attributeName="cy" values={`${e.y1};${e.y2};${e.y1}`} dur={`${dur}s`} begin={`${begin}s`} repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.9;1" dur={`${dur}s`} begin={`${begin}s`} repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0;0.55;0.55;0" keyTimes="0;0.1;0.9;1" dur={`${dur}s`} begin={`${begin}s`} repeatCount="indefinite" />
           </circle>
         );
       })}

@@ -1,6 +1,5 @@
 import { tokenInfo } from "@/config/token";
 import { FadeIn } from "./FadeIn";
-import { AllocationDonut } from "./AllocationDonut";
 
 const tokenomics = [
   { label: "Ticker", value: tokenInfo.ticker },
@@ -16,9 +15,11 @@ export function TokenomicsSection() {
         <FadeIn>
           <h2 className="text-3xl font-bold md:text-4xl">Tokenomics</h2>
           <p className="mt-3 max-w-2xl text-rsvd-offwhite/70">
-            Fixed supply, taxed on trade, and the bStocks the keeper is set up to acquire
-            first. Nothing has been bought yet — the composition below is the acquisition
-            plan, not a holdings snapshot.
+            Fixed supply, taxed on every buy and sell. See{" "}
+            <a href="#treasury" className="text-rsvd-gold underline-offset-4 hover:underline">
+              Treasury
+            </a>{" "}
+            for the planned reserve composition.
           </p>
         </FadeIn>
 
@@ -30,15 +31,6 @@ export function TokenomicsSection() {
             </FadeIn>
           ))}
         </div>
-
-        <FadeIn delay={0.2} className="mt-10 rounded-lg border border-white/10 bg-white/5 p-6">
-          <h3 className="text-sm uppercase tracking-widest text-rsvd-offwhite/40">
-            Planned reserve assets
-          </h3>
-          <div className="mt-5">
-            <AllocationDonut />
-          </div>
-        </FadeIn>
       </div>
     </section>
   );

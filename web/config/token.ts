@@ -22,8 +22,11 @@ export const tokenInfo = {
   redeemUrl: "",
 
   // Community links — set once these exist.
+  // xUrl left blank: the requested link text (x.com/ReservedFund) didn't match
+  // the given href (x.com/isBacked_, which looks like backed.is's own handle,
+  // not ours) — confirm the real handle before this gets wired up and published.
   xUrl: "",
-  telegramUrl: "",
+  telegramUrl: "https://t.me/ReservedPortal",
 };
 
 // bStock tickers the keeper is expected to acquire per the brief. These are the

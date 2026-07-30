@@ -1,5 +1,6 @@
 import { tokenInfo } from "@/config/token";
 import { CopyAddressButton } from "./CopyAddressButton";
+import { AllocationDonut } from "./AllocationDonut";
 import { FadeIn } from "./FadeIn";
 
 const facts = [
@@ -65,6 +66,15 @@ export function TreasurySection() {
         <FadeIn delay={0.2} className="mt-6 grid gap-3 sm:grid-cols-2">
           <CopyAddressButton address={tokenInfo.tokenAddress} label="RSVD token contract" />
           <CopyAddressButton address={tokenInfo.vaultAddress} label="Vault contract" />
+        </FadeIn>
+
+        <FadeIn delay={0.28} className="mt-6 rounded-lg border border-white/10 bg-white/5 p-6">
+          <h3 className="text-sm uppercase tracking-widest text-rsvd-offwhite/40">
+            Planned reserve assets
+          </h3>
+          <div className="mt-5">
+            <AllocationDonut />
+          </div>
         </FadeIn>
       </div>
     </section>
