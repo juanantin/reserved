@@ -5,6 +5,12 @@ import { ethers } from "hardhat";
 const TOKEN_ADDRESS = "0x8761873C64C1fB8e8174b9Ee39f11FFe4a3D8883";
 const VAULT_ADDRESS = "0x0Ec27569eb6Ac155aE18161DF1F5332c8f8900ea";
 
+// Free public BSC testnet RPC endpoints load-balance across backend nodes that
+// aren't always in sync, so a balanceOf() read immediately after a transaction
+// confirms can hit a replica that hasn't caught up yet. Give it a moment.
+const RPC_SETTLE_MS = 3000;
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 async function main() {
   const [deployer] = await ethers.getSigners();
   if (!deployer) {
@@ -42,6 +48,7 @@ async function main() {
   // equivalent to adding initial liquidity).
   const seedAmount = ethers.parseUnits("10000", 18);
   await (await token.connect(deployer).transfer(pair.address, seedAmount)).wait();
+  await sleep(RPC_SETTLE_MS);
   console.log(`[2] Seeded pair with ${ethers.formatUnits(seedAmount, 18)} RSVD`);
 
   // 3. BUY: pair -> buyer, should be taxed 3% to treasury.
@@ -49,6 +56,7 @@ async function main() {
   const treasuryAddr = await token.treasury();
   const treasuryBeforeBuy: bigint = await token.balanceOf(treasuryAddr);
   await (await token.connect(pair).transfer(buyer.address, buyAmount)).wait();
+  await sleep(RPC_SETTLE_MS);
   const buyerBal = await token.balanceOf(buyer.address);
   const treasuryAfterBuy: bigint = await token.balanceOf(treasuryAddr);
   const expectedBuyTax = (buyAmount * 300n) / 10000n;
@@ -62,18 +70,21 @@ async function main() {
   const sellAmount = ethers.parseUnits("400", 18);
   const treasuryBeforeSell: bigint = await token.balanceOf(treasuryAddr);
   await (await token.connect(buyer).transfer(pair.address, sellAmount)).wait();
+  await sleep(RPC_SETTLE_MS);
   const treasuryAfterSell: bigint = await token.balanceOf(treasuryAddr);
   const expectedSellTax = (sellAmount * 300n) / 10000n;
   const sellPass = treasuryAfterSell - treasuryBeforeSell === expectedSellTax;
   console.log(`\n[4] SELL: buyer -> pair, ${ethers.formatUnits(sellAmount, 18)} RSVD`);
   console.log(`    treasury gained ${ethers.formatUnits(treasuryAfterSell - treasuryBeforeSell, 18)} (expected ${ethers.formatUnits(expectedSellTax, 18)})`);
   console.log(`    SELL TAX: ${sellPass ? "PASS" : "FAIL"}`);
+  await sleep(RPC_SETTLE_MS);
 
   // 5. BURN: buyer burns half their remaining RSVD directly.
   const buyerBalBeforeBurn: bigint = await token.balanceOf(buyer.address);
   const burnAmount = buyerBalBeforeBurn / 2n;
   const supplyBeforeBurn: bigint = await token.totalSupply();
   await (await token.connect(buyer).burn(burnAmount)).wait();
+  await sleep(RPC_SETTLE_MS);
   const supplyAfterBurn: bigint = await token.totalSupply();
   const burnPass = supplyBeforeBurn - supplyAfterBurn === burnAmount;
   console.log(`\n[5] BURN: buyer burns ${ethers.formatUnits(burnAmount, 18)} RSVD`);
@@ -92,6 +103,7 @@ async function main() {
   await (await mockBStock.mint(deployer.address, depositAmount)).wait();
   await (await mockBStock.approve(VAULT_ADDRESS, depositAmount)).wait();
   await (await vault.connect(deployer).depositAsset(mockAddress, depositAmount)).wait();
+  await sleep(RPC_SETTLE_MS);
   const vaultMockBal = await mockBStock.balanceOf(VAULT_ADDRESS);
   const depositPass = vaultMockBal === depositAmount;
   console.log(`    keeper deposited ${ethers.formatUnits(depositAmount, 18)} mock bStock into the vault`);
@@ -104,6 +116,7 @@ async function main() {
   await (await token.connect(buyer).approve(VAULT_ADDRESS, buyerRsvdBal)).wait();
   const [, previewAmounts] = await vault.previewRedeem(buyerRsvdBal);
   await (await vault.connect(buyer).redeem(buyerRsvdBal)).wait();
+  await sleep(RPC_SETTLE_MS);
   const buyerMockBalAfter = await mockBStock.balanceOf(buyer.address);
   const supplyAfterRedeem = await token.totalSupply();
   const buyerRsvdAfter = await token.balanceOf(buyer.address);
