@@ -48,12 +48,15 @@ If your environment *can* reach `binaries.soliditylang.org` (e.g. deploying from
 4. After deploy: register the PancakeSwap RSVD/USDT pair via `token.setAmmPair(pair, true)`, and point the vault's `keeper` at the bot's operating address.
 5. Optional but recommended before real value is at stake: `TOKEN_ADDRESS=<...> VAULT_ADDRESS=<...> npm run deploy:timelock:testnet` (or `:mainnet`) to move ownership behind a timelock (see Security above).
 
-**Live on BSC testnet** (deployed and end-to-end tested — see `scripts/testnet-check.ts` — against buy/sell tax, burn, a mock bStock deposit, and redeem):
+**Live on BSC testnet** — redeployed after the security hardening above, end-to-end tested against buy/sell tax, burn, a mock bStock deposit, and redeem (`scripts/testnet-check.ts`, 7/7 passing), and with ownership handed to a timelock (`scripts/deploy-timelock.ts`), live-verified: the deployer's direct `pause()` call reverts, and `owner()` on both contracts equals the timelock:
 
-- `ReservedToken`: [`0x8761873C64C1fB8e8174b9Ee39f11FFe4a3D8883`](https://testnet.bscscan.com/address/0x8761873C64C1fB8e8174b9Ee39f11FFe4a3D8883)
-- `ReservedVault`: [`0x0Ec27569eb6Ac155aE18161DF1F5332c8f8900ea`](https://testnet.bscscan.com/address/0x0Ec27569eb6Ac155aE18161DF1F5332c8f8900ea)
+- `ReservedToken`: [`0x58820a66D1871ad99313FBC2460DBD4693F50DE1`](https://testnet.bscscan.com/address/0x58820a66D1871ad99313FBC2460DBD4693F50DE1)
+- `ReservedVault`: [`0x048Dc77edFBC733433ba3240D9d9b0140D863ECf`](https://testnet.bscscan.com/address/0x048Dc77edFBC733433ba3240D9d9b0140D863ECf)
+- `TimelockController` (owner of both, 120s delay — testnet smoke-test value, not the 24h mainnet default): [`0x2E8EEB4F3db861Ecc85b2bb6478f215849033afc`](https://testnet.bscscan.com/address/0x2E8EEB4F3db861Ecc85b2bb6478f215849033afc)
 
-This predates the `Ownable2Step` / resilient-`redeem` hardening above — redeploy to testnet again before relying on it as a preview of the current contract behavior. No mainnet deploy has been run: that additionally needs the audit and securities-classification legal review `PROJECT_BRIEF.md` requires, neither of which has happened.
+Since ownership now sits with the timelock, any further admin changes (`setAmmPair`, `setTreasury`, etc.) on this deployment need to go through `timelock.schedule()` then `timelock.execute()` after the delay — a direct call from the deployer will revert, by design.
+
+No mainnet deploy has been run: that additionally needs the audit and securities-classification legal review `PROJECT_BRIEF.md` requires, neither of which has happened.
 
 ## What's not here yet
 

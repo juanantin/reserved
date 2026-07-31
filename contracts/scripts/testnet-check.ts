@@ -1,10 +1,18 @@
 import { ethers } from "hardhat";
 
-// Live BSC testnet deployment from the first testnet deploy. Override via env vars
-// (TOKEN_ADDRESS=... VAULT_ADDRESS=... npm run check:testnet) after a fresh deploy
-// without having to edit this file.
-const TOKEN_ADDRESS = process.env.TOKEN_ADDRESS || "0x8761873C64C1fB8e8174b9Ee39f11FFe4a3D8883";
-const VAULT_ADDRESS = process.env.VAULT_ADDRESS || "0x0Ec27569eb6Ac155aE18161DF1F5332c8f8900ea";
+// Live BSC testnet deployment, post-hardening (Ownable2Step, resilient redeem, pause —
+// see contracts/README.md). Override via env vars (TOKEN_ADDRESS=... VAULT_ADDRESS=...
+// npm run check:testnet) after a fresh deploy without editing this file.
+//
+// IMPORTANT: this script calls token.setAmmPair() directly as the deployer (step [1]),
+// which requires the deployer to still be the contract owner. The addresses below are
+// from BEFORE that same deployment's ownership was handed to a TimelockController (see
+// README's Security section) — re-running this script against a timelock-owned
+// deployment will revert at step [1], since the deployer can no longer call setAmmPair
+// directly. Point this at a fresh, not-yet-timelocked deployment, or extend this script
+// to schedule+execute through the timelock instead.
+const TOKEN_ADDRESS = process.env.TOKEN_ADDRESS || "0x58820a66D1871ad99313FBC2460DBD4693F50DE1";
+const VAULT_ADDRESS = process.env.VAULT_ADDRESS || "0x048Dc77edFBC733433ba3240D9d9b0140D863ECf";
 
 // Free public BSC testnet RPC endpoints load-balance across backend nodes that
 // aren't always in sync, so a balanceOf() read immediately after a transaction
