@@ -109,20 +109,28 @@ async function main() {
   console.log(`    keeper deposited ${ethers.formatUnits(depositAmount, 18)} mock bStock into the vault`);
   console.log(`    vault's mock bStock balance: ${ethers.formatUnits(vaultMockBal, 18)}`);
   console.log(`    DEPOSIT: ${depositPass ? "PASS" : "FAIL"}`);
+  await sleep(RPC_SETTLE_MS);
 
   // 7. REDEEM: buyer redeems all remaining RSVD for a pro-rata share of the mock bStock.
+  // Compute the expected payout ourselves from one trusted "before" snapshot rather than
+  // comparing against a separate previewRedeem() read — two independent reads can land on
+  // different backend replicas on this public RPC and disagree by a few wei even when the
+  // contract math is correct (same class of staleness as the buy/sell/burn checks above,
+  // just visible here as a tiny mismatch instead of a stale zero).
   const buyerRsvdBal = await token.balanceOf(buyer.address);
-  const supplyBeforeRedeem = await token.totalSupply();
+  const supplyBeforeRedeem: bigint = await token.totalSupply();
+  const vaultMockBalBeforeRedeem: bigint = await mockBStock.balanceOf(VAULT_ADDRESS);
+  const expectedPayout = (vaultMockBalBeforeRedeem * buyerRsvdBal) / supplyBeforeRedeem;
+
   await (await token.connect(buyer).approve(VAULT_ADDRESS, buyerRsvdBal)).wait();
-  const [, previewAmounts] = await vault.previewRedeem(buyerRsvdBal);
   await (await vault.connect(buyer).redeem(buyerRsvdBal)).wait();
   await sleep(RPC_SETTLE_MS);
   const buyerMockBalAfter = await mockBStock.balanceOf(buyer.address);
   const supplyAfterRedeem = await token.totalSupply();
   const buyerRsvdAfter = await token.balanceOf(buyer.address);
-  const redeemPass = buyerMockBalAfter === previewAmounts[0] && buyerRsvdAfter === 0n;
+  const redeemPass = buyerMockBalAfter === expectedPayout && buyerRsvdAfter === 0n;
   console.log(`\n[7] REDEEM: buyer redeems ${ethers.formatUnits(buyerRsvdBal, 18)} RSVD`);
-  console.log(`    buyer received mock bStock: ${ethers.formatUnits(buyerMockBalAfter, 18)} (previewed: ${ethers.formatUnits(previewAmounts[0], 18)})`);
+  console.log(`    buyer received mock bStock: ${ethers.formatUnits(buyerMockBalAfter, 18)} (expected ${ethers.formatUnits(expectedPayout, 18)})`);
   console.log(`    RSVD supply: ${ethers.formatUnits(supplyBeforeRedeem, 18)} -> ${ethers.formatUnits(supplyAfterRedeem, 18)}`);
   console.log(`    buyer RSVD balance after redeem: ${ethers.formatUnits(buyerRsvdAfter, 18)} (expected 0)`);
   console.log(`    REDEEM: ${redeemPass ? "PASS" : "FAIL"}`);
