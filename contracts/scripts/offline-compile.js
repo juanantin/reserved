@@ -13,7 +13,13 @@ const CONTRACTS_DIR = path.join(__dirname, "..", "contracts");
 const ARTIFACTS_DIR = path.join(__dirname, "..", "artifacts");
 const NODE_MODULES = path.join(__dirname, "..", "node_modules");
 
-const targets = ["ReservedToken.sol", "ReservedVault.sol", "mocks/MockERC20.sol", "mocks/MockRevertingERC20.sol"];
+const targets = [
+  "ReservedToken.sol",
+  "ReservedVault.sol",
+  "mocks/MockERC20.sol",
+  "mocks/MockRevertingERC20.sol",
+  "vendor/TimelockController.sol",
+];
 
 function findImports(importPath) {
   const candidates = [
@@ -61,7 +67,11 @@ if (hasError) {
   process.exit(1);
 }
 
-for (const file of targets) {
+// Iterate every source file solc actually produced contracts for — not just our
+// `targets` list — since a target can be a thin re-export shim (see
+// vendor/TimelockController.sol) whose contract is declared in an imported file,
+// not the target file itself.
+for (const file of Object.keys(output.contracts)) {
   const contractsInFile = output.contracts[file];
   for (const [contractName, contract] of Object.entries(contractsInFile)) {
     const outDir = path.join(ARTIFACTS_DIR, "contracts", file);

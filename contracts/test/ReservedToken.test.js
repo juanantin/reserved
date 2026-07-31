@@ -101,6 +101,31 @@ describe("ReservedToken", function () {
     expect(await token.totalSupply()).to.equal(FIXED_SUPPLY - ethers.parseUnits("300", 18));
   });
 
+  it("pause blocks regular transfers but never blocks burning", async function () {
+    const { token, owner, alice, bob } = await deployToken();
+    await token.connect(owner).transfer(alice.address, ethers.parseUnits("1000", 18));
+
+    await token.connect(owner).pause();
+
+    await expect(token.connect(alice).transfer(bob.address, ethers.parseUnits("100", 18))).to.be.revertedWithCustomError(
+      token,
+      "TransfersPaused"
+    );
+
+    // Burning — what ReservedVault.redeem() relies on — must work even while paused.
+    await token.connect(alice).burn(ethers.parseUnits("100", 18));
+    expect(await token.balanceOf(alice.address)).to.equal(ethers.parseUnits("900", 18));
+
+    await token.connect(owner).unpause();
+    await token.connect(alice).transfer(bob.address, ethers.parseUnits("100", 18));
+    expect(await token.balanceOf(bob.address)).to.equal(ethers.parseUnits("100", 18));
+  });
+
+  it("only the owner can pause or unpause", async function () {
+    const { token, alice } = await deployToken();
+    await expect(token.connect(alice).pause()).to.be.revertedWithCustomError(token, "OwnableUnauthorizedAccount");
+  });
+
   it("ownership transfer requires the new owner to accept (Ownable2Step)", async function () {
     const { token, owner, alice, bob } = await deployToken();
 

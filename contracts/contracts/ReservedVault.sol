@@ -6,13 +6,14 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReservedToken} from "./ReservedToken.sol";
 
 /// @title ReservedVault
 /// @notice Holds the reserve of tokenized stocks (bStocks, plain BEP-20 tokens) backing
 /// RSVD. Holders redeem RSVD for a pro-rata share of every reserve asset the vault holds
 /// by burning it here. The keeper bot deposits bStocks it has acquired via depositAsset.
-contract ReservedVault is Ownable2Step, ReentrancyGuard {
+contract ReservedVault is Ownable2Step, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
 
     ReservedToken public immutable rsvd;
@@ -56,9 +57,20 @@ contract ReservedVault is Ownable2Step, ReentrancyGuard {
         keeper = newKeeper;
     }
 
+    /// @notice Emergency brake on new activity only. Deliberately does not (and, by
+    /// construction, cannot) affect redeem() — see there — so pausing can halt new
+    /// deposits while an issue is investigated without ever blocking a holder's exit.
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
     /// @notice Register a bStock as a tracked reserve asset without depositing (e.g. to
     /// show it in the reserve list ahead of the first buy). Safe to call repeatedly.
-    function registerReserveAsset(address token) public onlyKeeper {
+    function registerReserveAsset(address token) public onlyKeeper whenNotPaused {
         if (token == address(0)) revert ZeroAddress();
         if (!isReserveAsset[token]) {
             isReserveAsset[token] = true;
@@ -69,7 +81,7 @@ contract ReservedVault is Ownable2Step, ReentrancyGuard {
 
     /// @notice Keeper deposits bStocks it has acquired into the vault, registering the
     /// asset on first deposit. Caller must have approved this contract beforehand.
-    function depositAsset(address token, uint256 amount) external onlyKeeper nonReentrant {
+    function depositAsset(address token, uint256 amount) external onlyKeeper nonReentrant whenNotPaused {
         if (token == address(0)) revert ZeroAddress();
         if (amount == 0) revert ZeroAmount();
         registerReserveAsset(token);

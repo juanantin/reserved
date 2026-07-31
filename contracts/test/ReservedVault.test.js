@@ -137,6 +137,49 @@ describe("ReservedVault", function () {
     );
   });
 
+  it("pausing the vault blocks new deposits but never blocks redeem", async function () {
+    const { token, vault, nvdab, owner, keeper, alice } = await deploySystem();
+    await depositAsset(vault, nvdab, keeper, ethers.parseUnits("1000", 18));
+
+    const amount = ethers.parseUnits("10000000", 18); // 1%
+    await token.connect(owner).transfer(alice.address, amount);
+    await token.connect(alice).approve(await vault.getAddress(), amount);
+
+    await vault.connect(owner).pause();
+
+    // New deposits are blocked while paused.
+    await nvdab.mint(keeper.address, ethers.parseUnits("100", 18));
+    await nvdab.connect(keeper).approve(await vault.getAddress(), ethers.parseUnits("100", 18));
+    await expect(
+      vault.connect(keeper).depositAsset(await nvdab.getAddress(), ethers.parseUnits("100", 18))
+    ).to.be.revertedWithCustomError(vault, "EnforcedPause");
+
+    // Redeeming already-deposited assets is never blocked, paused or not.
+    await vault.connect(alice).redeem(amount);
+    expect(await nvdab.balanceOf(alice.address)).to.equal(ethers.parseUnits("10", 18));
+  });
+
+  it("pausing the token (not the vault) also never blocks redeem, since redeem burns", async function () {
+    const { token, vault, nvdab, owner, keeper, alice } = await deploySystem();
+    await depositAsset(vault, nvdab, keeper, ethers.parseUnits("1000", 18));
+
+    const amount = ethers.parseUnits("10000000", 18); // 1%
+    await token.connect(owner).transfer(alice.address, amount);
+    await token.connect(alice).approve(await vault.getAddress(), amount);
+
+    await token.connect(owner).pause();
+
+    // A holder's exit route survives even a fully paused token.
+    await vault.connect(alice).redeem(amount);
+    expect(await nvdab.balanceOf(alice.address)).to.equal(ethers.parseUnits("10", 18));
+    expect(await token.balanceOf(alice.address)).to.equal(0n);
+  });
+
+  it("only the owner can pause or unpause the vault", async function () {
+    const { vault, alice } = await deploySystem();
+    await expect(vault.connect(alice).pause()).to.be.revertedWithCustomError(vault, "OwnableUnauthorizedAccount");
+  });
+
   it("ownership transfer requires the new owner to accept (Ownable2Step)", async function () {
     const { vault, owner, alice, bob } = await deploySystem();
 

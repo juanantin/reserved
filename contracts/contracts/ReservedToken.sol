@@ -5,6 +5,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /// @title ReservedToken (RSVD)
 /// @notice Fixed-supply BEP-20 for the Reserved treasury. A 3% tax applies to transfers
@@ -20,7 +21,7 @@ import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 /// hook, which skims BNB/USDT directly. Net effect on the vault is the same. Migrating to
 /// a true Infinity hook is a documented follow-up (see PROJECT_BRIEF.md) once the hook
 /// interfaces are integrated and audited — do not assume this contract already does that.
-contract ReservedToken is ERC20Burnable, Ownable2Step {
+contract ReservedToken is ERC20Burnable, Ownable2Step, Pausable {
     uint256 public constant BPS_DENOMINATOR = 10_000;
     /// @notice Hard ceiling on the tax rate so the owner can never rug holders via tax.
     uint256 public constant MAX_TAX_BPS = 500; // 5%
@@ -44,6 +45,7 @@ contract ReservedToken is ERC20Burnable, Ownable2Step {
 
     error TaxTooHigh(uint256 requested, uint256 max);
     error ZeroAddress();
+    error TransfersPaused();
 
     constructor(
         string memory name_,
@@ -88,11 +90,26 @@ contract ReservedToken is ERC20Burnable, Ownable2Step {
         emit TaxExemptUpdated(account, exempt);
     }
 
+    /// @notice Emergency brake on trading. Deliberately cannot block burns — see _update —
+    /// so holders can always redeem via ReservedVault regardless of pause state. This can
+    /// only ever restrict new activity, never trap funds already in a holder's wallet.
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
     /// @dev Applies the buy/sell tax on transfers touching a registered AMM pair, unless
     /// either party is exempt. Mints (from == address(0)) and burns (to == address(0))
-    /// are never taxed.
+    /// are never taxed. Burns are also exempt from pause — see pause() — so redemption
+    /// through ReservedVault can never be blocked, even in an emergency stop.
     function _update(address from, address to, uint256 value) internal override {
         bool isMintOrBurn = from == address(0) || to == address(0);
+
+        if (paused() && to != address(0)) revert TransfersPaused();
+
         bool touchesPair = isAmmPair[from] || isAmmPair[to];
         bool exempt = isTaxExempt[from] || isTaxExempt[to];
 

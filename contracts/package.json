@@ -10,7 +10,9 @@
     "coverage": "hardhat coverage",
     "deploy:testnet": "node scripts/offline-compile.js && hardhat run scripts/deploy.ts --network bscTestnet --no-compile",
     "deploy:mainnet": "node scripts/offline-compile.js && hardhat run scripts/deploy.ts --network bscMainnet --no-compile",
-    "check:testnet": "node scripts/offline-compile.js && hardhat run scripts/testnet-check.ts --network bscTestnet --no-compile"
+    "check:testnet": "node scripts/offline-compile.js && hardhat run scripts/testnet-check.ts --network bscTestnet --no-compile",
+    "deploy:timelock:testnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-timelock.ts --network bscTestnet --no-compile",
+    "deploy:timelock:mainnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-timelock.ts --network bscMainnet --no-compile"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
