@@ -7,6 +7,12 @@ const FIXED_SUPPLY = ethers.parseUnits("1000000000", 18); // 1B RSVD
 
 async function main() {
   const [deployer] = await ethers.getSigners();
+  if (!deployer) {
+    throw new Error(
+      "No deployer account configured for this network. Check that contracts/.env exists " +
+        "and DEPLOYER_PRIVATE_KEY is set (copy .env.example to .env if you haven't already)."
+    );
+  }
   console.log("Deploying with:", deployer.address);
 
   // TODO: replace with the real multisig/treasury addresses before any non-local deploy.

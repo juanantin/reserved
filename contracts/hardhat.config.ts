@@ -31,10 +31,11 @@ const config: HardhatUserConfig = {
     },
   },
   etherscan: {
-    apiKey: {
-      bscTestnet: process.env.BSCSCAN_API_KEY || "",
-      bsc: process.env.BSCSCAN_API_KEY || "",
-    },
+    // A single string here (not the old per-network object) tells the plugin to use
+    // Etherscan's unified V2 multichain API — one key, routed by chain ID, which is
+    // what BscScan's own key-issuance flow now points to (the old bscscan.com-issued
+    // per-chain keys were retired in 2025).
+    apiKey: process.env.ETHERSCAN_API_KEY || "",
   },
 };
 
