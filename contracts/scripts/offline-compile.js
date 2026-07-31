@@ -13,7 +13,7 @@ const CONTRACTS_DIR = path.join(__dirname, "..", "contracts");
 const ARTIFACTS_DIR = path.join(__dirname, "..", "artifacts");
 const NODE_MODULES = path.join(__dirname, "..", "node_modules");
 
-const targets = ["ReservedToken.sol", "ReservedVault.sol", "mocks/MockERC20.sol"];
+const targets = ["ReservedToken.sol", "ReservedVault.sol", "mocks/MockERC20.sol", "mocks/MockRevertingERC20.sol"];
 
 function findImports(importPath) {
   const candidates = [

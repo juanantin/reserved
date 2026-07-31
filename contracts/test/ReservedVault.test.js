@@ -136,4 +136,64 @@ describe("ReservedVault", function () {
       "OwnableUnauthorizedAccount"
     );
   });
+
+  it("ownership transfer requires the new owner to accept (Ownable2Step)", async function () {
+    const { vault, owner, alice, bob } = await deploySystem();
+
+    await vault.connect(owner).transferOwnership(alice.address);
+    // Not yet transferred: old owner still privileged, new owner not yet.
+    expect(await vault.owner()).to.equal(owner.address);
+    expect(await vault.pendingOwner()).to.equal(alice.address);
+    await expect(vault.connect(alice).setKeeper(bob.address)).to.be.revertedWithCustomError(
+      vault,
+      "OwnableUnauthorizedAccount"
+    );
+
+    // A stray caller can't accept on alice's behalf.
+    await expect(vault.connect(bob).acceptOwnership()).to.be.revertedWithCustomError(
+      vault,
+      "OwnableUnauthorizedAccount"
+    );
+
+    await vault.connect(alice).acceptOwnership();
+    expect(await vault.owner()).to.equal(alice.address);
+    // Old owner has lost privileges now.
+    await expect(vault.connect(owner).setKeeper(bob.address)).to.be.revertedWithCustomError(
+      vault,
+      "OwnableUnauthorizedAccount"
+    );
+  });
+
+  it("redeem() skips a broken reserve asset instead of reverting the whole redemption", async function () {
+    const { token, vault, nvdab, owner, keeper, alice } = await deploySystem();
+
+    const Reverting = await ethers.getContractFactory("MockRevertingERC20");
+    const badAsset = await Reverting.deploy("Broken bStock", "BROKEN");
+    await badAsset.waitForDeployment();
+
+    // Vault holds a good asset (NVDAB) and a broken one that always reverts on transfer —
+    // standing in for a keeper mistakenly (or maliciously) registering a bad token.
+    await depositAsset(vault, nvdab, keeper, ethers.parseUnits("1000", 18));
+    await badAsset.mint(keeper.address, ethers.parseUnits("1000", 18));
+    await badAsset.connect(keeper).approve(await vault.getAddress(), ethers.parseUnits("1000", 18));
+    await vault.connect(keeper).depositAsset(await badAsset.getAddress(), ethers.parseUnits("1000", 18));
+
+    const amount = ethers.parseUnits("10000000", 18); // 1%
+    await token.connect(owner).transfer(alice.address, amount);
+    await token.connect(alice).approve(await vault.getAddress(), amount);
+
+    // Must not revert despite one reserve asset being broken.
+    await expect(vault.connect(alice).redeem(amount))
+      .to.emit(vault, "RedeemAssetSkipped")
+      .withArgs(alice.address, await badAsset.getAddress(), ethers.parseUnits("10", 18));
+
+    // The good asset still paid out, and RSVD was still burned.
+    expect(await nvdab.balanceOf(alice.address)).to.equal(ethers.parseUnits("10", 18));
+    expect(await badAsset.balanceOf(alice.address)).to.equal(0n);
+    expect(await token.balanceOf(alice.address)).to.equal(0n);
+    expect(await token.totalSupply()).to.equal(FIXED_SUPPLY - amount);
+
+    // The skipped asset's balance stays in the vault (not lost, just not paid out here).
+    expect(await badAsset.balanceOf(await vault.getAddress())).to.equal(ethers.parseUnits("1000", 18));
+  });
 });

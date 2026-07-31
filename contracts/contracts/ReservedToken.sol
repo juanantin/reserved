@@ -4,6 +4,7 @@ pragma solidity ^0.8.28;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 /// @title ReservedToken (RSVD)
 /// @notice Fixed-supply BEP-20 for the Reserved treasury. A 3% tax applies to transfers
@@ -19,7 +20,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 /// hook, which skims BNB/USDT directly. Net effect on the vault is the same. Migrating to
 /// a true Infinity hook is a documented follow-up (see PROJECT_BRIEF.md) once the hook
 /// interfaces are integrated and audited — do not assume this contract already does that.
-contract ReservedToken is ERC20Burnable, Ownable {
+contract ReservedToken is ERC20Burnable, Ownable2Step {
     uint256 public constant BPS_DENOMINATOR = 10_000;
     /// @notice Hard ceiling on the tax rate so the owner can never rug holders via tax.
     uint256 public constant MAX_TAX_BPS = 500; // 5%

@@ -4,6 +4,7 @@ pragma solidity ^0.8.28;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {ReservedToken} from "./ReservedToken.sol";
 
@@ -11,7 +12,7 @@ import {ReservedToken} from "./ReservedToken.sol";
 /// @notice Holds the reserve of tokenized stocks (bStocks, plain BEP-20 tokens) backing
 /// RSVD. Holders redeem RSVD for a pro-rata share of every reserve asset the vault holds
 /// by burning it here. The keeper bot deposits bStocks it has acquired via depositAsset.
-contract ReservedVault is Ownable, ReentrancyGuard {
+contract ReservedVault is Ownable2Step, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     ReservedToken public immutable rsvd;
@@ -26,6 +27,11 @@ contract ReservedVault is Ownable, ReentrancyGuard {
     event ReserveAssetAdded(address indexed token);
     event AssetDeposited(address indexed token, address indexed from, uint256 amount);
     event Redeemed(address indexed account, uint256 rsvdBurned, uint256 supplyBeforeBurn);
+    /// @notice A reserve asset's payout failed during redeem (e.g. the token reverts,
+    /// blacklists the recipient, or is otherwise broken) and was skipped so the rest of
+    /// the redemption could still go through. The RSVD claim on that specific asset is
+    /// lost for this redemption — see redeem() for why that tradeoff is deliberate.
+    event RedeemAssetSkipped(address indexed account, address indexed token, uint256 amount);
 
     error ZeroAddress();
     error ZeroAmount();
@@ -106,6 +112,17 @@ contract ReservedVault is Ownable, ReentrancyGuard {
     /// reserve asset the vault holds, computed against total supply before the burn.
     /// Caller must have approved this contract to burn on their behalf
     /// (ReservedToken.approve(vault, rsvdAmount)).
+    ///
+    /// @dev Each payout is attempted independently via try/catch (a raw external call,
+    /// not SafeERC20) rather than the more common "revert the whole tx on any transfer
+    /// failure" pattern. This is deliberate: a naive loop means a single broken reserve
+    /// asset — one that reverts on transfer, blacklists this vault, is paused, or is
+    /// otherwise malformed — would permanently brick redemption for every holder and
+    /// every other (perfectly fine) reserve asset, since one failing transfer reverts
+    /// the entire transaction. That failure mode is worse than what this does instead:
+    /// skip the broken asset (emitting RedeemAssetSkipped) and still pay out everything
+    /// that works. The cost is the redeemer's claim on that specific asset for this
+    /// redemption isn't retried — accepted as the better of two bad outcomes.
     function redeem(uint256 rsvdAmount) external nonReentrant {
         if (rsvdAmount == 0) revert ZeroAmount();
 
@@ -126,7 +143,11 @@ contract ReservedVault is Ownable, ReentrancyGuard {
 
         for (uint256 i = 0; i < tokens.length; i++) {
             if (amounts[i] > 0) {
-                IERC20(tokens[i]).safeTransfer(msg.sender, amounts[i]);
+                try IERC20(tokens[i]).transfer(msg.sender, amounts[i]) returns (bool success) {
+                    if (!success) emit RedeemAssetSkipped(msg.sender, tokens[i], amounts[i]);
+                } catch {
+                    emit RedeemAssetSkipped(msg.sender, tokens[i], amounts[i]);
+                }
             }
         }
 

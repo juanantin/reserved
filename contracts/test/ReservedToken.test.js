@@ -100,4 +100,19 @@ describe("ReservedToken", function () {
     expect(await token.balanceOf(alice.address)).to.equal(ethers.parseUnits("700", 18));
     expect(await token.totalSupply()).to.equal(FIXED_SUPPLY - ethers.parseUnits("300", 18));
   });
+
+  it("ownership transfer requires the new owner to accept (Ownable2Step)", async function () {
+    const { token, owner, alice, bob } = await deployToken();
+
+    await token.connect(owner).transferOwnership(alice.address);
+    expect(await token.owner()).to.equal(owner.address);
+    expect(await token.pendingOwner()).to.equal(alice.address);
+    await expect(token.connect(alice).setTaxBps(100)).to.be.revertedWithCustomError(token, "OwnableUnauthorizedAccount");
+
+    await expect(token.connect(bob).acceptOwnership()).to.be.revertedWithCustomError(token, "OwnableUnauthorizedAccount");
+
+    await token.connect(alice).acceptOwnership();
+    expect(await token.owner()).to.equal(alice.address);
+    await expect(token.connect(owner).setTaxBps(100)).to.be.revertedWithCustomError(token, "OwnableUnauthorizedAccount");
+  });
 });
