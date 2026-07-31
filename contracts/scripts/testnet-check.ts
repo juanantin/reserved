@@ -1,9 +1,10 @@
 import { ethers } from "hardhat";
 
-// Live BSC testnet deployment from the first testnet deploy. Update these if you
-// redeploy.
-const TOKEN_ADDRESS = "0x8761873C64C1fB8e8174b9Ee39f11FFe4a3D8883";
-const VAULT_ADDRESS = "0x0Ec27569eb6Ac155aE18161DF1F5332c8f8900ea";
+// Live BSC testnet deployment from the first testnet deploy. Override via env vars
+// (TOKEN_ADDRESS=... VAULT_ADDRESS=... npm run check:testnet) after a fresh deploy
+// without having to edit this file.
+const TOKEN_ADDRESS = process.env.TOKEN_ADDRESS || "0x8761873C64C1fB8e8174b9Ee39f11FFe4a3D8883";
+const VAULT_ADDRESS = process.env.VAULT_ADDRESS || "0x0Ec27569eb6Ac155aE18161DF1F5332c8f8900ea";
 
 // Free public BSC testnet RPC endpoints load-balance across backend nodes that
 // aren't always in sync, so a balanceOf() read immediately after a transaction
