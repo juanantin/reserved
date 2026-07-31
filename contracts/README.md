@@ -58,6 +58,54 @@ Since ownership now sits with the timelock, any further admin changes (`setAmmPa
 
 No mainnet deploy has been run: that additionally needs the audit and securities-classification legal review `PROJECT_BRIEF.md` requires, neither of which has happened.
 
+## Mainnet dry run (throwaway ticker, self-funded only)
+
+Before spending real money on an audit and the real `Reserved`/`RSVD` launch, it's reasonable to prove the whole path — deploy, verify, pool, tax, redeem — works end to end on mainnet itself, using a throwaway ticker and only your own capital. That's what this section covers. It is **not** a public launch: nobody but you should ever be expected to hold this test token.
+
+**Ground rules, non-negotiable:**
+- Use a throwaway name/symbol (e.g. `RSVDTEST`), never `Reserved`/`RSVD` — so nobody could mistake it for the real thing if they stumble on it.
+- Fund it with the minimum that still exercises the real mechanism — not an amount you'd be upset to lose.
+- Never post the pair address, contract address, or "come try this" anywhere public. Once a PancakeSwap pool exists on mainnet, it is public infrastructure regardless of whether you announce it — sniper bots watch the PancakeSwap factory's `PairCreated` event and can buy within the same block, with zero promotion on your part. This is a real, structural risk of this test, not a hypothetical: keep the pooled amounts small enough that sniping them isn't worth anyone's gas, and keep the pool's total lifetime short (create → your own test trades → remove liquidity, all in one sitting, not left sitting for days).
+- Do all trading from wallets you control. Don't let a friend "try buying some" with their own money — the whole point of self-funded-only is that reclaiming the liquidity afterward can't leave anyone but you holding an illiquid bag.
+
+**1. Deploy the test token + vault**, overriding the hardcoded name/symbol/supply via env vars instead of editing `deploy.ts`:
+
+```bash
+TOKEN_NAME=RSVDTEST TOKEN_SYMBOL=RSVDTEST FIXED_SUPPLY_TOKENS=1000000 npm run deploy:mainnet
+```
+
+A supply of 1,000,000 (vs. the real 1B) keeps the numbers small and obviously a test. This uses your real mainnet deployer wallet — never paste that wallet's private key into a chat session; edit `contracts/.env` directly on your own machine.
+
+**2. Verify both contracts on BscScan** (`npx hardhat verify --network bscMainnet <address> <constructor args>` — same pattern as testnet) so the contract is readable, matching the "verifiable reserve" premise even for the test.
+
+**3. Create the pool** with a small amount of your own token + BNB:
+
+```bash
+TOKEN_ADDRESS=<token address> POOL_TOKEN_AMOUNT=100000 POOL_BNB_AMOUNT=0.03 npm run pool:create:mainnet
+```
+
+`POOL_BNB_AMOUNT` is the real money at risk here — 0.03 BNB is a reasonable floor for a pool that's actually swappable without pathological slippage on small test trades, while staying small enough that sniping it isn't worth the gas. Check current BNB price yourself to know what that is in your currency. On top of that, budget roughly 0.02–0.03 BNB for gas across the two deploys, verification, `setAmmPair`, and a couple of test trades — so a mainnet wallet balance of ~0.06–0.08 BNB total is a reasonable minimum to have on hand before starting.
+
+The script prints the resulting PancakeSwap pair address — save it, `remove-pool.ts` needs it later.
+
+**4. Register the pair for tax** (from the deployer, before any timelock handoff — see the note atop `testnet-check.ts` for why order matters here):
+
+```ts
+await token.setAmmPair("<pair address>", true);
+```
+
+**5. Test buy/sell/tax/burn/redeem** using a second wallet you also control, sending it a little BNB for gas and swapping small amounts against the pool directly (e.g. via the PancakeSwap UI pointed at your pair, or scripted like `testnet-check.ts`). Confirm tax lands in `treasury`, `burn()` reduces supply, and (after depositing some real bStock into the vault, or another vault-registered token, via `depositAsset`) `redeem()` pays out correctly.
+
+**6. Remove liquidity** once you're satisfied, reclaiming your BNB + remaining tokens:
+
+```bash
+TOKEN_ADDRESS=<token address> PAIR_ADDRESS=<pair address> npm run pool:remove:mainnet
+```
+
+After this, the test pool is empty and effectively dead — nobody can meaningfully trade against it anymore. The test token contract itself keeps existing on-chain (nothing here self-destructs it), which is fine: it's worthless and unpooled.
+
+**7. Deploy the real thing separately.** This dry run doesn't upgrade into the real launch — once you're confident, deploy fresh with the real `Reserved`/`RSVD` name (default env, no overrides needed), a real multisig for owner/treasury/keeper (not the solo deployer key used here), and — per `PROJECT_BRIEF.md` — only after the audit and legal review it requires.
+
 ## What's not here yet
 
 Per the brief's phased plan, this covers phase 1 (token + vault + tests) only:

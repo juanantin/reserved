@@ -12,7 +12,9 @@
     "deploy:mainnet": "node scripts/offline-compile.js && hardhat run scripts/deploy.ts --network bscMainnet --no-compile",
     "check:testnet": "node scripts/offline-compile.js && hardhat run scripts/testnet-check.ts --network bscTestnet --no-compile",
     "deploy:timelock:testnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-timelock.ts --network bscTestnet --no-compile",
-    "deploy:timelock:mainnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-timelock.ts --network bscMainnet --no-compile"
+    "deploy:timelock:mainnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-timelock.ts --network bscMainnet --no-compile",
+    "pool:create:mainnet": "node scripts/offline-compile.js && hardhat run scripts/create-pool.ts --network bscMainnet --no-compile",
+    "pool:remove:mainnet": "node scripts/offline-compile.js && hardhat run scripts/remove-pool.ts --network bscMainnet --no-compile"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",

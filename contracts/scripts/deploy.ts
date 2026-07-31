@@ -1,9 +1,11 @@
 import { ethers } from "hardhat";
 
-// Fill these in for the target deployment before running.
-const TOKEN_NAME = "Reserved";
-const TOKEN_SYMBOL = "RSVD";
-const FIXED_SUPPLY = ethers.parseUnits("1000000000", 18); // 1B RSVD
+// Fill these in for the target deployment before running, or override via env vars
+// for a throwaway test deployment without editing this file, e.g.:
+//   TOKEN_NAME=RSVDTEST TOKEN_SYMBOL=RSVDTEST FIXED_SUPPLY_TOKENS=1000000 npm run deploy:mainnet
+const TOKEN_NAME = process.env.TOKEN_NAME || "Reserved";
+const TOKEN_SYMBOL = process.env.TOKEN_SYMBOL || "RSVD";
+const FIXED_SUPPLY = ethers.parseUnits(process.env.FIXED_SUPPLY_TOKENS || "1000000000", 18); // default 1B
 
 async function main() {
   const [deployer] = await ethers.getSigners();
