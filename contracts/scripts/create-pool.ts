@@ -14,7 +14,7 @@ import { ethers } from "hardhat";
 // PancakeSwap V2 Router on BSC mainnet. Double-check this against
 // https://docs.pancakeswap.finance/developers/smart-contracts/pancakeswap-exchange/v2-contracts
 // before trusting it — this is from training data, not a live lookup.
-const PANCAKE_ROUTER = process.env.PANCAKE_ROUTER || "0x10ED43C718714eb63d5aA57B78B54704E256024";
+const PANCAKE_ROUTER = process.env.PANCAKE_ROUTER || "0x10ED43C718714eb63d5aA57B78B54704E256024E";
 
 const TOKEN_ADDRESS = process.env.TOKEN_ADDRESS || "";
 const TOKEN_AMOUNT = process.env.POOL_TOKEN_AMOUNT || ""; // human units, e.g. "100000"

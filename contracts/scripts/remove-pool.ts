@@ -4,7 +4,7 @@ import { ethers } from "hardhat";
 // create-pool.ts, sending both legs (token + BNB) back to the caller's wallet. Use
 // this to unwind a self-funded mainnet dry run (see README's "Mainnet dry run"
 // section) before deploying the real token.
-const PANCAKE_ROUTER = process.env.PANCAKE_ROUTER || "0x10ED43C718714eb63d5aA57B78B54704E256024";
+const PANCAKE_ROUTER = process.env.PANCAKE_ROUTER || "0x10ED43C718714eb63d5aA57B78B54704E256024E";
 const TOKEN_ADDRESS = process.env.TOKEN_ADDRESS || "";
 const PAIR_ADDRESS = process.env.PAIR_ADDRESS || "";
 
