@@ -16,6 +16,7 @@
     "pool:create:mainnet": "node scripts/offline-compile.js && hardhat run scripts/create-pool.ts --network bscMainnet --no-compile",
     "pool:remove:mainnet": "node scripts/offline-compile.js && hardhat run scripts/remove-pool.ts --network bscMainnet --no-compile",
     "set-amm-pair:mainnet": "node scripts/offline-compile.js && hardhat run scripts/set-amm-pair.ts --network bscMainnet --no-compile",
+    "set-tax-exempt:mainnet": "node scripts/offline-compile.js && hardhat run scripts/set-tax-exempt.ts --network bscMainnet --no-compile",
     "check:mainnet": "node scripts/offline-compile.js && hardhat run scripts/mainnet-check.ts --network bscMainnet --no-compile",
     "verify:standard-json": "node scripts/verify-standard-json.js"
   },
