@@ -36,17 +36,28 @@ const targets = [
   "vendor/TimelockController.sol",
 ];
 
-function findImports(importPath) {
-  const candidates = [path.join(CONTRACTS_DIR, importPath), path.join(NODE_MODULES, importPath)];
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) return { contents: fs.readFileSync(candidate, "utf8") };
-  }
-  return { error: `File not found: ${importPath}` };
-}
-
+// Etherscan compiles from the submitted JSON alone — no filesystem, no node_modules
+// — so every imported file (all of @openzeppelin/contracts, transitively) has to be
+// bundled into `sources` with its actual content, not just our own contract files.
+// Record every file this callback resolves (solc calls it for the full transitive
+// import graph, exactly the same resolution it used for the real local compile that
+// produced the deployed bytecode) directly into `sources` as a side effect.
 const sources = {};
 for (const file of targets) {
   sources[file] = { content: fs.readFileSync(path.join(CONTRACTS_DIR, file), "utf8") };
+}
+
+function findImports(importPath) {
+  if (sources[importPath]) return { contents: sources[importPath].content };
+  const candidates = [path.join(CONTRACTS_DIR, importPath), path.join(NODE_MODULES, importPath)];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      const contents = fs.readFileSync(candidate, "utf8");
+      sources[importPath] = { content: contents };
+      return { contents };
+    }
+  }
+  return { error: `File not found: ${importPath}` };
 }
 
 const input = {
@@ -59,6 +70,14 @@ const input = {
     },
   },
 };
+
+// Force full import resolution (populating `sources` above) by actually compiling
+// locally, exactly as offline-compile.js does, before submitting to Etherscan.
+const compileOutput = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
+for (const err of compileOutput.errors || []) {
+  if (err.severity === "error") throw new Error(`Local compile failed: ${err.formattedMessage}`);
+}
+input.sources = sources; // now the full transitive closure, not just our own files
 
 const CONTRACT = process.env.CONTRACT; // "ReservedToken" | "ReservedVault"
 const ADDRESS = process.env.ADDRESS;
