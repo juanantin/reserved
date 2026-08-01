@@ -14,9 +14,9 @@ export default function Home() {
       <Navbar />
       <main>
         <Hero />
-        <HowItWorksSection />
-        <TokenomicsSection />
         <TreasurySection />
+        <TokenomicsSection />
+        <HowItWorksSection />
         <TransparencySection />
         <GovernanceSection />
         <FeatureStrip />

@@ -91,9 +91,12 @@ export function RedeemPanel() {
       );
       if (!cancelled) setPreview(lines.filter((l) => Number(l.amount) > 0));
     }
-    loadPreview();
+    // Debounced — this fires on every keystroke otherwise, hammering the
+    // public RPC endpoint while someone's still typing an amount.
+    const timer = setTimeout(loadPreview, 400);
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
   }, [amountInput]);
 
@@ -109,8 +112,24 @@ export function RedeemPanel() {
     }
   })();
 
+  // allowance starts null while its balanceOf/allowance read is in flight —
+  // treat that as "unknown", not "no approval needed". Defaulting to false
+  // here would show the Redeem button before we actually know the vault has
+  // approval, letting someone click it into a guaranteed-revert.
+  const allowanceUnknown = allowance === null;
   const needsApproval = allowance !== null && amountWei > BigInt(0) && allowance < amountWei;
   const insufficientBalance = balance !== null && amountWei > BigInt(0) && amountWei > balance;
+
+  // ethers surfaces a short, human-readable reason on most revert/rejection
+  // errors (e.g. "user rejected action", a custom error name) — show that
+  // instead of a flat generic string when it's available.
+  function describeError(error: unknown, fallback: string): string {
+    if (error && typeof error === "object" && "shortMessage" in error) {
+      const msg = (error as { shortMessage?: unknown }).shortMessage;
+      if (typeof msg === "string" && msg) return msg;
+    }
+    return fallback;
+  }
 
   const handleApprove = async () => {
     setStatus(null);
@@ -123,8 +142,8 @@ export function RedeemPanel() {
       await tx.wait();
       setStatus("Approved. You can redeem now.");
       await refreshBalance();
-    } catch {
-      setStatus("Approval failed or was rejected.");
+    } catch (error) {
+      setStatus(describeError(error, "Approval failed or was rejected."));
     } finally {
       setBusy(null);
     }
@@ -142,8 +161,8 @@ export function RedeemPanel() {
       setStatus("Redeemed. Reserve assets have been sent to your wallet.");
       setAmountInput("");
       await refreshBalance();
-    } catch {
-      setStatus("Redeem failed or was rejected.");
+    } catch (error) {
+      setStatus(describeError(error, "Redeem failed or was rejected."));
     } finally {
       setBusy(null);
     }
@@ -239,7 +258,15 @@ export function RedeemPanel() {
       {insufficientBalance && <p className="mt-3 text-sm text-red-400">Amount exceeds your balance.</p>}
 
       <div className="mt-4 flex gap-3">
-        {needsApproval ? (
+        {amountWei > BigInt(0) && allowanceUnknown ? (
+          <button
+            type="button"
+            disabled
+            className="cursor-not-allowed rounded-md bg-rsvd-gold px-6 py-3 text-sm font-semibold text-rsvd-black opacity-50"
+          >
+            Checking approval...
+          </button>
+        ) : needsApproval ? (
           <button
             type="button"
             onClick={handleApprove}

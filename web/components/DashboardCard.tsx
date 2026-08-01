@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { tokenInfo } from "@/config/token";
-import { getReadProvider, getTokenContract, getVaultContract } from "@/lib/contracts";
+import { getReadProvider, getTokenContract, getVaultContract, BNB_USD_PRICE_FEED, CHAINLINK_FEED_ABI } from "@/lib/contracts";
 import { useWallet } from "@/lib/useWallet";
 import { Logo } from "./Logo";
 import { HistoricalValueChart } from "./HistoricalValueChart";
@@ -44,6 +44,7 @@ export function DashboardCard() {
   const { address, wrongNetwork } = useWallet();
 
   const [marketCapBnb, setMarketCapBnb] = useState<number | null>(null);
+  const [marketCapUsd, setMarketCapUsd] = useState<number | null>(null);
   const [supply, setSupply] = useState<number | null>(null);
   const [treasuryBal, setTreasuryBal] = useState<number | null>(null);
   const [reserves, setReserves] = useState<ReserveLine[] | null>(null);
@@ -96,11 +97,29 @@ export function DashboardCard() {
           }
         }
 
+        // Chainlink's own on-chain feed, not a third-party API — no key, no
+        // extra backend, consistent with everything else this reads directly.
+        let marketCapInUsd: number | null = null;
+        if (marketCap !== null) {
+          try {
+            const feed = new ethers.Contract(BNB_USD_PRICE_FEED, CHAINLINK_FEED_ABI, provider);
+            const [decimals, roundData]: [number, [bigint, bigint, bigint, bigint, bigint]] = await Promise.all([
+              feed.decimals(),
+              feed.latestRoundData(),
+            ]);
+            const bnbUsd = Number(roundData[1]) / 10 ** Number(decimals);
+            marketCapInUsd = marketCap * bnbUsd;
+          } catch {
+            // Price feed read failed — fall back to BNB-only display below.
+          }
+        }
+
         if (!cancelled) {
           setSupply(supplyNum);
           setTreasuryBal(Number(ethers.formatUnits(treasuryWei, 18)));
           setReserves(lines.filter((l) => Number(l.balance) > 0));
           setMarketCapBnb(marketCap);
+          setMarketCapUsd(marketCapInUsd);
         }
       } catch {
         if (!cancelled) setFailed(true);
@@ -169,12 +188,19 @@ export function DashboardCard() {
       <div className="border-b border-white/10 px-6 py-6 text-center">
         <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">Market Cap</div>
         <div className="mt-2 truncate font-mono text-4xl font-bold text-rsvd-gold">
-          {marketCapBnb !== null
-            ? `${marketCapBnb.toLocaleString(undefined, { maximumFractionDigits: 2 })} BNB`
-            : failed
-              ? "—"
-              : "..."}
+          {marketCapUsd !== null
+            ? `$${marketCapUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+            : marketCapBnb !== null
+              ? `${marketCapBnb.toLocaleString(undefined, { maximumFractionDigits: 2 })} BNB`
+              : failed
+                ? "—"
+                : "..."}
         </div>
+        {marketCapUsd !== null && marketCapBnb !== null && (
+          <div className="mt-1 truncate font-mono text-xs text-rsvd-offwhite/40">
+            {marketCapBnb.toLocaleString(undefined, { maximumFractionDigits: 4 })} BNB
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 divide-x divide-white/10 border-b border-white/10 px-6 py-5 text-center">

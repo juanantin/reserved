@@ -4,29 +4,48 @@ import { useState } from "react";
 import { Menu, X as CloseIcon } from "lucide-react";
 import { navLinks } from "@/config/site";
 import { tokenInfo } from "@/config/token";
+import { useWallet } from "@/lib/useWallet";
 import { Logo } from "./Logo";
 
-function DashboardLink({ className }: { className?: string }) {
-  const dashboardReady = Boolean(tokenInfo.tokenAddress);
+function shortAddr(addr: string) {
+  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+}
 
-  if (dashboardReady) {
+function WalletButton({ className }: { className?: string }) {
+  const { address, wrongNetwork, connecting, connect, switchToBsc } = useWallet();
+  const base = `rounded-md px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90 focus-gold ${className ?? ""}`;
+
+  if (!tokenInfo.tokenAddress) {
     return (
       <a
-        href={tokenInfo.buyUrl || "#tokenomics"}
-        className={`rounded-md bg-rsvd-gold px-4 py-2 text-sm font-semibold text-rsvd-black transition-opacity hover:opacity-90 focus-gold ${className ?? ""}`}
+        href="#tokenomics"
+        className={`rounded-md border border-rsvd-gold/40 px-4 py-2 text-sm font-semibold text-rsvd-gold/80 transition-colors hover:border-rsvd-gold hover:text-rsvd-gold focus-gold ${className ?? ""}`}
+        title="Dashboard goes live once the contracts are deployed"
       >
-        View Dashboard
+        Dashboard — Coming Soon
       </a>
     );
   }
 
+  if (!address) {
+    return (
+      <button type="button" onClick={connect} disabled={connecting} className={`bg-rsvd-gold text-rsvd-black disabled:opacity-60 ${base}`}>
+        {connecting ? "Connecting..." : "Connect Wallet"}
+      </button>
+    );
+  }
+
+  if (wrongNetwork) {
+    return (
+      <button type="button" onClick={switchToBsc} className={`border border-rsvd-gold/40 text-rsvd-gold hover:border-rsvd-gold ${base}`}>
+        Wrong Network
+      </button>
+    );
+  }
+
   return (
-    <a
-      href="#tokenomics"
-      className={`rounded-md border border-rsvd-gold/40 px-4 py-2 text-sm font-semibold text-rsvd-gold/80 transition-colors hover:border-rsvd-gold hover:text-rsvd-gold focus-gold ${className ?? ""}`}
-      title="Dashboard goes live once the contracts are deployed"
-    >
-      Dashboard — Coming Soon
+    <a href="#treasury" className={`bg-rsvd-gold text-rsvd-black ${base}`} title="Go to the Treasury section to redeem">
+      {shortAddr(address)} · Redeem
     </a>
   );
 }
@@ -53,7 +72,7 @@ export function Navbar() {
         </ul>
 
         <div className="hidden md:block">
-          <DashboardLink />
+          <WalletButton />
         </div>
 
         <button
@@ -79,7 +98,7 @@ export function Navbar() {
             ))}
           </ul>
           <div className="mt-5">
-            <DashboardLink className="block w-full text-center" />
+            <WalletButton className="block w-full text-center" />
           </div>
         </nav>
       )}

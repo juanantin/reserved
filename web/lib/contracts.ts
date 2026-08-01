@@ -40,6 +40,15 @@ export const ERC20_META_ABI = [
   "function decimals() view returns (uint8)",
 ];
 
+// Chainlink's BNB/USD price feed proxy on BSC mainnet — used to convert the
+// pool-derived BNB market cap into USD. A read-only on-chain call, no API key.
+// https://bscscan.com/address/0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE
+export const BNB_USD_PRICE_FEED = "0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE";
+export const CHAINLINK_FEED_ABI = [
+  "function latestRoundData() view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)",
+  "function decimals() view returns (uint8)",
+];
+
 export function getTokenContract(runner: ethers.ContractRunner) {
   return new ethers.Contract(tokenInfo.tokenAddress, TOKEN_ABI, runner);
 }
