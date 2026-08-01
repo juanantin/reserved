@@ -104,7 +104,6 @@ console.log("Constructor args (abi-encoded):", constructorArguments);
 
 async function main() {
   const params = new URLSearchParams({
-    chainid: "56",
     module: "contract",
     action: "verifysourcecode",
     apikey: API_KEY,
@@ -116,7 +115,10 @@ async function main() {
     constructorArguments,
   });
 
-  const submitRes = await fetch("https://api.etherscan.io/v2/api", { method: "POST", body: params });
+  // The V2 API reads chainid off the URL's query string, not the POST body —
+  // it 404/NOTOKs with "Missing or unsupported chainid parameter" if it's only
+  // in the form-encoded body, even though every other param is read from there.
+  const submitRes = await fetch("https://api.etherscan.io/v2/api?chainid=56", { method: "POST", body: params });
   const submitJson = await submitRes.json();
   console.log("\nSubmit response:", submitJson);
   if (submitJson.status !== "1") {
