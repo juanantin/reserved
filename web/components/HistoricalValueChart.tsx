@@ -1,16 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { dictionaries, type Locale } from "@/lib/i18n";
 
 type Point = { t: number; marketCapBnb: number | null };
+
+const DATE_LOCALE: Record<Locale, string> = { en: "en-US", zh: "zh-CN" };
 
 // Reads public/history.json — real snapshots appended hourly by
 // .github/workflows/snapshot.yml (see scripts/snapshot.mjs), not fabricated
 // or backfilled. Renders nothing until there's at least two real points to
 // draw a trend between.
-export function HistoricalValueChart() {
+export function HistoricalValueChart({ locale }: { locale: Locale }) {
   const [points, setPoints] = useState<Point[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const t = dictionaries[locale].dashboardCard;
 
   useEffect(() => {
     let cancelled = false;
@@ -36,10 +40,9 @@ export function HistoricalValueChart() {
   if (withValue.length < 2) {
     return (
       <div className="border-b border-white/10 px-6 py-5">
-        <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">Historical Market Cap</div>
+        <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">{t.historicalMarketCap}</div>
         <p className="mt-2 text-xs text-rsvd-offwhite/40">
-          Tracking started {new Date(withValue[0].t * 1000).toLocaleDateString()} — chart fills in as snapshots
-          accumulate (hourly).
+          {t.trackingStarted(new Date(withValue[0].t * 1000).toLocaleDateString(DATE_LOCALE[locale]))}
         </p>
       </div>
     );
@@ -52,7 +55,7 @@ export function HistoricalValueChart() {
   return (
     <div className="border-b border-white/10 px-6 py-5">
       <div className="flex items-baseline justify-between">
-        <span className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">Historical Market Cap</span>
+        <span className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">{t.historicalMarketCap}</span>
         <span className="font-mono text-xs text-rsvd-gold">
           {latest.toLocaleString(undefined, { maximumFractionDigits: 4 })} BNB
         </span>
@@ -66,7 +69,7 @@ export function HistoricalValueChart() {
               height: `${max > 0 ? Math.max(4, (p.marketCapBnb / max) * 100) : 4}%`,
               opacity: 0.35 + 0.65 * (i / Math.max(1, recent.length - 1)),
             }}
-            title={`${new Date(p.t * 1000).toLocaleString()}: ${p.marketCapBnb.toFixed(6)} BNB`}
+            title={`${new Date(p.t * 1000).toLocaleString(DATE_LOCALE[locale])}: ${p.marketCapBnb.toFixed(6)} BNB`}
           />
         ))}
       </div>

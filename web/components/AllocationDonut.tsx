@@ -1,4 +1,5 @@
 import { plannedReserveAssets } from "@/config/token";
+import { dictionaries, type Locale } from "@/lib/i18n";
 
 // Equal-weight by construction — there's no live allocation yet, so this shows the
 // acquisition plan, not a holdings snapshot. Segment shades are a gold monochrome
@@ -11,7 +12,8 @@ const GAP = 6;
 
 const shades = [1, 0.8, 0.62, 0.46, 0.32];
 
-export function AllocationDonut() {
+export function AllocationDonut({ locale }: { locale: Locale }) {
+  const t = dictionaries[locale].allocationDonut;
   const n = plannedReserveAssets.length;
   const segmentLength = CIRCUMFERENCE / n;
 
@@ -38,7 +40,7 @@ export function AllocationDonut() {
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-2xl font-bold text-rsvd-gold">{n}</span>
-          <span className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/50">assets</span>
+          <span className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/50">{t.assets}</span>
         </div>
       </div>
 
@@ -56,9 +58,7 @@ export function AllocationDonut() {
             </li>
           ))}
         </ul>
-        <p className="mt-3 text-xs text-rsvd-offwhite/40">
-          Planned allocation, equal-weight — illustrative until the vault starts acquiring.
-        </p>
+        <p className="mt-3 text-xs text-rsvd-offwhite/40">{t.caption}</p>
       </div>
     </div>
   );

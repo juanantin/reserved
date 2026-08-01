@@ -5,6 +5,7 @@ import { ethers } from "ethers";
 import { tokenInfo } from "@/config/token";
 import { getReadProvider, getTokenContract, getVaultContract } from "@/lib/contracts";
 import { useWallet } from "@/lib/useWallet";
+import { dictionaries, type Locale } from "@/lib/i18n";
 
 type PreviewLine = { token: string; symbol: string; amount: string };
 
@@ -12,8 +13,10 @@ function shortAddr(addr: string) {
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 }
 
-export function RedeemPanel() {
+export function RedeemPanel({ locale }: { locale: Locale }) {
   const { address, wrongNetwork, connecting, error: walletError, connect, switchToBsc, getSigner } = useWallet();
+  const t = dictionaries[locale].redeemPanel;
+  const tw = dictionaries[locale].wallet;
 
   const [balance, setBalance] = useState<bigint | null>(null);
   const [allowance, setAllowance] = useState<bigint | null>(null);
@@ -138,12 +141,12 @@ export function RedeemPanel() {
       const signer = await getSigner();
       const token = getTokenContract(signer);
       const tx = await token.approve(tokenInfo.vaultAddress, amountWei);
-      setStatus("Approval submitted — waiting for confirmation...");
+      setStatus(t.approvalSubmitted);
       await tx.wait();
-      setStatus("Approved. You can redeem now.");
+      setStatus(t.approved);
       await refreshBalance();
     } catch (error) {
-      setStatus(describeError(error, "Approval failed or was rejected."));
+      setStatus(describeError(error, t.approvalFailed));
     } finally {
       setBusy(null);
     }
@@ -156,13 +159,13 @@ export function RedeemPanel() {
       const signer = await getSigner();
       const vault = getVaultContract(signer);
       const tx = await vault.redeem(amountWei);
-      setStatus("Redeem submitted — waiting for confirmation...");
+      setStatus(t.redeemSubmitted);
       await tx.wait();
-      setStatus("Redeemed. Reserve assets have been sent to your wallet.");
+      setStatus(t.redeemed);
       setAmountInput("");
       await refreshBalance();
     } catch (error) {
-      setStatus(describeError(error, "Redeem failed or was rejected."));
+      setStatus(describeError(error, t.redeemFailed));
     } finally {
       setBusy(null);
     }
@@ -173,10 +176,10 @@ export function RedeemPanel() {
       <button
         type="button"
         disabled
-        title="Redeem opens once the vault contract is deployed"
+        title={t.comingSoonTitle}
         className="cursor-not-allowed rounded-md border border-rsvd-gold/30 px-6 py-3 text-sm font-semibold text-rsvd-gold/50"
       >
-        Redeem — Coming Soon
+        {t.comingSoon}
       </button>
     );
   }
@@ -190,9 +193,9 @@ export function RedeemPanel() {
           disabled={connecting}
           className="rounded-md bg-rsvd-gold px-6 py-3 text-sm font-semibold text-rsvd-black transition-opacity hover:opacity-90 focus-gold disabled:opacity-60"
         >
-          {connecting ? "Connecting..." : "Connect Wallet to Redeem"}
+          {connecting ? t.connecting : t.connectToRedeem}
         </button>
-        {walletError && <p className="mt-2 text-sm text-red-400">{walletError}</p>}
+        {walletError && <p className="mt-2 text-sm text-red-400">{tw.errors[walletError]}</p>}
       </div>
     );
   }
@@ -204,7 +207,7 @@ export function RedeemPanel() {
         onClick={switchToBsc}
         className="rounded-md border border-rsvd-gold/40 px-6 py-3 text-sm font-semibold text-rsvd-gold transition-colors hover:border-rsvd-gold focus-gold"
       >
-        Switch to BNB Chain
+        {t.switchToBnb}
       </button>
     );
   }
@@ -212,9 +215,9 @@ export function RedeemPanel() {
   return (
     <div className="rounded-lg border border-white/10 bg-white/5 p-6">
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-        <span className="text-rsvd-offwhite/60">Connected: {shortAddr(address)}</span>
+        <span className="text-rsvd-offwhite/60">{t.connectedLabel(shortAddr(address))}</span>
         <span className="text-rsvd-offwhite/60">
-          Balance: {balance !== null ? Number(ethers.formatUnits(balance, 18)).toLocaleString() : "..."} {tokenInfo.ticker}
+          {t.balanceLabel(balance !== null ? Number(ethers.formatUnits(balance, 18)).toLocaleString() : "...", tokenInfo.ticker)}
         </span>
       </div>
 
@@ -224,7 +227,7 @@ export function RedeemPanel() {
           min="0"
           value={amountInput}
           onChange={(e) => setAmountInput(e.target.value)}
-          placeholder={`Amount of ${tokenInfo.ticker} to redeem`}
+          placeholder={t.amountPlaceholder(tokenInfo.ticker)}
           className="w-full rounded-md border border-white/10 bg-black/30 px-4 py-3 text-sm text-rsvd-offwhite focus-gold"
         />
         <button
@@ -232,13 +235,13 @@ export function RedeemPanel() {
           onClick={setMax}
           className="shrink-0 rounded-md border border-white/10 px-3 text-xs text-rsvd-offwhite/70 hover:border-rsvd-gold/50 hover:text-rsvd-gold"
         >
-          Max
+          {t.max}
         </button>
       </div>
 
       {preview && preview.length > 0 && (
         <div className="mt-4 rounded-md border border-white/10 bg-black/20 p-4 text-sm">
-          <div className="text-xs uppercase tracking-widest text-rsvd-offwhite/40">You will receive</div>
+          <div className="text-xs uppercase tracking-widest text-rsvd-offwhite/40">{t.youWillReceive}</div>
           <ul className="mt-2 space-y-1">
             {preview.map((line) => (
               <li key={line.token} className="flex justify-between font-mono text-rsvd-gold">
@@ -250,12 +253,10 @@ export function RedeemPanel() {
         </div>
       )}
       {preview && preview.length === 0 && amountWei > BigInt(0) && (
-        <p className="mt-3 text-sm text-rsvd-offwhite/50">
-          The vault holds no reserve assets yet — nothing to redeem against.
-        </p>
+        <p className="mt-3 text-sm text-rsvd-offwhite/50">{t.nothingToRedeem}</p>
       )}
 
-      {insufficientBalance && <p className="mt-3 text-sm text-red-400">Amount exceeds your balance.</p>}
+      {insufficientBalance && <p className="mt-3 text-sm text-red-400">{t.exceedsBalance}</p>}
 
       <div className="mt-4 flex gap-3">
         {amountWei > BigInt(0) && allowanceUnknown ? (
@@ -264,7 +265,7 @@ export function RedeemPanel() {
             disabled
             className="cursor-not-allowed rounded-md bg-rsvd-gold px-6 py-3 text-sm font-semibold text-rsvd-black opacity-50"
           >
-            Checking approval...
+            {t.checkingApproval}
           </button>
         ) : needsApproval ? (
           <button
@@ -273,7 +274,7 @@ export function RedeemPanel() {
             disabled={busy !== null || amountWei === BigInt(0) || insufficientBalance}
             className="rounded-md bg-rsvd-gold px-6 py-3 text-sm font-semibold text-rsvd-black transition-opacity hover:opacity-90 focus-gold disabled:opacity-50"
           >
-            {busy === "approve" ? "Approving..." : `Approve ${tokenInfo.ticker}`}
+            {busy === "approve" ? t.approving : t.approve(tokenInfo.ticker)}
           </button>
         ) : (
           <button
@@ -282,7 +283,7 @@ export function RedeemPanel() {
             disabled={busy !== null || amountWei === BigInt(0) || insufficientBalance}
             className="rounded-md bg-rsvd-gold px-6 py-3 text-sm font-semibold text-rsvd-black transition-opacity hover:opacity-90 focus-gold disabled:opacity-50"
           >
-            {busy === "redeem" ? "Redeeming..." : "Redeem"}
+            {busy === "redeem" ? t.redeeming : t.redeem}
           </button>
         )}
       </div>

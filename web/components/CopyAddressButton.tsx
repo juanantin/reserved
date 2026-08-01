@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { dictionaries, type Locale } from "@/lib/i18n";
 
-export function CopyAddressButton({ address, label }: { address: string; label: string }) {
+export function CopyAddressButton({ address, label, locale }: { address: string; label: string; locale: Locale }) {
   const [copied, setCopied] = useState(false);
+  const t = dictionaries[locale].copyAddressButton;
 
   if (!address) {
     return (
       <div className="flex items-center justify-between rounded-md border border-white/10 bg-white/5 px-4 py-3">
         <span className="text-sm text-rsvd-offwhite/60">{label}</span>
-        <span className="text-sm text-rsvd-offwhite/40">Coming soon</span>
+        <span className="text-sm text-rsvd-offwhite/40">{t.comingSoon}</span>
       </div>
     );
   }
@@ -28,7 +30,7 @@ export function CopyAddressButton({ address, label }: { address: string; label: 
     >
       <span className="text-sm text-rsvd-offwhite/60">{label}</span>
       <span className="font-mono text-sm text-rsvd-gold">
-        {copied ? "Copied!" : `${address.slice(0, 6)}...${address.slice(-4)}`}
+        {copied ? t.copied : `${address.slice(0, 6)}...${address.slice(-4)}`}
       </span>
     </button>
   );

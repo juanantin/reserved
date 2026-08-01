@@ -4,8 +4,11 @@ import { FadeIn } from "./FadeIn";
 import { BlockchainBackground } from "./BlockchainBackground";
 import { DashboardCard } from "./DashboardCard";
 import { tokenInfo } from "@/config/token";
+import { dictionaries, type Locale } from "@/lib/i18n";
 
-export function Hero() {
+export function Hero({ locale }: { locale: Locale }) {
+  const t = dictionaries[locale].hero;
+
   return (
     <section id="top" className="relative overflow-hidden px-6 pb-16 pt-16 md:pt-20">
       <BlockchainBackground className="pointer-events-none absolute inset-0 h-full w-full" />
@@ -13,31 +16,29 @@ export function Hero() {
         <div className="flex flex-col items-start gap-6">
           <FadeIn delay={0}>
             <div className="flex flex-wrap items-center gap-2">
-              <StatusBadge />
+              <StatusBadge locale={locale} />
               <ChainBadge />
             </div>
           </FadeIn>
 
           <FadeIn delay={0.08}>
             <h1 className="text-4xl font-bold leading-tight tracking-tight md:text-6xl">
-              The on-chain treasury of{" "}
-              <span className="text-gradient-gold">tokenized stocks.</span>
+              {t.titlePrefix}{" "}
+              <span className="text-gradient-gold">{t.titleGold}</span>
             </h1>
           </FadeIn>
 
           <FadeIn delay={0.16}>
             <p className="text-lg font-medium text-rsvd-offwhite/90">
-              We acquire. We hold. We grow.
+              {t.taglineLine1}
               <br />
-              Transparent. Verifiable. Reserved.
+              {t.taglineLine2}
             </p>
           </FadeIn>
 
           <FadeIn delay={0.24}>
             <p className="max-w-xl text-sm text-rsvd-offwhite/60">
-              Reserved is an on-chain treasury that acquires and holds tokenized stocks for the
-              long term, on {tokenInfo.chain}. Every {tokenInfo.ticker} buy and sell funds the
-              reserve; every holder can redeem their pro-rata share, on-chain, any time.
+              {t.description(tokenInfo.chain, tokenInfo.ticker)}
             </p>
           </FadeIn>
 
@@ -47,21 +48,19 @@ export function Hero() {
                 href="#how-it-works"
                 className="rounded-md bg-rsvd-gold px-6 py-3 text-sm font-semibold text-rsvd-black transition-opacity hover:opacity-90 focus-gold"
               >
-                How It Works
+                {t.ctaHowItWorks}
               </a>
               <a
                 href="#treasury"
                 className="rounded-md border border-white/20 px-6 py-3 text-sm font-semibold text-rsvd-offwhite transition-colors hover:border-rsvd-gold hover:text-rsvd-gold focus-gold"
               >
-                View Treasury
+                {t.ctaViewTreasury}
               </a>
             </div>
           </FadeIn>
 
           <FadeIn delay={0.4}>
-            <p className="pt-4 text-xs uppercase tracking-widest text-rsvd-offwhite/40">
-              Real stocks. On-chain. Reserved.
-            </p>
+            <p className="pt-4 text-xs uppercase tracking-widest text-rsvd-offwhite/40">{t.footerTag}</p>
           </FadeIn>
         </div>
 
@@ -71,7 +70,7 @@ export function Hero() {
             style={{ background: "radial-gradient(circle, rgba(212,175,55,0.35) 0%, transparent 70%)" }}
             aria-hidden="true"
           />
-          <DashboardCard />
+          <DashboardCard locale={locale} />
         </FadeIn>
       </div>
     </section>

@@ -7,6 +7,7 @@ import { getReadProvider, getTokenContract, getVaultContract, BNB_USD_PRICE_FEED
 import { useWallet } from "@/lib/useWallet";
 import { Logo } from "./Logo";
 import { HistoricalValueChart } from "./HistoricalValueChart";
+import { dictionaries, type Locale } from "@/lib/i18n";
 
 const PAIR_ABI = [
   "function getReserves() view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)",
@@ -40,8 +41,9 @@ function Monogram({ symbol, index }: { symbol: string; index: number }) {
 // event history (a subgraph/indexer) to do honestly, which is separate
 // infrastructure work, not a UI change, so it's deliberately left out rather
 // than faked.
-export function DashboardCard() {
+export function DashboardCard({ locale }: { locale: Locale }) {
   const { address, wrongNetwork } = useWallet();
+  const t = dictionaries[locale].dashboardCard;
 
   const [marketCapBnb, setMarketCapBnb] = useState<number | null>(null);
   const [marketCapUsd, setMarketCapUsd] = useState<number | null>(null);
@@ -186,7 +188,7 @@ export function DashboardCard() {
       </div>
 
       <div className="border-b border-white/10 px-6 py-6 text-center">
-        <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">Market Cap</div>
+        <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">{t.marketCap}</div>
         <div className="mt-2 truncate font-mono text-4xl font-bold text-rsvd-gold">
           {marketCapUsd !== null
             ? `$${marketCapUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
@@ -205,7 +207,7 @@ export function DashboardCard() {
 
       <div className="grid grid-cols-2 divide-x divide-white/10 border-b border-white/10 px-6 py-5 text-center">
         <div>
-          <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">Tax Collected</div>
+          <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">{t.taxCollected}</div>
           <div className="mt-1 truncate font-mono text-lg font-bold text-rsvd-offwhite">
             {treasuryBal !== null
               ? `${treasuryBal.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${tokenInfo.ticker}`
@@ -215,20 +217,20 @@ export function DashboardCard() {
           </div>
         </div>
         <div>
-          <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">Reserve Assets</div>
+          <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">{t.reserveAssets}</div>
           <div className="mt-1 font-mono text-lg font-bold text-rsvd-offwhite">
             {reserves !== null ? reserves.length : failed ? "—" : "..."}
           </div>
         </div>
       </div>
 
-      <HistoricalValueChart />
+      <HistoricalValueChart locale={locale} />
 
       {reserves && reserves.length > 0 && (
         <div className="border-b border-white/10 px-6 py-5">
           <div className="flex items-baseline justify-between">
-            <span className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">Vault holdings</span>
-            <span className="text-[10px] text-rsvd-offwhite/40">{reserves.length} asset{reserves.length === 1 ? "" : "s"}</span>
+            <span className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">{t.vaultHoldings}</span>
+            <span className="text-[10px] text-rsvd-offwhite/40">{t.assetCount(reserves.length)}</span>
           </div>
           <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
             {reserves.map((r, i) => (
@@ -248,7 +250,7 @@ export function DashboardCard() {
 
       <div className="bg-rsvd-gold/10 px-6 py-5">
         <div className="text-[10px] uppercase tracking-widest text-rsvd-gold/70">
-          {address && !wrongNetwork ? "Your position" : "Connect to see your position"}
+          {address && !wrongNetwork ? t.yourPosition : t.connectToSeePosition}
         </div>
         {address && !wrongNetwork ? (
           <>
@@ -259,19 +261,15 @@ export function DashboardCard() {
 
             <div className="mt-3 grid grid-cols-2 gap-4 border-t border-rsvd-gold/10 pt-3">
               <div>
-                <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">Share</div>
+                <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">{t.share}</div>
                 <div className="mt-1 font-mono text-sm font-semibold text-rsvd-offwhite">
                   {sharePct !== null ? `${sharePct.toFixed(4)}%` : "—"}
                 </div>
               </div>
               <div>
-                <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">Redeemable</div>
+                <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">{t.redeemable}</div>
                 <div className="mt-1 font-mono text-sm font-semibold text-rsvd-offwhite">
-                  {redeemPreview === null
-                    ? "..."
-                    : redeemPreview.length === 0
-                      ? "Nothing yet"
-                      : `${redeemPreview.length} asset${redeemPreview.length === 1 ? "" : "s"}`}
+                  {redeemPreview === null ? "..." : redeemPreview.length === 0 ? t.nothingYet : t.assetCount(redeemPreview.length)}
                 </div>
               </div>
             </div>
@@ -285,9 +283,7 @@ export function DashboardCard() {
             )}
           </>
         ) : (
-          <p className="mt-2 text-sm text-rsvd-offwhite/50">
-            Connect a wallet (see the Treasury section below) to see your balance, share, and redeemable assets here.
-          </p>
+          <p className="mt-2 text-sm text-rsvd-offwhite/50">{t.connectPrompt}</p>
         )}
       </div>
     </div>

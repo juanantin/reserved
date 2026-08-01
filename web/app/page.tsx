@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { HowItWorksSection } from "@/components/HowItWorksSection";
@@ -8,20 +9,24 @@ import { GovernanceSection } from "@/components/GovernanceSection";
 import { FeatureStrip } from "@/components/FeatureStrip";
 import { Footer } from "@/components/Footer";
 
+export const metadata: Metadata = {
+  alternates: { canonical: "/", languages: { en: "/", "zh-Hans": "/zh" } },
+};
+
 export default function Home() {
   return (
     <>
-      <Navbar />
+      <Navbar locale="en" />
       <main>
-        <Hero />
-        <TreasurySection />
-        <TokenomicsSection />
-        <HowItWorksSection />
-        <TransparencySection />
-        <GovernanceSection />
-        <FeatureStrip />
+        <Hero locale="en" />
+        <TreasurySection locale="en" />
+        <TokenomicsSection locale="en" />
+        <HowItWorksSection locale="en" />
+        <TransparencySection locale="en" />
+        <GovernanceSection locale="en" />
+        <FeatureStrip locale="en" />
       </main>
-      <Footer />
+      <Footer locale="en" />
     </>
   );
 }

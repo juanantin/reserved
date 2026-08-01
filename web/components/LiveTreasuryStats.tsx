@@ -5,13 +5,16 @@ import { ethers } from "ethers";
 import { tokenInfo } from "@/config/token";
 import { getReadProvider, getTokenContract, getVaultContract } from "@/lib/contracts";
 import { FadeIn } from "./FadeIn";
+import { dictionaries, type Locale } from "@/lib/i18n";
 
 type ReserveLine = { token: string; symbol: string; balance: string };
 
-export function LiveTreasuryStats() {
+export function LiveTreasuryStats({ locale }: { locale: Locale }) {
   const [supply, setSupply] = useState<string | null>(null);
   const [reserves, setReserves] = useState<ReserveLine[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const t = dictionaries[locale].treasury;
+  const dc = dictionaries[locale].dashboardCard;
 
   useEffect(() => {
     if (!tokenInfo.tokenAddress || !tokenInfo.vaultAddress) return;
@@ -58,13 +61,13 @@ export function LiveTreasuryStats() {
 
   const facts = [
     {
-      label: "Reserve assets held",
-      value: failed ? "Unable to load" : reserves === null ? "Loading..." : reserves.length === 0 ? "None yet" : `${reserves.length} asset${reserves.length === 1 ? "" : "s"}`,
+      label: t.reserveAssetsHeld,
+      value: failed ? t.unableToLoad : reserves === null ? t.loading : reserves.length === 0 ? t.none : dc.assetCount(reserves.length),
     },
-    { label: "Redemption", value: "Pro-rata, on-chain, any time" },
+    { label: t.redemption, value: t.redemptionValue },
     {
-      label: "Circulating supply",
-      value: failed ? "Unable to load" : supply !== null ? `${Number(supply).toLocaleString()} ${tokenInfo.ticker}` : "Loading...",
+      label: t.circulatingSupply,
+      value: failed ? t.unableToLoad : supply !== null ? `${Number(supply).toLocaleString()} ${tokenInfo.ticker}` : t.loading,
     },
   ];
 
@@ -79,7 +82,7 @@ export function LiveTreasuryStats() {
 
       {reserves && reserves.length > 0 && (
         <div className="col-span-full rounded-lg border border-white/10 bg-white/5 p-6">
-          <div className="text-xs uppercase tracking-widest text-rsvd-offwhite/40">Vault holdings</div>
+          <div className="text-xs uppercase tracking-widest text-rsvd-offwhite/40">{dc.vaultHoldings}</div>
           <ul className="mt-3 space-y-2">
             {reserves.map((r) => (
               <li key={r.token} className="flex justify-between font-mono text-sm text-rsvd-gold">

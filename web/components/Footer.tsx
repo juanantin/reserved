@@ -1,8 +1,11 @@
 import { Logo } from "./Logo";
 import { LinksBar } from "./LinksBar";
 import { tokenInfo } from "@/config/token";
+import { dictionaries, type Locale } from "@/lib/i18n";
 
-export function Footer() {
+export function Footer({ locale }: { locale: Locale }) {
+  const t = dictionaries[locale].footer;
+
   return (
     <footer className="border-t border-white/10 px-6 py-12 text-sm text-rsvd-offwhite/50">
       <div className="mx-auto flex max-w-6xl flex-col gap-6">
@@ -11,17 +14,12 @@ export function Footer() {
             <Logo size={22} />
             <span className="font-semibold text-rsvd-offwhite/80">RESERVED</span>
           </div>
-          <LinksBar />
+          <LinksBar locale={locale} />
         </div>
 
-        <p className="max-w-3xl">
-          {tokenInfo.ticker} is not deployed to mainnet. Nothing on this site is an offer to
-          sell securities, and no reserve assets have been acquired yet. RSVD represents a
-          claim on a reserve of tokenized-equity exposure; treat it accordingly and do your
-          own research. This page is informational only, not financial or legal advice.
-        </p>
+        <p className="max-w-3xl">{t.disclaimer(tokenInfo.ticker)}</p>
 
-        <p>&copy; {new Date().getFullYear()} Reserved. All figures on this site are illustrative until launch.</p>
+        <p>{t.copyright(new Date().getFullYear())}</p>
       </div>
     </footer>
   );

@@ -18,12 +18,16 @@ declare global {
   }
 }
 
+// A code, not a message — lets consuming components render a translated
+// string (see lib/i18n.ts) instead of baking English text into this hook.
+export type WalletErrorCode = "no-wallet" | "connection-rejected";
+
 type WalletState = {
   address: string | null;
   chainId: string | null;
   wrongNetwork: boolean;
   connecting: boolean;
-  error: string | null;
+  error: WalletErrorCode | null;
   connect: () => Promise<void>;
   disconnect: () => void;
   switchToBsc: () => Promise<void>;
@@ -41,14 +45,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [address, setAddress] = useState<string | null>(null);
   const [chainId, setChainId] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<WalletErrorCode | null>(null);
 
   const wrongNetwork = chainId !== null && chainId !== BSC_CHAIN_ID_HEX;
 
   const connect = useCallback(async () => {
     setError(null);
     if (!window.ethereum) {
-      setError("No wallet found — install MetaMask or another BNB Chain-compatible wallet.");
+      setError("no-wallet");
       return;
     }
     setConnecting(true);
@@ -58,7 +62,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       setAddress(accounts[0] ?? null);
       setChainId(currentChainId);
     } catch {
-      setError("Connection request was rejected or failed.");
+      setError("connection-rejected");
     } finally {
       setConnecting(false);
     }
