@@ -1,18 +1,14 @@
 import { StatusBadge } from "./StatusBadge";
 import { ChainBadge } from "./ChainBadge";
-import { Logo } from "./Logo";
 import { FadeIn } from "./FadeIn";
 import { BlockchainBackground } from "./BlockchainBackground";
-import { DashboardStats } from "./DashboardStats";
+import { DashboardCard } from "./DashboardCard";
 import { tokenInfo } from "@/config/token";
 
 export function Hero() {
   return (
     <section id="top" className="relative overflow-hidden px-6 pb-16 pt-16 md:pt-20">
       <BlockchainBackground className="pointer-events-none absolute inset-0 h-full w-full" />
-      <div className="relative mx-auto mb-10 max-w-6xl">
-        <DashboardStats />
-      </div>
       <div className="relative mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2">
         <div className="flex flex-col items-start gap-6">
           <FadeIn delay={0}>
@@ -69,13 +65,13 @@ export function Hero() {
           </FadeIn>
         </div>
 
-        <FadeIn delay={0.2} className="relative mx-auto hidden md:block">
+        <FadeIn delay={0.2} immediate className="relative mx-auto w-full">
           <div
             className="pointer-events-none absolute inset-0 -z-10 rounded-full blur-3xl"
             style={{ background: "radial-gradient(circle, rgba(212,175,55,0.35) 0%, transparent 70%)" }}
             aria-hidden="true"
           />
-          <Logo size={280} className="mx-auto" />
+          <DashboardCard />
         </FadeIn>
       </div>
     </section>
