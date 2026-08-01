@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { ethers } from "ethers";
 import { BSC_CHAIN_ID_HEX, BSC_CHAIN_PARAMS } from "./contracts";
 
@@ -18,7 +18,26 @@ declare global {
   }
 }
 
-export function useWallet() {
+type WalletState = {
+  address: string | null;
+  chainId: string | null;
+  wrongNetwork: boolean;
+  connecting: boolean;
+  error: string | null;
+  connect: () => Promise<void>;
+  disconnect: () => void;
+  switchToBsc: () => Promise<void>;
+  getSigner: () => Promise<ethers.JsonRpcSigner>;
+};
+
+// A single shared connection, not one per component. Every component that
+// calls useWallet() reads and updates the SAME address/chainId state — so
+// connecting from the navbar immediately reflects everywhere else (dashboard
+// card, redeem panel) without depending on the wallet's own accountsChanged
+// event to fire and every independent listener catching it.
+const WalletContext = createContext<WalletState | null>(null);
+
+export function WalletProvider({ children }: { children: ReactNode }) {
   const [address, setAddress] = useState<string | null>(null);
   const [chainId, setChainId] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
@@ -43,6 +62,16 @@ export function useWallet() {
     } finally {
       setConnecting(false);
     }
+  }, []);
+
+  // MetaMask/EIP-1193 has no cross-wallet-supported way for a dapp to revoke
+  // its own permission — this is the standard "soft disconnect" pattern
+  // basically every dapp uses: forget the address locally so the app treats
+  // the user as disconnected, even though the wallet extension itself may
+  // still remember the site (a fresh Connect click won't re-prompt approval).
+  const disconnect = useCallback(() => {
+    setAddress(null);
+    setError(null);
   }, []);
 
   const switchToBsc = useCallback(async () => {
@@ -98,5 +127,16 @@ export function useWallet() {
     return provider.getSigner();
   }, []);
 
-  return { address, chainId, wrongNetwork, connecting, error, connect, switchToBsc, getSigner };
+  const value = useMemo<WalletState>(
+    () => ({ address, chainId, wrongNetwork, connecting, error, connect, disconnect, switchToBsc, getSigner }),
+    [address, chainId, wrongNetwork, connecting, error, connect, disconnect, switchToBsc, getSigner]
+  );
+
+  return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
+}
+
+export function useWallet(): WalletState {
+  const ctx = useContext(WalletContext);
+  if (!ctx) throw new Error("useWallet() must be used within <WalletProvider>");
+  return ctx;
 }

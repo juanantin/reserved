@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Sora } from "next/font/google";
+import { WalletProvider } from "@/lib/useWallet";
 import "./globals.css";
 
 const sora = Sora({
@@ -36,7 +37,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={sora.variable}>
-      <body className="antialiased overflow-x-hidden bg-rsvd-black text-rsvd-offwhite">{children}</body>
+      <body className="antialiased overflow-x-hidden bg-rsvd-black text-rsvd-offwhite">
+        <WalletProvider>{children}</WalletProvider>
+      </body>
     </html>
   );
 }

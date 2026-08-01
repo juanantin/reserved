@@ -12,8 +12,8 @@ function shortAddr(addr: string) {
 }
 
 function WalletButton({ className }: { className?: string }) {
-  const { address, wrongNetwork, connecting, connect, switchToBsc } = useWallet();
-  const base = `rounded-md px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90 focus-gold ${className ?? ""}`;
+  const { address, wrongNetwork, connecting, connect, disconnect, switchToBsc } = useWallet();
+  const base = `rounded-md px-4 py-2 text-sm font-semibold transition-colors focus-gold ${className ?? ""}`;
 
   if (!tokenInfo.tokenAddress) {
     return (
@@ -29,7 +29,12 @@ function WalletButton({ className }: { className?: string }) {
 
   if (!address) {
     return (
-      <button type="button" onClick={connect} disabled={connecting} className={`bg-rsvd-gold text-rsvd-black disabled:opacity-60 ${base}`}>
+      <button
+        type="button"
+        onClick={connect}
+        disabled={connecting}
+        className={`bg-rsvd-gold text-rsvd-black hover:opacity-90 disabled:opacity-60 ${base}`}
+      >
         {connecting ? "Connecting..." : "Connect Wallet"}
       </button>
     );
@@ -44,9 +49,14 @@ function WalletButton({ className }: { className?: string }) {
   }
 
   return (
-    <a href="#treasury" className={`bg-rsvd-gold text-rsvd-black ${base}`} title="Go to the Treasury section to redeem">
-      {shortAddr(address)} · Redeem
-    </a>
+    <button
+      type="button"
+      onClick={disconnect}
+      title="Disconnect"
+      className={`border border-white/20 text-rsvd-offwhite hover:border-red-400/60 hover:text-red-400 ${base}`}
+    >
+      {shortAddr(address)}
+    </button>
   );
 }
 
