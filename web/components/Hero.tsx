@@ -8,8 +8,11 @@ import { tokenInfo } from "@/config/token";
 
 export function Hero() {
   return (
-    <section id="top" className="relative overflow-hidden px-6 pb-24 pt-20 md:pt-28">
+    <section id="top" className="relative overflow-hidden px-6 pb-16 pt-16 md:pt-20">
       <BlockchainBackground className="pointer-events-none absolute inset-0 h-full w-full" />
+      <div className="relative mx-auto mb-10 max-w-6xl">
+        <DashboardStats />
+      </div>
       <div className="relative mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2">
         <div className="flex flex-col items-start gap-6">
           <FadeIn delay={0}>
@@ -74,10 +77,6 @@ export function Hero() {
           />
           <Logo size={280} className="mx-auto" />
         </FadeIn>
-      </div>
-
-      <div className="relative mx-auto mt-12 max-w-6xl">
-        <DashboardStats />
       </div>
     </section>
   );

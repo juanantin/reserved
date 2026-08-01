@@ -83,7 +83,7 @@ export function DashboardStats() {
   ];
 
   return (
-    <FadeIn delay={0.28} className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <FadeIn delay={0.28} immediate className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {tiles.map((tile) => (
         <div
           key={tile.label}
