@@ -14,7 +14,8 @@
     "deploy:timelock:testnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-timelock.ts --network bscTestnet --no-compile",
     "deploy:timelock:mainnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-timelock.ts --network bscMainnet --no-compile",
     "pool:create:mainnet": "node scripts/offline-compile.js && hardhat run scripts/create-pool.ts --network bscMainnet --no-compile",
-    "pool:remove:mainnet": "node scripts/offline-compile.js && hardhat run scripts/remove-pool.ts --network bscMainnet --no-compile"
+    "pool:remove:mainnet": "node scripts/offline-compile.js && hardhat run scripts/remove-pool.ts --network bscMainnet --no-compile",
+    "verify:standard-json": "node scripts/verify-standard-json.js"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
