@@ -7,11 +7,12 @@ An on-chain treasury on BNB Chain that acquires and holds tokenized stocks (Bina
 ## Structure
 
 ```
-contracts/   Solidity (Hardhat) — ReservedToken (RSVD), ReservedVault, tests
+contracts/   Solidity (Hardhat) — ReservedToken (RSVD), ReservedVault, TreasuryConverter, tests
+keeper/      Node/TypeScript keeper bot — calls TreasuryConverter's bounded conversion functions
 web/         Next.js 16 treasury dashboard site (App Router, TypeScript, Tailwind v4)
 ```
 
-Each has its own `README.md` with setup details: [`contracts/README.md`](./contracts/README.md), and below for `web/`.
+Each has its own `README.md` with setup details: [`contracts/README.md`](./contracts/README.md), [`keeper/README.md`](./keeper/README.md), and below for `web/`.
 
 ## contracts/
 
@@ -46,8 +47,12 @@ Built:
 - Deploy script for BSC testnet/mainnet (not run)
 - Treasury dashboard website (builds, lints, and renders correctly — verified with a headless browser)
 
+Also built:
+- `TreasuryConverter.sol` — bounded contract the treasury tax revenue flows into instead of a wallet, with no withdraw/rescue function of any kind; `sellRsvd` and `buyReserveAsset` are both protected by a real TWAP (+ Chainlink for the buy leg) price floor. See `contracts/README.md`'s Security section.
+- Keeper bot (`keeper/`) — on-chain swap path is built and verified end-to-end against a real deployed `TreasuryConverter` on a local node (sell, buy, deposit into vault all confirmed working). See `keeper/README.md`.
+
 Not built (see `PROJECT_BRIEF.md`'s phased plan and `contracts/README.md`'s "What's not here yet"):
-- Keeper bot (on-chain swap path + Binance API fallback) — needs Binance API credentials and a funded wallet this session doesn't have
+- Keeper bot's Binance API fallback path — needs real Binance API credentials and a funded account this session doesn't have; wired into the bot's control flow but throws until implemented and tested for real (see `keeper/README.md`)
 - A true PancakeSwap Infinity pool hook — the token uses a standard transfer-tax pattern instead; see `contracts/README.md` for the tradeoff
 - Basket governance (voting) — explicitly a later phase
 - Any actual deployment, testnet or mainnet — deploying costs real funds and requires a private key only you should hold
