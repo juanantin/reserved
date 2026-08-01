@@ -28,6 +28,10 @@ async function deploySystem() {
   await bStock.waitForDeployment();
   const bStockAddress = await bStock.getAddress();
 
+  const usdt = await Mock.deploy("Mock USDT", "USDT");
+  await usdt.waitForDeployment();
+  const usdtAddress = await usdt.getAddress();
+
   const Router = await ethers.getContractFactory("MockUniswapV2Router");
   const router = await Router.deploy(wbnbAddress);
   await router.waitForDeployment();
@@ -40,8 +44,27 @@ async function deploySystem() {
   await pair.waitForDeployment();
   const pairAddress = await pair.getAddress();
 
+  // bStock is token0, USDT is token1 — the mirror pairing used by _bStockMinOutFloor.
+  const bStockUsdtPair = await Pair.deploy(bStockAddress, usdtAddress);
+  await bStockUsdtPair.waitForDeployment();
+  const bStockUsdtPairAddress = await bStockUsdtPair.getAddress();
+
+  const Feed = await ethers.getContractFactory("MockChainlinkFeed");
+  // 8 decimals, like Chainlink's real BNB/USD feed. $300/BNB.
+  const priceFeed = await Feed.deploy(30000000000n, 8);
+  await priceFeed.waitForDeployment();
+  const priceFeedAddress = await priceFeed.getAddress();
+
   const Converter = await ethers.getContractFactory("TreasuryConverter");
-  const converter = await Converter.deploy(tokenAddress, vaultAddress, routerAddress, pairAddress, owner.address, keeper.address);
+  const converter = await Converter.deploy(
+    tokenAddress,
+    vaultAddress,
+    routerAddress,
+    pairAddress,
+    usdtAddress,
+    owner.address,
+    keeper.address
+  );
   await converter.waitForDeployment();
   const converterAddress = await converter.getAddress();
 
@@ -54,7 +77,31 @@ async function deploySystem() {
   // This is the intended production shape too: one less EOA with direct vault access.
   await vault.connect(owner).setKeeper(converterAddress);
 
-  return { token, vault, wbnb, bStock, router, pair, converter, owner, keeper, other, tokenAddress, vaultAddress, wbnbAddress, bStockAddress, routerAddress, pairAddress, converterAddress };
+  return {
+    token,
+    vault,
+    wbnb,
+    bStock,
+    usdt,
+    router,
+    pair,
+    bStockUsdtPair,
+    priceFeed,
+    converter,
+    owner,
+    keeper,
+    other,
+    tokenAddress,
+    vaultAddress,
+    wbnbAddress,
+    bStockAddress,
+    usdtAddress,
+    routerAddress,
+    pairAddress,
+    bStockUsdtPairAddress,
+    priceFeedAddress,
+    converterAddress,
+  };
 }
 
 // Sets a checkpoint of cumulative=0 at an arbitrary base timestamp, then a second
@@ -76,14 +123,51 @@ async function primeTwap(pair, converter, priceX112PerRsvd, elapsedSeconds) {
   await pair.setCumulativePrices(cumulativeDelta, 0);
 }
 
+// Same idea as primeTwap, but for a bStock/USDT pair checkpointed via
+// updateBStockTwapCheckpoint(bStock) instead of the RSVD/BNB-specific
+// updateTwapCheckpoint(). priceX112PerBStock is USDT-per-bStock (bStock is token0,
+// USDT is token1 in deploySystem's bStockUsdtPair).
+async function primeBStockTwap(bStockUsdtPair, converter, bStockAddress, priceX112PerBStock, elapsedSeconds) {
+  const t0 = 1000;
+  await bStockUsdtPair.setReserves(0, 0, t0);
+  await bStockUsdtPair.setCumulativePrices(0, 0);
+  await converter.updateBStockTwapCheckpoint(bStockAddress);
+
+  const t1 = t0 + elapsedSeconds;
+  const cumulativeDelta = priceX112PerBStock * BigInt(elapsedSeconds);
+  await bStockUsdtPair.setReserves(0, 0, t1);
+  await bStockUsdtPair.setCumulativePrices(cumulativeDelta, 0);
+}
+
 describe("TreasuryConverter", function () {
   describe("access control", function () {
     it("rejects a zero address in the constructor", async function () {
-      const { tokenAddress, vaultAddress, routerAddress, pairAddress, owner, keeper } = await deploySystem();
+      const { tokenAddress, vaultAddress, routerAddress, pairAddress, usdtAddress, owner, keeper } = await deploySystem();
       const Converter = await ethers.getContractFactory("TreasuryConverter");
       await expect(
-        Converter.deploy(ethers.ZeroAddress, vaultAddress, routerAddress, pairAddress, owner.address, keeper.address)
+        Converter.deploy(
+          ethers.ZeroAddress,
+          vaultAddress,
+          routerAddress,
+          pairAddress,
+          usdtAddress,
+          owner.address,
+          keeper.address
+        )
       ).to.be.revertedWithCustomError(Converter, "ZeroAddress");
+    });
+
+    it("rejects a non-18-decimal USDT in the constructor", async function () {
+      const { tokenAddress, vaultAddress, routerAddress, pairAddress, owner, keeper } = await deploySystem();
+      const SixDecimals = await ethers.getContractFactory("MockERC20CustomDecimals");
+      const usdt6 = await SixDecimals.deploy("Six Decimal USDT", "USDT6", 6);
+      await usdt6.waitForDeployment();
+      const usdt6Address = await usdt6.getAddress();
+
+      const Converter = await ethers.getContractFactory("TreasuryConverter");
+      await expect(
+        Converter.deploy(tokenAddress, vaultAddress, routerAddress, pairAddress, usdt6Address, owner.address, keeper.address)
+      ).to.be.revertedWithCustomError(Converter, "UnsupportedDecimals");
     });
 
     it("only the keeper (or owner) can call sellRsvd, buyReserveAsset, or depositReserveAsset", async function () {
@@ -272,6 +356,10 @@ describe("TreasuryConverter", function () {
       const { converter, owner, keeper, bStock, bStockAddress, wbnbAddress, converterAddress, router, routerAddress } =
         await deploySystem();
       await converter.connect(owner).setAllowedReserveAsset(bStockAddress, true);
+      // No USDT pair/price feed configured for this asset — use the escape hatch so
+      // this test can focus on balance-delta accounting; the price-floor behavior
+      // itself is covered by the "buyReserveAsset price floor (oracle)" suite below.
+      await converter.connect(owner).setRequirePriceFloorForBuys(false);
       await owner.sendTransaction({ to: converterAddress, value: ethers.parseEther("1") });
 
       const buyOut = ethers.parseUnits("500", 18);
@@ -284,6 +372,156 @@ describe("TreasuryConverter", function () {
         .to.emit(converter, "ReserveAssetBought")
         .withArgs(bStockAddress, ethers.parseEther("0.1"), buyOut, buyOut);
       expect(await bStock.balanceOf(converterAddress)).to.equal(buyOut);
+    });
+  });
+
+  describe("buyReserveAsset price floor (oracle)", function () {
+    it("reverts when no USDT pair/price feed is configured, since requirePriceFloorForBuys defaults to true", async function () {
+      const { converter, owner, keeper, bStockAddress, wbnbAddress, converterAddress } = await deploySystem();
+      await converter.connect(owner).setAllowedReserveAsset(bStockAddress, true);
+      await owner.sendTransaction({ to: converterAddress, value: ethers.parseEther("1") });
+
+      await expect(
+        converter.connect(keeper).buyReserveAsset(ethers.parseEther("0.1"), 0, bStockAddress, [wbnbAddress, bStockAddress])
+      ).to.be.revertedWithCustomError(converter, "PriceFloorNotConfigured");
+    });
+
+    it("computes the min-out floor from the bStock/USDT TWAP + Chainlink BNB/USD feed, rejects a below-floor buy, and accepts an at-floor one", async function () {
+      const {
+        converter,
+        owner,
+        keeper,
+        bStock,
+        bStockAddress,
+        wbnbAddress,
+        bStockUsdtPair,
+        priceFeedAddress,
+        bStockUsdtPairAddress,
+        converterAddress,
+        router,
+        routerAddress,
+      } = await deploySystem();
+
+      await converter.connect(owner).setAllowedReserveAsset(bStockAddress, true);
+      await converter.connect(owner).setPriceFeed(priceFeedAddress);
+      await converter.connect(owner).setBStockUsdtPair(bStockAddress, bStockUsdtPairAddress);
+      await owner.sendTransaction({ to: converterAddress, value: ethers.parseEther("1") });
+
+      // 30 USDT per bStock.
+      const priceX112PerBStock = 30n * 2n ** 112n;
+      await primeBStockTwap(bStockUsdtPair, converter, bStockAddress, priceX112PerBStock, TEN_MINUTES + 100);
+
+      // priceFeed reports $300/BNB (8 decimals) — see deploySystem. 1 BNB in -> $300 ->
+      // at $30/bStock, 10 bStock, minus the default 3% slippage.
+      const bnbIn = ethers.parseEther("1");
+      const twapMinOut = ethers.parseUnits("10", 18);
+      const floorMinOut = (twapMinOut * (10000n - 300n)) / 10000n;
+
+      await bStock.mint(routerAddress, floorMinOut - 1n);
+      await router.setNextSwapOutput(floorMinOut - 1n);
+      await expect(converter.connect(keeper).buyReserveAsset(bnbIn, 0, bStockAddress, [wbnbAddress, bStockAddress])).to.be
+        .reverted;
+
+      await bStock.mint(routerAddress, floorMinOut);
+      await router.setNextSwapOutput(floorMinOut);
+      await expect(converter.connect(keeper).buyReserveAsset(bnbIn, 0, bStockAddress, [wbnbAddress, bStockAddress]))
+        .to.emit(converter, "ReserveAssetBought")
+        .withArgs(bStockAddress, bnbIn, floorMinOut, floorMinOut);
+    });
+
+    it("uses the keeper-supplied minOut when it's stricter than the TWAP+feed floor", async function () {
+      const {
+        converter,
+        owner,
+        keeper,
+        bStock,
+        bStockAddress,
+        wbnbAddress,
+        bStockUsdtPair,
+        priceFeedAddress,
+        bStockUsdtPairAddress,
+        converterAddress,
+        router,
+        routerAddress,
+      } = await deploySystem();
+
+      await converter.connect(owner).setAllowedReserveAsset(bStockAddress, true);
+      await converter.connect(owner).setPriceFeed(priceFeedAddress);
+      await converter.connect(owner).setBStockUsdtPair(bStockAddress, bStockUsdtPairAddress);
+      await owner.sendTransaction({ to: converterAddress, value: ethers.parseEther("1") });
+
+      const priceX112PerBStock = 30n * 2n ** 112n;
+      await primeBStockTwap(bStockUsdtPair, converter, bStockAddress, priceX112PerBStock, TEN_MINUTES + 100);
+
+      const bnbIn = ethers.parseEther("1");
+      const twapMinOut = ethers.parseUnits("10", 18);
+      const floorMinOut = (twapMinOut * (10000n - 300n)) / 10000n;
+      const strictKeeperMinOut = floorMinOut + ethers.parseUnits("0.0001", 18);
+
+      // Router pays exactly the TWAP+feed floor — enough to pass that check, but below
+      // the keeper's stricter requested minimum, so it must still revert.
+      await bStock.mint(routerAddress, floorMinOut);
+      await router.setNextSwapOutput(floorMinOut);
+      await expect(converter.connect(keeper).buyReserveAsset(bnbIn, strictKeeperMinOut, bStockAddress, [wbnbAddress, bStockAddress]))
+        .to.be.reverted;
+    });
+
+    it("reverts if the price feed reports a non-positive answer", async function () {
+      const {
+        converter,
+        owner,
+        keeper,
+        bStockAddress,
+        wbnbAddress,
+        bStockUsdtPair,
+        priceFeed,
+        priceFeedAddress,
+        bStockUsdtPairAddress,
+        converterAddress,
+      } = await deploySystem();
+
+      await converter.connect(owner).setAllowedReserveAsset(bStockAddress, true);
+      await converter.connect(owner).setPriceFeed(priceFeedAddress);
+      await converter.connect(owner).setBStockUsdtPair(bStockAddress, bStockUsdtPairAddress);
+      await owner.sendTransaction({ to: converterAddress, value: ethers.parseEther("1") });
+
+      const priceX112PerBStock = 30n * 2n ** 112n;
+      await primeBStockTwap(bStockUsdtPair, converter, bStockAddress, priceX112PerBStock, TEN_MINUTES + 100);
+      await priceFeed.setAnswer(0);
+
+      await expect(
+        converter.connect(keeper).buyReserveAsset(ethers.parseEther("1"), 0, bStockAddress, [wbnbAddress, bStockAddress])
+      ).to.be.revertedWithCustomError(converter, "InvalidPriceFeed");
+    });
+
+    it("setBStockUsdtPair reverts for a non-18-decimal bStock", async function () {
+      const { converter, owner, bStockUsdtPairAddress } = await deploySystem();
+      const SixDecimals = await ethers.getContractFactory("MockERC20CustomDecimals");
+      const badBStock = await SixDecimals.deploy("Six Decimal Stock", "BAD6", 6);
+      await badBStock.waitForDeployment();
+      const badBStockAddress = await badBStock.getAddress();
+
+      await expect(
+        converter.connect(owner).setBStockUsdtPair(badBStockAddress, bStockUsdtPairAddress)
+      ).to.be.revertedWithCustomError(converter, "UnsupportedDecimals");
+
+      // Clearing the pair (address(0)) never needs to assert decimals.
+      await expect(converter.connect(owner).setBStockUsdtPair(badBStockAddress, ethers.ZeroAddress)).to.not.be.reverted;
+    });
+
+    it("only the owner can call setPriceFeed, setBStockUsdtPair, or setRequirePriceFloorForBuys", async function () {
+      const { converter, other, bStockAddress, bStockUsdtPairAddress, priceFeedAddress } = await deploySystem();
+      await expect(converter.connect(other).setPriceFeed(priceFeedAddress)).to.be.revertedWithCustomError(
+        converter,
+        "OwnableUnauthorizedAccount"
+      );
+      await expect(
+        converter.connect(other).setBStockUsdtPair(bStockAddress, bStockUsdtPairAddress)
+      ).to.be.revertedWithCustomError(converter, "OwnableUnauthorizedAccount");
+      await expect(converter.connect(other).setRequirePriceFloorForBuys(false)).to.be.revertedWithCustomError(
+        converter,
+        "OwnableUnauthorizedAccount"
+      );
     });
   });
 

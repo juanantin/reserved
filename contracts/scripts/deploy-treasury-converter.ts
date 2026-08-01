@@ -11,6 +11,7 @@ import { ethers } from "hardhat";
 const TOKEN_ADDRESS = process.env.TOKEN_ADDRESS || "";
 const VAULT_ADDRESS = process.env.VAULT_ADDRESS || "";
 const PAIR_ADDRESS = process.env.PAIR_ADDRESS || "";
+const USDT_ADDRESS = process.env.USDT_ADDRESS || "0x55d398326f99059fF775485246999027B3197955"; // BSC mainnet USDT (18 decimals)
 const PANCAKE_ROUTER = process.env.PANCAKE_ROUTER || "0x10ED43C718714eb63d5aA57B78B54704E256024E";
 
 async function main() {
@@ -30,6 +31,7 @@ async function main() {
     VAULT_ADDRESS,
     PANCAKE_ROUTER,
     PAIR_ADDRESS,
+    USDT_ADDRESS,
     deployer.address, // owner — TODO: transfer to a real multisig/timelock before real value flows through this
     deployer.address // keeper — TODO: replace with the real keeper bot's operating address
   );
@@ -51,6 +53,11 @@ async function main() {
 
   console.log("\nNext steps:");
   console.log("- converter.setAllowedReserveAsset(<bStock address>, true) for each real bStock the keeper will buy");
+  console.log("- converter.setPriceFeed(<Chainlink BNB/USD feed address>) — required for buyReserveAsset's price floor");
+  console.log("- converter.setBStockUsdtPair(<bStock address>, <bStock/USDT pair address>) for each allowlisted bStock");
+  console.log("  (buyReserveAsset reverts with PriceFloorNotConfigured for any asset missing this + the price feed,");
+  console.log("   unless setRequirePriceFloorForBuys(false) is deliberately called first — not recommended)");
+  console.log("- converter.updateBStockTwapCheckpoint(<bStock address>) once per bStock, then wait minTwapWindow before buying it");
   console.log("- converter.setKeeper(<real keeper bot address>) once it exists — currently the deployer");
   console.log("- Move ownership of token/vault/converter to a real multisig/timelock before real value flows through");
   console.log(`- Wait at least minTwapWindow (${await converter.minTwapWindow()}s) after the checkpoint above before the first sellRsvd()`);
