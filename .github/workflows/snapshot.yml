@@ -1,0 +1,41 @@
+name: Snapshot on-chain history
+
+on:
+  schedule:
+    - cron: "0 * * * *" # hourly
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Take snapshot
+        working-directory: web
+        run: node scripts/snapshot.mjs
+
+      - name: Commit if changed
+        run: |
+          git config user.name "reserved-snapshot-bot"
+          git config user.email "actions@users.noreply.github.com"
+          if ! git diff --quiet -- web/public/history.json; then
+            git add web/public/history.json
+            git commit -m "chore: snapshot on-chain history"
+            git push
+          else
+            echo "No change in history.json, skipping commit."
+          fi
