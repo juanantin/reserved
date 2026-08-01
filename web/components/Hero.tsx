@@ -3,6 +3,7 @@ import { ChainBadge } from "./ChainBadge";
 import { Logo } from "./Logo";
 import { FadeIn } from "./FadeIn";
 import { BlockchainBackground } from "./BlockchainBackground";
+import { DashboardStats } from "./DashboardStats";
 import { tokenInfo } from "@/config/token";
 
 export function Hero() {
@@ -73,6 +74,10 @@ export function Hero() {
           />
           <Logo size={280} className="mx-auto" />
         </FadeIn>
+      </div>
+
+      <div className="relative mx-auto mt-12 max-w-6xl">
+        <DashboardStats />
       </div>
     </section>
   );

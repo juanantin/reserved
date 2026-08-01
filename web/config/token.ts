@@ -13,6 +13,10 @@ export const tokenInfo = {
   tokenAddress: "0x8761873C64C1fB8e8174b9Ee39f11FFe4a3D8883",
   vaultAddress: "0x0Ec27569eb6Ac155aE18161DF1F5332c8f8900ea",
 
+  // Set once a PancakeSwap pool exists. Used to read live price off the pair's
+  // reserves (see DashboardStats) — not just for the buy/chart links below.
+  pairAddress: "0x064B8301aC475789e8D6B7b8A4920127d5FCb80B",
+
   // Set once a PancakeSwap pool exists / the token is listed somewhere.
   buyUrl: "https://pancakeswap.finance/swap?outputCurrency=0x8761873C64C1fB8e8174b9Ee39f11FFe4a3D8883",
   chartUrl: "https://www.dextools.io/app/en/bnb/pair-explorer/0x064B8301aC475789e8D6B7b8A4920127d5FCb80B",
