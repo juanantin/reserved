@@ -16,8 +16,11 @@ const NODE_MODULES = path.join(__dirname, "..", "node_modules");
 const targets = [
   "ReservedToken.sol",
   "ReservedVault.sol",
+  "TreasuryConverter.sol",
   "mocks/MockERC20.sol",
   "mocks/MockRevertingERC20.sol",
+  "mocks/MockUniswapV2Pair.sol",
+  "mocks/MockUniswapV2Router.sol",
   "vendor/TimelockController.sol",
 ];
 
