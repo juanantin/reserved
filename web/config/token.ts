@@ -10,15 +10,16 @@ export const tokenInfo = {
   taxBps: 300, // 3% buy/sell tax, see PROJECT_BRIEF.md
 
   // Set once each contract is deployed and verified.
-  tokenAddress: "",
-  vaultAddress: "",
+  tokenAddress: "0x8761873C64C1fB8e8174b9Ee39f11FFe4a3D8883",
+  vaultAddress: "0x0Ec27569eb6Ac155aE18161DF1F5332c8f8900ea",
 
   // Set once a PancakeSwap pool exists / the token is listed somewhere.
-  buyUrl: "",
-  chartUrl: "",
+  buyUrl: "https://pancakeswap.finance/swap?outputCurrency=0x8761873C64C1fB8e8174b9Ee39f11FFe4a3D8883",
+  chartUrl: "https://www.dextools.io/app/en/bnb/pair-explorer/0x064B8301aC475789e8D6B7b8A4920127d5FCb80B",
   explorerBaseUrl: "https://bscscan.com/address/",
 
-  // Set once the vault contract is deployed and a redeem UI exists.
+  // Redemption happens directly on this site now (see RedeemPanel) — no external
+  // redeemUrl needed. Kept as a field in case an external flow is ever preferred.
   redeemUrl: "",
 
   // Community links — set once these exist.
