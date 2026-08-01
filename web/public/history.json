@@ -12,5 +12,12 @@
     "supply": 962048186.5743736,
     "treasuryBal": 29874759.067173876,
     "reserveAssetCount": 1
+  },
+  {
+    "t": 1785611166,
+    "marketCapBnb": 0.09402693824180614,
+    "supply": 962048186.5743736,
+    "treasuryBal": 86352711.32164977,
+    "reserveAssetCount": 1
   }
 ]
