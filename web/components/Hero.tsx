@@ -15,7 +15,7 @@ export function Hero({ locale }: { locale: Locale }) {
       <div className="relative mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2">
         <div className="flex flex-col items-start gap-5">
           <FadeIn delay={0} immediate>
-            <Logo size={140} />
+            <Logo size={200} />
           </FadeIn>
 
           <FadeIn delay={0.06}>
@@ -40,7 +40,7 @@ export function Hero({ locale }: { locale: Locale }) {
               href="https://www.binance.com/en/bstocks-landing"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm font-medium tracking-wide text-rsvd-offwhite/50 transition-colors hover:text-rsvd-gold focus-gold"
+              className="text-lg font-medium tracking-wide text-rsvd-offwhite/50 transition-colors hover:text-rsvd-gold focus-gold"
             >
               {t.poweredByBinance}
             </a>

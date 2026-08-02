@@ -24,16 +24,21 @@ const COIN_ICONS: { key: string; src: string; width: number; height: number }[] 
   { key: "circle", src: "/images/bstock-icons/circle.png", width: 218, height: 246 },
 ];
 
+// Layered gradient + inset shadows to fake an embossed/extruded metal disc (a curved
+// highlight band catching light, plus a beveled rim) rather than a flat tinted circle —
+// closer to the reference image's coins, which are visibly not just flat gold discs.
 function CoinFace({ src, width, height }: { src: string; width: number; height: number }) {
   return (
     <div
-      className="flex h-24 w-24 items-center justify-center rounded-full md:h-28 md:w-28"
+      className="flex h-14 w-14 items-center justify-center rounded-full md:h-16 md:w-16"
       style={{
-        background: "radial-gradient(circle at 35% 30%, #FCEBA8 0%, #E9C25E 30%, #C89A2E 60%, #8a6d1d 100%)",
-        boxShadow: "inset 0 2px 6px rgba(255,255,255,0.5), inset 0 -6px 10px rgba(0,0,0,0.35), 0 6px 14px rgba(0,0,0,0.4)",
+        background:
+          "linear-gradient(125deg, #6b5416 0%, #a9822a 10%, #f5d576 22%, #fff6d9 30%, #f5d576 38%, #C89A2E 55%, #8a6d1d 78%, #6b5416 100%)",
+        boxShadow:
+          "inset 0 0 0 1px rgba(255,241,196,0.6), inset -3px -3px 6px rgba(0,0,0,0.45), inset 3px 3px 5px rgba(255,255,255,0.35), 0 3px 6px rgba(0,0,0,0.5)",
       }}
     >
-      <Image src={src} alt="" width={width} height={height} className="h-[55%] w-auto object-contain" />
+      <Image src={src} alt="" width={width} height={height} className="h-[52%] w-auto object-contain drop-shadow-sm" />
     </div>
   );
 }
@@ -58,7 +63,7 @@ function SpinningCoin({ src, width, height, index }: { src: string; width: numbe
 
 function SpinningCoins() {
   return (
-    <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
+    <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4">
       {COIN_ICONS.map((icon, i) => (
         <SpinningCoin key={icon.key} src={icon.src} width={icon.width} height={icon.height} index={i} />
       ))}
