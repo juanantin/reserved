@@ -55,7 +55,7 @@ async function main() {
   console.log("\n--- USDT ---");
   const usdt = await ethers.getContractAt(ERC20_ABI, USDT_ADDRESS);
   const usdtSymbol = await usdt.symbol();
-  const usdtDecimals = await usdt.decimals();
+  const usdtDecimals = Number(await usdt.decimals()); // ethers returns uint8 as bigint — must convert before comparing to a number
   console.log("  symbol:", usdtSymbol, "decimals:", usdtDecimals);
   if (usdtSymbol !== "USDT") fail(`expected symbol USDT, got ${usdtSymbol}`);
   if (usdtDecimals !== 18) fail(`TreasuryConverter requires 18 decimals, USDT_ADDRESS reports ${usdtDecimals}`);
@@ -82,24 +82,43 @@ async function main() {
     const [symbol, address] = entry.trim().split(":");
     console.log(`\n  ${symbol} (${address})`);
     const token = await ethers.getContractAt(ERC20_ABI, address);
-    const [name, tokenSymbol, decimals] = await Promise.all([token.name(), token.symbol(), token.decimals()]);
+    const [name, tokenSymbol, decimalsRaw] = await Promise.all([token.name(), token.symbol(), token.decimals()]);
+    const decimals = Number(decimalsRaw); // ethers returns uint8 as bigint — must convert before comparing to a number
     console.log(`    name: ${name}, symbol: ${tokenSymbol}, decimals: ${decimals}`);
     if (tokenSymbol !== symbol) fail(`expected symbol ${symbol}, got ${tokenSymbol}`);
     if (decimals !== 18) fail(`TreasuryConverter requires 18 decimals, ${symbol} reports ${decimals}`);
 
-    const pairAddress: string = await factory.getPair(address, USDT_ADDRESS);
-    console.log(`    ${symbol}/USDT pair: ${pairAddress}`);
-    if (pairAddress === ethers.ZeroAddress) {
-      fail(`no PancakeSwap ${symbol}/USDT pair exists yet — can't set this as a price floor source`);
-      continue;
+    async function reportPair(label: string, quoteAddress: string, quoteDecimals: number): Promise<boolean> {
+      const pairAddress: string = await factory.getPair(address, quoteAddress);
+      console.log(`    ${symbol}/${label} V2 pair: ${pairAddress}`);
+      if (pairAddress === ethers.ZeroAddress) return false;
+      const pair = await ethers.getContractAt(PAIR_ABI, pairAddress);
+      const [reserve0, reserve1] = await pair.getReserves();
+      const token0: string = await pair.token0();
+      const bStockReserve = token0.toLowerCase() === address.toLowerCase() ? reserve0 : reserve1;
+      const quoteReserve = token0.toLowerCase() === address.toLowerCase() ? reserve1 : reserve0;
+      console.log(
+        `      reserves: ${ethers.formatUnits(bStockReserve, 18)} ${symbol} / ${ethers.formatUnits(quoteReserve, quoteDecimals)} ${label}`
+      );
+      return quoteReserve > 0n;
     }
-    const pair = await ethers.getContractAt(PAIR_ABI, pairAddress);
-    const [reserve0, reserve1] = await pair.getReserves();
-    const token0: string = await pair.token0();
-    const bStockReserve = token0.toLowerCase() === address.toLowerCase() ? reserve0 : reserve1;
-    const usdtReserve = token0.toLowerCase() === address.toLowerCase() ? reserve1 : reserve0;
-    console.log(`    reserves: ${ethers.formatUnits(bStockReserve, 18)} ${symbol} / ${ethers.formatUnits(usdtReserve, 18)} USDT`);
-    if (usdtReserve === 0n) fail(`${symbol}/USDT pair has zero liquidity`);
+
+    // setBStockUsdtPair specifically needs a USDT pair — that's what the contract's
+    // price floor math reads. But if that comes back empty, also check WBNB, purely as
+    // a diagnostic: it tells us whether this bStock has *any* PancakeSwap V2 liquidity
+    // at all, or whether it trades through V3/a different venue entirely (which would
+    // mean this whole V2-pair-based price floor design doesn't apply to it as-is).
+    const hasUsdtPair = await reportPair("USDT", USDT_ADDRESS, 18);
+    if (!hasUsdtPair) {
+      fail(`no PancakeSwap V2 ${symbol}/USDT pair with liquidity — can't set this as a price floor source`);
+      const hasWbnbPair = await reportPair("WBNB", wbnb, 18);
+      if (!hasWbnbPair) {
+        console.log(
+          `    ${symbol} has no V2 pair against USDT or WBNB either — it likely trades via PancakeSwap V3/a ` +
+            `different venue, or has no on-chain liquidity yet. Check the PancakeSwap app directly for ${symbol}.`
+        );
+      }
+    }
   }
 
   console.log("\n" + (failed ? "SOME CHECKS FAILED — do not deploy with these addresses until resolved." : "All checks passed."));
