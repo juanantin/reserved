@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
+import { FloorSection } from "@/components/FloorSection";
 import { HowItWorksSection } from "@/components/HowItWorksSection";
 import { TokenomicsSection } from "@/components/TokenomicsSection";
 import { TreasurySection } from "@/components/TreasurySection";
@@ -19,6 +20,7 @@ export default function Home() {
       <Navbar locale="en" />
       <main>
         <Hero locale="en" />
+        <FloorSection locale="en" />
         <TreasurySection locale="en" />
         <TokenomicsSection locale="en" />
         <HowItWorksSection locale="en" />

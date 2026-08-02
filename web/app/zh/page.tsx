@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
+import { FloorSection } from "@/components/FloorSection";
 import { HowItWorksSection } from "@/components/HowItWorksSection";
 import { TokenomicsSection } from "@/components/TokenomicsSection";
 import { TreasurySection } from "@/components/TreasurySection";
@@ -26,6 +27,7 @@ export default function HomeZh() {
       <Navbar locale="zh" />
       <main>
         <Hero locale="zh" />
+        <FloorSection locale="zh" />
         <TreasurySection locale="zh" />
         <TokenomicsSection locale="zh" />
         <HowItWorksSection locale="zh" />
