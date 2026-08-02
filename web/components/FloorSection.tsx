@@ -1,4 +1,5 @@
 import { FadeIn } from "./FadeIn";
+import { ReserveValueLine } from "./ReserveValueLine";
 import { dictionaries, type Locale } from "@/lib/i18n";
 
 // Explains the redeem-driven price floor without the "can't go to zero" framing —
@@ -25,6 +26,7 @@ export function FloorSection({ locale }: { locale: Locale }) {
             {t.headlinePrefix} <span className="text-gradient-gold">{t.headlineGold}</span>
           </h2>
           <p className="mt-5 max-w-2xl text-rsvd-offwhite/70">{t.body}</p>
+          <ReserveValueLine locale={locale} />
         </FadeIn>
       </div>
     </section>
