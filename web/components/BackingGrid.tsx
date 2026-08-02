@@ -9,29 +9,59 @@ import { FadeIn } from "./FadeIn";
 import { VoteNextPanel } from "./VoteNextPanel";
 import { dictionaries, type Locale } from "@/lib/i18n";
 
-// Continuous 3D turn on the whole banner — the source image is one fused graphic
-// (five overlapping coins baked into a single PNG), not five separate sprites, so
-// they can't spin independently; this turns the group as one medallion instead.
-// `perspective` on the wrapper is what makes rotateY read as genuine depth rather
-// than a flat horizontal squash. Off entirely for prefers-reduced-motion.
-function SpinningBanner() {
-  const shouldReduceMotion = useReducedMotion();
+// The source bStocks.png is one flattened graphic with the coins overlapping/occluding
+// each other — there's no way to recover a clean, independent circular coin per logo
+// from it directly. But the logo glyphs themselves aren't occluded (only the gold disc
+// edges are, where a neighboring coin overlaps them), so each glyph was extracted as its
+// own transparent-background cutout (see web/public/images/bstock-icons/) and gets
+// mounted on a freshly CSS-drawn gold coin here instead — genuinely independent discs
+// that can each spin on their own.
+const COIN_ICONS: { key: string; src: string; width: number; height: number }[] = [
+  { key: "sandisk", src: "/images/bstock-icons/sandisk.png", width: 210, height: 167 },
+  { key: "nvidia", src: "/images/bstock-icons/nvidia.png", width: 248, height: 172 },
+  { key: "tesla", src: "/images/bstock-icons/tesla.png", width: 168, height: 238 },
+  { key: "micron", src: "/images/bstock-icons/micron.png", width: 257, height: 155 },
+  { key: "circle", src: "/images/bstock-icons/circle.png", width: 218, height: 246 },
+];
 
-  if (shouldReduceMotion) {
-    return (
-      <Image src="/images/bStocks.png" alt="bStocks" width={2018} height={678} className="h-auto w-full max-w-2xl" priority />
-    );
-  }
+function CoinFace({ src, width, height }: { src: string; width: number; height: number }) {
+  return (
+    <div
+      className="flex h-24 w-24 items-center justify-center rounded-full md:h-28 md:w-28"
+      style={{
+        background: "radial-gradient(circle at 35% 30%, #FCEBA8 0%, #E9C25E 30%, #C89A2E 60%, #8a6d1d 100%)",
+        boxShadow: "inset 0 2px 6px rgba(255,255,255,0.5), inset 0 -6px 10px rgba(0,0,0,0.35), 0 6px 14px rgba(0,0,0,0.4)",
+      }}
+    >
+      <Image src={src} alt="" width={width} height={height} className="h-[55%] w-auto object-contain" />
+    </div>
+  );
+}
+
+// Each coin spins independently — its own perspective wrapper (so rotateY reads as
+// depth, not a flat squash) and a slightly different duration/delay per coin so they
+// don't all turn in lockstep. Off for prefers-reduced-motion.
+function SpinningCoin({ src, width, height, index }: { src: string; width: number; height: number; index: number }) {
+  const shouldReduceMotion = useReducedMotion();
+  const face = <CoinFace src={src} width={width} height={height} />;
+
+  if (shouldReduceMotion) return face;
 
   return (
-    <div style={{ perspective: 1200 }}>
-      <motion.div
-        animate={{ rotateY: 360 }}
-        transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-        className="max-w-2xl"
-      >
-        <Image src="/images/bStocks.png" alt="bStocks" width={2018} height={678} className="h-auto w-full" priority />
+    <div style={{ perspective: 800 }}>
+      <motion.div animate={{ rotateY: 360 }} transition={{ duration: 6 + index * 0.6, repeat: Infinity, ease: "linear", delay: index * 0.15 }}>
+        {face}
       </motion.div>
+    </div>
+  );
+}
+
+function SpinningCoins() {
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
+      {COIN_ICONS.map((icon, i) => (
+        <SpinningCoin key={icon.key} src={icon.src} width={icon.width} height={icon.height} index={i} />
+      ))}
     </div>
   );
 }
@@ -58,7 +88,7 @@ export function BackingGrid({ locale }: { locale: Locale }) {
   return (
     <div>
       <FadeIn immediate className="mb-6 flex justify-center">
-        <SpinningBanner />
+        <SpinningCoins />
       </FadeIn>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
