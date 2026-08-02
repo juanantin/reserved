@@ -1,4 +1,3 @@
-import { StatusBadge } from "./StatusBadge";
 import { ChainBadge } from "./ChainBadge";
 import { FadeIn } from "./FadeIn";
 import { BlockchainBackground } from "./BlockchainBackground";
@@ -15,12 +14,11 @@ export function Hero({ locale }: { locale: Locale }) {
       <div className="relative mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2">
         <div className="flex flex-col items-start gap-5">
           <FadeIn delay={0} immediate>
-            <Logo size={88} />
+            <Logo size={140} />
           </FadeIn>
 
           <FadeIn delay={0.06}>
             <div className="flex flex-wrap items-center gap-2">
-              <StatusBadge locale={locale} />
               <ChainBadge />
             </div>
           </FadeIn>
@@ -63,6 +61,17 @@ export function Hero({ locale }: { locale: Locale }) {
           <DashboardCard locale={locale} />
         </FadeIn>
       </div>
+
+      <FadeIn delay={0.4} className="relative mt-12 flex justify-center">
+        <a
+          href="https://www.binance.com/en/bstocks-landing"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs uppercase tracking-widest text-rsvd-offwhite/40 transition-colors hover:text-rsvd-gold focus-gold"
+        >
+          {t.poweredByBinance}
+        </a>
+      </FadeIn>
     </section>
   );
 }

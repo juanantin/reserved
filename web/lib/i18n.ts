@@ -35,6 +35,7 @@ export const dictionaries = {
       taglineLine1: "Real stocks. On-chain. Reserved.",
       ctaHowItWorks: "How It Works",
       ctaViewTreasury: "View Treasury",
+      poweredByBinance: "Powered by Binance bStocks",
     },
     dashboardCard: {
       marketCap: "Market Cap",
@@ -226,6 +227,7 @@ export const dictionaries = {
       taglineLine1: "真实股票，链上运行，稳健守护。",
       ctaHowItWorks: "运作机制",
       ctaViewTreasury: "查看资金库",
+      poweredByBinance: "由币安 bStocks 提供支持",
     },
     dashboardCard: {
       marketCap: "市值",
