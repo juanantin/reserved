@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { HelpCircle } from "lucide-react";
 import { plannedReserveAssets } from "@/config/token";
 import { FadeIn } from "./FadeIn";
@@ -28,6 +29,17 @@ export function BackingGrid({ locale }: { locale: Locale }) {
 
   return (
     <div>
+      <FadeIn immediate className="mb-6 flex justify-center">
+        <Image
+          src="/images/bStocks.png"
+          alt="bStocks"
+          width={2018}
+          height={678}
+          className="h-auto w-full max-w-2xl"
+          priority
+        />
+      </FadeIn>
+
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {plannedReserveAssets.map((asset, i) => (
           <FadeIn key={asset.symbol} delay={i * 0.05}>
