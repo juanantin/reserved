@@ -14,6 +14,15 @@ const PAIR_ADDRESS = process.env.PAIR_ADDRESS || "";
 const USDT_ADDRESS = process.env.USDT_ADDRESS || "0x55d398326f99059fF775485246999027B3197955"; // BSC mainnet USDT (18 decimals)
 const PANCAKE_ROUTER = process.env.PANCAKE_ROUTER || "0x10ED43C718714eb63d5aA57B78B54704E256024E";
 
+// Optional — the contract's built-in defaults (5,000,000 RSVD / 5 BNB per tx) assume a
+// pool with real depth behind it. For a small/fresh launch pool those caps can exceed
+// the entire pool, which defeats the point of a "per-tx cap" (see PROJECT_BRIEF.md /
+// the launch-sizing discussion). Set these to something proportionate to your actual
+// pool size and this script will right-size them right after deploy; leave unset to
+// keep the contract's defaults.
+const MAX_BNB_SPEND_PER_TX = process.env.MAX_BNB_SPEND_PER_TX || ""; // e.g. "0.2"
+const MAX_RSVD_SPEND_PER_TX = process.env.MAX_RSVD_SPEND_PER_TX || ""; // e.g. "5000000"
+
 async function main() {
   if (!TOKEN_ADDRESS || !VAULT_ADDRESS || !PAIR_ADDRESS) {
     throw new Error("Set TOKEN_ADDRESS, VAULT_ADDRESS, and PAIR_ADDRESS env vars first.");
@@ -50,6 +59,15 @@ async function main() {
 
   await (await converter.updateTwapCheckpoint()).wait();
   console.log("Initial TWAP checkpoint recorded.");
+
+  if (MAX_BNB_SPEND_PER_TX) {
+    await (await converter.connect(deployer).setMaxBnbSpendPerTx(ethers.parseEther(MAX_BNB_SPEND_PER_TX))).wait();
+    console.log(`maxBnbSpendPerTx set to ${MAX_BNB_SPEND_PER_TX} BNB.`);
+  }
+  if (MAX_RSVD_SPEND_PER_TX) {
+    await (await converter.connect(deployer).setMaxRsvdSpendPerTx(ethers.parseUnits(MAX_RSVD_SPEND_PER_TX, 18))).wait();
+    console.log(`maxRsvdSpendPerTx set to ${MAX_RSVD_SPEND_PER_TX} RSVD.`);
+  }
 
   console.log("\nNext steps:");
   console.log("- converter.setAllowedReserveAsset(<bStock address>, true) for each real bStock the keeper will buy");

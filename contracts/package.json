@@ -20,7 +20,8 @@
     "deploy:treasury-converter:testnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-treasury-converter.ts --network bscTestnet --no-compile",
     "deploy:treasury-converter:mainnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-treasury-converter.ts --network bscMainnet --no-compile",
     "check:mainnet": "node scripts/offline-compile.js && hardhat run scripts/mainnet-check.ts --network bscMainnet --no-compile",
-    "verify:standard-json": "node scripts/verify-standard-json.js"
+    "verify:standard-json": "node scripts/verify-standard-json.js",
+    "verify:launch-addresses:mainnet": "node scripts/offline-compile.js && hardhat run scripts/verify-launch-addresses.ts --network bscMainnet --no-compile"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
