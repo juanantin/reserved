@@ -3,6 +3,7 @@ import { FadeIn } from "./FadeIn";
 import { BlockchainBackground } from "./BlockchainBackground";
 import { DashboardCard } from "./DashboardCard";
 import { Logo } from "./Logo";
+import { tokenInfo } from "@/config/token";
 import { dictionaries, type Locale } from "@/lib/i18n";
 
 export function Hero({ locale }: { locale: Locale }) {
@@ -34,13 +35,26 @@ export function Hero({ locale }: { locale: Locale }) {
             <p className="text-base font-medium text-rsvd-offwhite/90">{t.taglineLine1}</p>
           </FadeIn>
 
-          <FadeIn delay={0.26}>
+          <FadeIn delay={0.24}>
+            <a
+              href="https://www.binance.com/en/bstocks-landing"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs uppercase tracking-widest text-rsvd-offwhite/40 transition-colors hover:text-rsvd-gold focus-gold"
+            >
+              {t.poweredByBinance}
+            </a>
+          </FadeIn>
+
+          <FadeIn delay={0.3}>
             <div className="flex flex-wrap gap-4 pt-1">
               <a
-                href="#how-it-works"
+                href={tokenInfo.buyUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="rounded-md bg-rsvd-gold px-6 py-3 text-sm font-semibold text-rsvd-black transition-opacity hover:opacity-90 focus-gold"
               >
-                {t.ctaHowItWorks}
+                {t.ctaBuy}
               </a>
               <a
                 href="#treasury"
@@ -61,17 +75,6 @@ export function Hero({ locale }: { locale: Locale }) {
           <DashboardCard locale={locale} />
         </FadeIn>
       </div>
-
-      <FadeIn delay={0.4} className="relative mt-12 flex justify-center">
-        <a
-          href="https://www.binance.com/en/bstocks-landing"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs uppercase tracking-widest text-rsvd-offwhite/40 transition-colors hover:text-rsvd-gold focus-gold"
-        >
-          {t.poweredByBinance}
-        </a>
-      </FadeIn>
     </section>
   );
 }

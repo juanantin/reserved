@@ -36,14 +36,17 @@ export const tokenInfo = {
 
 // bStock tickers the keeper is expected to acquire per the brief. These are the
 // *planned* reserve assets, not a live holdings snapshot — the vault has not
-// acquired anything yet from this site's perspective. This is the actual current
-// Binance bStock catalog (5 tickers) — verified against on-chain BSC data, not
-// aspirational; see "vote next" candidates below for stocks that don't have a
-// bStock yet.
+// acquired anything yet from this site's perspective. Starting allowlist, chosen
+// from Binance's current bStock catalog (which has grown well past its original 5 —
+// see "vote next" candidates below for names that don't have a bStock yet, e.g.
+// SpaceX, which is only teased/pending its own Nasdaq listing, not tradable).
+// Symbol/name pairs are cross-referenced via web search, not independently confirmed
+// on-chain from this build environment (see contracts/scripts/verify-launch-addresses.ts,
+// which found NVDAB itself has no PancakeSwap V2 liquidity yet) — re-verify before launch.
 export const plannedReserveAssets = [
-  { symbol: "NVDAB", name: "NVIDIA (bStock)" },
-  { symbol: "TSLAB", name: "Tesla (bStock)" },
   { symbol: "CRCLB", name: "Circle (bStock)" },
-  { symbol: "MUB", name: "Micron (bStock)" },
+  { symbol: "NVDAB", name: "NVIDIA (bStock)" },
   { symbol: "SNDKB", name: "SanDisk (bStock)" },
+  { symbol: "MUB", name: "Micron (bStock)" },
+  { symbol: "AMDB", name: "AMD (bStock)" },
 ];
