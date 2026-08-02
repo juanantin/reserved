@@ -3,7 +3,7 @@ import { ChainBadge } from "./ChainBadge";
 import { FadeIn } from "./FadeIn";
 import { BlockchainBackground } from "./BlockchainBackground";
 import { DashboardCard } from "./DashboardCard";
-import { tokenInfo } from "@/config/token";
+import { Logo } from "./Logo";
 import { dictionaries, type Locale } from "@/lib/i18n";
 
 export function Hero({ locale }: { locale: Locale }) {
@@ -13,37 +13,31 @@ export function Hero({ locale }: { locale: Locale }) {
     <section id="top" className="relative overflow-hidden px-6 pb-16 pt-16 md:pt-20">
       <BlockchainBackground className="pointer-events-none absolute inset-0 h-full w-full" />
       <div className="relative mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2">
-        <div className="flex flex-col items-start gap-6">
-          <FadeIn delay={0}>
+        <div className="flex flex-col items-start gap-5">
+          <FadeIn delay={0} immediate>
+            <Logo size={88} />
+          </FadeIn>
+
+          <FadeIn delay={0.06}>
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge locale={locale} />
               <ChainBadge />
             </div>
           </FadeIn>
 
-          <FadeIn delay={0.08}>
-            <h1 className="text-4xl font-bold leading-tight tracking-tight md:text-6xl">
+          <FadeIn delay={0.12}>
+            <h1 className="text-3xl font-bold leading-tight tracking-tight md:text-5xl">
               {t.titlePrefix}{" "}
               <span className="text-gradient-gold">{t.titleGold}</span>
             </h1>
           </FadeIn>
 
-          <FadeIn delay={0.16}>
-            <p className="text-lg font-medium text-rsvd-offwhite/90">
-              {t.taglineLine1}
-              <br />
-              {t.taglineLine2}
-            </p>
+          <FadeIn delay={0.18}>
+            <p className="text-base font-medium text-rsvd-offwhite/90">{t.taglineLine1}</p>
           </FadeIn>
 
-          <FadeIn delay={0.24}>
-            <p className="max-w-xl text-sm text-rsvd-offwhite/60">
-              {t.description(tokenInfo.chain, tokenInfo.ticker)}
-            </p>
-          </FadeIn>
-
-          <FadeIn delay={0.32}>
-            <div className="flex flex-wrap gap-4 pt-2">
+          <FadeIn delay={0.26}>
+            <div className="flex flex-wrap gap-4 pt-1">
               <a
                 href="#how-it-works"
                 className="rounded-md bg-rsvd-gold px-6 py-3 text-sm font-semibold text-rsvd-black transition-opacity hover:opacity-90 focus-gold"
@@ -57,10 +51,6 @@ export function Hero({ locale }: { locale: Locale }) {
                 {t.ctaViewTreasury}
               </a>
             </div>
-          </FadeIn>
-
-          <FadeIn delay={0.4}>
-            <p className="pt-4 text-xs uppercase tracking-widest text-rsvd-offwhite/40">{t.footerTag}</p>
           </FadeIn>
         </div>
 

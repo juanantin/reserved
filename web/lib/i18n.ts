@@ -32,13 +32,9 @@ export const dictionaries = {
     hero: {
       titlePrefix: "The on-chain treasury of",
       titleGold: "tokenized stocks.",
-      taglineLine1: "We acquire. We hold. We grow.",
-      taglineLine2: "Transparent. Verifiable. Reserved.",
-      description: (chain: string, ticker: string) =>
-        `Reserved is an on-chain treasury that acquires and holds tokenized stocks for the long term, on ${chain}. Every ${ticker} buy and sell funds the reserve; every holder can redeem their pro-rata share, on-chain, any time.`,
+      taglineLine1: "Real stocks. On-chain. Reserved.",
       ctaHowItWorks: "How It Works",
       ctaViewTreasury: "View Treasury",
-      footerTag: "Real stocks. On-chain. Reserved.",
     },
     dashboardCard: {
       marketCap: "Market Cap",
@@ -227,13 +223,9 @@ export const dictionaries = {
     hero: {
       titlePrefix: "链上资金库，",
       titleGold: "持有代币化股票。",
-      taglineLine1: "我们收购，我们持有，我们增长。",
-      taglineLine2: "透明、可验证、稳健留存。",
-      description: (chain: string, ticker: string) =>
-        `Reserved 是一个链上资金库，长期收购并持有代币化股票，运行于 ${chain}。每一笔 ${ticker} 的买卖都会为储备注入资金；任何持有者均可随时在链上按比例赎回其应得份额。`,
+      taglineLine1: "真实股票，链上运行，稳健守护。",
       ctaHowItWorks: "运作机制",
       ctaViewTreasury: "查看资金库",
-      footerTag: "真实股票，链上运行，稳健守护。",
     },
     dashboardCard: {
       marketCap: "市值",
