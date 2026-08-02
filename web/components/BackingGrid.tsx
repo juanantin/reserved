@@ -2,11 +2,39 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { motion, useReducedMotion } from "framer-motion";
 import { HelpCircle } from "lucide-react";
 import { plannedReserveAssets } from "@/config/token";
 import { FadeIn } from "./FadeIn";
 import { VoteNextPanel } from "./VoteNextPanel";
 import { dictionaries, type Locale } from "@/lib/i18n";
+
+// Continuous 3D turn on the whole banner — the source image is one fused graphic
+// (five overlapping coins baked into a single PNG), not five separate sprites, so
+// they can't spin independently; this turns the group as one medallion instead.
+// `perspective` on the wrapper is what makes rotateY read as genuine depth rather
+// than a flat horizontal squash. Off entirely for prefers-reduced-motion.
+function SpinningBanner() {
+  const shouldReduceMotion = useReducedMotion();
+
+  if (shouldReduceMotion) {
+    return (
+      <Image src="/images/bStocks.png" alt="bStocks" width={2018} height={678} className="h-auto w-full max-w-2xl" priority />
+    );
+  }
+
+  return (
+    <div style={{ perspective: 1200 }}>
+      <motion.div
+        animate={{ rotateY: 360 }}
+        transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+        className="max-w-2xl"
+      >
+        <Image src="/images/bStocks.png" alt="bStocks" width={2018} height={678} className="h-auto w-full" priority />
+      </motion.div>
+    </div>
+  );
+}
 
 // Ticker badge — a plain monogram in the site's own palette rather than pulling in
 // real brand marks (Nvidia's logo, Tesla's logo, etc.), which this project doesn't
@@ -30,14 +58,7 @@ export function BackingGrid({ locale }: { locale: Locale }) {
   return (
     <div>
       <FadeIn immediate className="mb-6 flex justify-center">
-        <Image
-          src="/images/bStocks.png"
-          alt="bStocks"
-          width={2018}
-          height={678}
-          className="h-auto w-full max-w-2xl"
-          priority
-        />
+        <SpinningBanner />
       </FadeIn>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
