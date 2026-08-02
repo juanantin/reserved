@@ -54,13 +54,22 @@ export const dictionaries = {
     },
     howItWorks: {
       title: "How It Works",
-      description: "Every trade funds the reserve. Nothing here has run yet — this is the mechanism, not a transaction log.",
-      steps: [
-        { title: "Trade RSVD", body: "Buy or sell on the open market." },
-        { title: "3% buy/sell tax", body: "Collected in RSVD, sent to the keeper." },
-        { title: "Keeper bot converts", body: "Swaps on PancakeSwap (primary), or buys via Binance API if slippage is high (fallback)." },
-        { title: "Vault holds it", body: "Acquired bStocks land in the vault as backing." },
-        { title: "Redeem any time", body: "Burn RSVD for a pro-rata share of everything the vault holds." },
+      headline: "The tax buys real bStocks. They never leave.",
+      description:
+        "Three moving parts, all on-chain. Nothing here has run yet — this is the mechanism, not a transaction log. Value only ever accrues to the vault: supply shrinks on redeem and never re-mints, so backing per token has nowhere to go but up.",
+      highlights: [
+        {
+          title: "Every trade pays 3%",
+          body: "A 3% tax on every RSVD buy and sell is collected in RSVD and routed to the treasury converter — a bounded contract, not a wallet someone could drain.",
+        },
+        {
+          title: "It buys real bStocks",
+          body: "The keeper bot converts that RSVD to BNB, then swaps for allowlisted bStocks on PancakeSwap — every swap checked against a TWAP price floor so it can't be sandwiched in one transaction. The bStocks land in the vault as backing.",
+        },
+        {
+          title: "Backing only grows",
+          body: "Redeemed RSVD is burned, never re-minted, so supply only shrinks. Tax revenue keeps flowing into the vault on top of that, so backing per token trends up, not down.",
+        },
       ],
       diagram: {
         trade: { title: "Trade RSVD", subtitle: "Buy or sell on the open market" },
@@ -246,13 +255,22 @@ export const dictionaries = {
     },
     howItWorks: {
       title: "运作机制",
-      description: "每一笔交易都会为储备注入资金。目前尚未发生任何实际交易 — 这里展示的是机制本身，而非交易记录。",
-      steps: [
-        { title: "交易 RSVD", body: "在公开市场买入或卖出。" },
-        { title: "3% 买卖税", body: "以 RSVD 形式收取，发送给 keeper（管理机器人）。" },
-        { title: "Keeper 机器人兑换", body: "优先通过 PancakeSwap 兑换；若滑点过高，则通过 Binance API 购买（备用方案）。" },
-        { title: "金库持有资产", body: "购入的 bStocks 存入金库，作为储备支撑。" },
-        { title: "随时赎回", body: "销毁 RSVD 以按比例换取金库持有的全部资产份额。" },
+      headline: "税费买入真实 bStocks，资产永不离开。",
+      description:
+        "三个环节，全部在链上完成。目前尚未发生任何实际交易 — 这里展示的是机制本身，而非交易记录。价值只会不断累积进金库：赎回会使总量减少且永不增发，因此单币背后的储备只会走高，不会走低。",
+      highlights: [
+        {
+          title: "每笔交易征收 3%",
+          body: "每笔 RSVD 买卖均征收 3% 的税，以 RSVD 形式收取并转入资金库转换合约 —— 那是一个有边界约束的合约，而非可能被人卷走资金的钱包。",
+        },
+        {
+          title: "买入真实的 bStocks",
+          body: "Keeper 机器人将这笔 RSVD 兑换为 BNB，再通过 PancakeSwap 换成已获准的 bStocks —— 每笔兑换都会对照 TWAP 价格下限进行校验，防止单笔交易被夹击套利。购入的 bStocks 存入金库，作为储备支撑。",
+        },
+        {
+          title: "储备只增不减",
+          body: "被赎回的 RSVD 会被销毁、永不增发，因此总量只会减少。税收持续注入金库，单币背后的储备呈上升趋势，而非下降。",
+        },
       ],
       diagram: {
         trade: { title: "交易 RSVD", subtitle: "在公开市场买入或卖出" },
