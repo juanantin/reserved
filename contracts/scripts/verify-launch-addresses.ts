@@ -17,6 +17,11 @@ import { ethers } from "hardhat";
 // confirms it against the real chain.
 const PANCAKE_ROUTER = process.env.PANCAKE_ROUTER || "0x10ED43C718714eb63d5aA57B78B54704E256024E";
 const PANCAKE_FACTORY = process.env.PANCAKE_FACTORY || "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73";
+// PancakeSwap V3 factory — only used as a diagnostic when a bStock has no V2 liquidity,
+// to tell "no liquidity anywhere on PancakeSwap" apart from "liquidity exists, just not
+// on V2" (V3 uses concentrated liquidity in fee-tiered pools, not a single reserve pair).
+const PANCAKE_V3_FACTORY = process.env.PANCAKE_V3_FACTORY || "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865";
+const V3_FEE_TIERS = [100, 500, 2500, 10000]; // PancakeSwap V3's standard fee tiers, in hundredths of a bip
 const USDT_ADDRESS = process.env.USDT_ADDRESS || "0x55d398326f99059fF775485246999027B3197955";
 const PRICE_FEED_ADDRESS = process.env.PRICE_FEED_ADDRESS || "0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE"; // Chainlink BNB/USD
 const BSTOCKS = process.env.BSTOCKS || "NVDAB:0x02fca66c1d1afb4e2a7884261eb00f63598a7436";
@@ -24,6 +29,8 @@ const BSTOCKS = process.env.BSTOCKS || "NVDAB:0x02fca66c1d1afb4e2a7884261eb00f63
 const ERC20_ABI = ["function name() view returns (string)", "function symbol() view returns (string)", "function decimals() view returns (uint8)"];
 const ROUTER_ABI = ["function WETH() view returns (address)", "function factory() view returns (address)"];
 const FACTORY_ABI = ["function getPair(address,address) view returns (address)"];
+const V3_FACTORY_ABI = ["function getPool(address,address,uint24) view returns (address)"];
+const V3_POOL_ABI = ["function liquidity() view returns (uint128)"];
 const PAIR_ABI = [
   "function getReserves() view returns (uint112,uint112,uint32)",
   "function token0() view returns (address)",
@@ -78,6 +85,25 @@ async function main() {
 
   console.log("\n--- bStocks ---");
   const factory = await ethers.getContractAt(FACTORY_ABI, PANCAKE_FACTORY);
+  const v3Factory = await ethers.getContractAt(V3_FACTORY_ABI, PANCAKE_V3_FACTORY);
+
+  // Purely diagnostic: TreasuryConverter's price floor only understands V2-style pairs
+  // (it reads price0CumulativeLast/price1CumulativeLast directly), so a V3 pool can't be
+  // used as-is even if one exists. This just tells us whether "no V2 liquidity" means
+  // "no liquidity on PancakeSwap at all" or "liquidity exists, just on V3" — which
+  // changes what work is actually needed before buyReserveAsset can support this asset.
+  async function reportV3Pools(symbol: string, address: string, quoteAddress: string, quoteLabel: string): Promise<boolean> {
+    let foundAny = false;
+    for (const fee of V3_FEE_TIERS) {
+      const poolAddress: string = await v3Factory.getPool(address, quoteAddress, fee);
+      if (poolAddress === ethers.ZeroAddress) continue;
+      const pool = await ethers.getContractAt(V3_POOL_ABI, poolAddress);
+      const liquidity: bigint = await pool.liquidity();
+      console.log(`    ${symbol}/${quoteLabel} V3 pool (fee ${fee / 10000}%): ${poolAddress}, liquidity: ${liquidity.toString()}`);
+      if (liquidity > 0n) foundAny = true;
+    }
+    return foundAny;
+  }
   for (const entry of BSTOCKS.split(",")) {
     const [symbol, address] = entry.trim().split(":");
     console.log(`\n  ${symbol} (${address})`);
@@ -113,10 +139,18 @@ async function main() {
       fail(`no PancakeSwap V2 ${symbol}/USDT pair with liquidity — can't set this as a price floor source`);
       const hasWbnbPair = await reportPair("WBNB", wbnb, 18);
       if (!hasWbnbPair) {
-        console.log(
-          `    ${symbol} has no V2 pair against USDT or WBNB either — it likely trades via PancakeSwap V3/a ` +
-            `different venue, or has no on-chain liquidity yet. Check the PancakeSwap app directly for ${symbol}.`
-        );
+        const hasV3UsdtPool = await reportV3Pools(symbol, address, USDT_ADDRESS, "USDT");
+        const hasV3WbnbPool = await reportV3Pools(symbol, address, wbnb, "WBNB");
+        if (hasV3UsdtPool || hasV3WbnbPool) {
+          console.log(
+            `    ${symbol} has real liquidity, but only on PancakeSwap V3 — TreasuryConverter's price floor ` +
+              `(price0CumulativeLast/price1CumulativeLast) only understands V2-style pairs. Rework needed before ` +
+              `buyReserveAsset can support this asset: a V3 TWAP (pool.observe(), tick-based, different math) ` +
+              `and a V3-compatible swap call (exactInputSingle, not swapExactETHForTokensSupportingFeeOnTransferTokens).`
+          );
+        } else {
+          console.log(`    ${symbol} has no V2 or V3 liquidity against USDT or WBNB — check the PancakeSwap app directly.`);
+        }
       }
     }
   }
