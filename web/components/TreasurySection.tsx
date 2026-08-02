@@ -1,6 +1,6 @@
 import { tokenInfo } from "@/config/token";
 import { CopyAddressButton } from "./CopyAddressButton";
-import { AllocationDonut } from "./AllocationDonut";
+import { BackingGrid } from "./BackingGrid";
 import { FadeIn } from "./FadeIn";
 import { LiveTreasuryStats } from "./LiveTreasuryStats";
 import { RedeemPanel } from "./RedeemPanel";
@@ -42,7 +42,7 @@ export function TreasurySection({ locale }: { locale: Locale }) {
         <FadeIn delay={0.28} className="mt-6 rounded-lg border border-white/10 bg-white/5 p-6">
           <h3 className="text-sm uppercase tracking-widest text-rsvd-offwhite/40">{t.plannedReserveAssets}</h3>
           <div className="mt-5">
-            <AllocationDonut locale={locale} />
+            <BackingGrid locale={locale} />
           </div>
         </FadeIn>
       </div>

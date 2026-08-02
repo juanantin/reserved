@@ -13,6 +13,7 @@ export const dictionaries = {
       howItWorks: "How It Works",
       transparency: "Transparency",
       governance: "Governance",
+      docs: "Docs",
     },
     wallet: {
       connect: "Connect Wallet",
@@ -142,16 +143,16 @@ export const dictionaries = {
     },
     governance: {
       title: "Governance",
-      badge: "Planned, later phase",
+      badge: "Non-binding signal",
       cardTitle: "Basket governance",
       cardBody:
-        "The plan: RSVD holders vote on which bStocks the reserve buys next. It is not live today — the treasury is keeper-operated at launch, not DAO-governed. This section will describe the actual voting mechanism once it ships, not before.",
+        "RSVD holders who connect a wallet holding at least 100,000 RSVD can vote on which blue-chip stock the reserve should prioritize once Binance issues a bStock for it — see \"Vote the next\" in the Treasury section above. It's non-binding signaling, on-chain and verifiable, not a claim that the treasury is fully DAO-governed: the keeper still decides what actually gets bought.",
     },
     featureStrip: [
       { title: "Transparent", body: "Vault holdings on-chain, always checkable." },
       { title: "Diversified", body: "Exposure across multiple tokenized equities." },
       { title: "Long-term", body: "Built for compounding value over time." },
-      { title: "Basket Governance", body: "Planned: holders vote on future acquisitions." },
+      { title: "Basket Governance", body: "Holders vote on future acquisitions." },
     ],
     footer: {
       disclaimer: (ticker: string) =>
@@ -170,9 +171,33 @@ export const dictionaries = {
       comingSoon: "Coming soon",
       copied: "Copied!",
     },
-    allocationDonut: {
-      assets: "assets",
-      caption: "Planned allocation, equal-weight — illustrative until the vault starts acquiring.",
+    backingGrid: {
+      voteCardTitle: "Vote the next",
+      voteCardSubtitle: "Holders choose",
+    },
+    voteNext: {
+      title: "Vote the next bStock",
+      description:
+        "Non-binding signal for which blue-chip stock the reserve should prioritize once Binance issues a bStock for it. On-chain, verifiable, and gated by RSVD balance — not staked, you keep full custody of your tokens.",
+      comingSoon: "Voting opens once the governance contract is deployed.",
+      connectToVote: "Connect Wallet to Vote",
+      connecting: "Connecting...",
+      switchToBnb: "Switch to BNB Chain",
+      balanceLine: (bal: string, threshold: string, ticker: string) =>
+        `Your balance: ${bal} ${ticker} — voting requires at least ${threshold} ${ticker}.`,
+      ineligible: "Your balance is below the threshold to vote.",
+      voting: "Voting...",
+      votesLabel: "votes",
+      noCandidates: "No active candidates right now.",
+      voteSubmitted: "Vote submitted — waiting for confirmation...",
+      voted: "Vote recorded.",
+      voteFailed: "Vote failed or was rejected.",
+    },
+    docsPage: {
+      title: "Documentation",
+      subtitle: "How Reserved actually works, contract by contract — not marketing copy.",
+      onThisPage: "On this page",
+      backToSite: "← Back to reserved",
     },
     langSwitcher: { label: "中文", href: "/zh" },
   },
@@ -183,6 +208,7 @@ export const dictionaries = {
       howItWorks: "运作机制",
       transparency: "透明度",
       governance: "治理",
+      docs: "文档",
     },
     wallet: {
       connect: "连接钱包",
@@ -309,16 +335,16 @@ export const dictionaries = {
     },
     governance: {
       title: "治理",
-      badge: "计划中，后续阶段",
+      badge: "非约束性信号",
       cardTitle: "资产篮治理",
       cardBody:
-        "计划：RSVD 持有者投票决定储备下一步购入哪些 bStocks。该机制目前尚未上线 — 启动阶段资金库由 keeper 运营，而非 DAO 治理。本板块将在该机制实际上线后描述其具体投票方式，而非提前描述。",
+        "连接钱包且持有至少 100,000 RSVD 的持有者，可以为币安尚未发行 bStock 的蓝筹股投票，表达储备下一步应优先收购哪一支 — 见上方资金库板块的“为下一支投票”。这是链上可验证的非约束性信号，并不代表资金库已完全由 DAO 治理：实际购入决策仍由 keeper 执行。",
     },
     featureStrip: [
       { title: "透明", body: "金库持仓上链，随时可查。" },
       { title: "多元化", body: "分散配置多支代币化股票。" },
       { title: "长期主义", body: "为长期复利增值而设计。" },
-      { title: "资产篮治理", body: "计划中：持有者投票决定未来购入标的。" },
+      { title: "资产篮治理", body: "持有者投票决定未来购入标的。" },
     ],
     footer: {
       disclaimer: (ticker: string) =>
@@ -337,9 +363,33 @@ export const dictionaries = {
       comingSoon: "即将开放",
       copied: "已复制！",
     },
-    allocationDonut: {
-      assets: "项资产",
-      caption: "计划中的等权重配置 — 在金库开始实际收购前，仅供示意。",
+    backingGrid: {
+      voteCardTitle: "为下一支投票",
+      voteCardSubtitle: "持有者决定",
+    },
+    voteNext: {
+      title: "为下一支 bStock 投票",
+      description:
+        "针对币安尚未发行 bStock 的蓝筹股，表达储备应优先收购哪一支的非约束性信号。链上、可验证，并根据 RSVD 持仓设定门槛 — 代币无需质押，您始终完全掌控自己的代币。",
+      comingSoon: "治理合约部署后即可开放投票。",
+      connectToVote: "连接钱包以投票",
+      connecting: "连接中...",
+      switchToBnb: "切换至 BNB 链",
+      balanceLine: (bal: string, threshold: string, ticker: string) =>
+        `您的余额：${bal} ${ticker} — 投票需持有至少 ${threshold} ${ticker}。`,
+      ineligible: "您的余额未达到投票门槛。",
+      voting: "投票中...",
+      votesLabel: "票",
+      noCandidates: "当前没有可投票的候选项。",
+      voteSubmitted: "投票交易已提交 — 等待确认...",
+      voted: "投票已记录。",
+      voteFailed: "投票失败或被拒绝。",
+    },
+    docsPage: {
+      title: "文档",
+      subtitle: "Reserved 的实际运作方式，逐个合约说明 — 而非宣传文案。",
+      onThisPage: "本页目录",
+      backToSite: "← 返回 reserved",
     },
     langSwitcher: { label: "EN", href: "/" },
   },

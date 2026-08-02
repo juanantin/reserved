@@ -17,8 +17,7 @@ const PAIR_ABI = [
 type ReserveLine = { symbol: string; balance: string };
 type RedeemLine = { symbol: string; amount: string };
 
-// Monochrome gold shades only — matches AllocationDonut's convention of not
-// introducing off-brand colors for per-asset visual variety.
+// Monochrome gold shades only — no off-brand colors for per-asset visual variety.
 const MONOGRAM_SHADES = [1, 0.75, 0.55, 0.4];
 
 function Monogram({ symbol, index }: { symbol: string; index: number }) {

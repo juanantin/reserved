@@ -19,6 +19,8 @@
     "set-tax-exempt:mainnet": "node scripts/offline-compile.js && hardhat run scripts/set-tax-exempt.ts --network bscMainnet --no-compile",
     "deploy:treasury-converter:testnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-treasury-converter.ts --network bscTestnet --no-compile",
     "deploy:treasury-converter:mainnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-treasury-converter.ts --network bscMainnet --no-compile",
+    "deploy:governance-vote:testnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-governance-vote.ts --network bscTestnet --no-compile",
+    "deploy:governance-vote:mainnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-governance-vote.ts --network bscMainnet --no-compile",
     "check:mainnet": "node scripts/offline-compile.js && hardhat run scripts/mainnet-check.ts --network bscMainnet --no-compile",
     "verify:standard-json": "node scripts/verify-standard-json.js",
     "verify:launch-addresses:mainnet": "node scripts/offline-compile.js && hardhat run scripts/verify-launch-addresses.ts --network bscMainnet --no-compile"

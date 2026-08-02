@@ -29,15 +29,21 @@ export const tokenInfo = {
   // Community links — set once these exist.
   xUrl: "https://x.com/ReservedFund_",
   telegramUrl: "https://t.me/ReservedPortal",
+
+  // Set once ReservedGovernanceVote is deployed (see contracts/scripts/deploy-governance-vote.ts).
+  governanceVoteAddress: "",
 };
 
 // bStock tickers the keeper is expected to acquire per the brief. These are the
 // *planned* reserve assets, not a live holdings snapshot — the vault has not
-// acquired anything yet from this site's perspective.
+// acquired anything yet from this site's perspective. This is the actual current
+// Binance bStock catalog (5 tickers) — verified against on-chain BSC data, not
+// aspirational; see "vote next" candidates below for stocks that don't have a
+// bStock yet.
 export const plannedReserveAssets = [
   { symbol: "NVDAB", name: "NVIDIA (bStock)" },
   { symbol: "TSLAB", name: "Tesla (bStock)" },
   { symbol: "CRCLB", name: "Circle (bStock)" },
-  { symbol: "MUB", name: "MicroStrategy (bStock)" },
+  { symbol: "MUB", name: "Micron (bStock)" },
   { symbol: "SNDKB", name: "SanDisk (bStock)" },
 ];

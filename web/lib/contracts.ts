@@ -49,10 +49,24 @@ export const CHAINLINK_FEED_ABI = [
   "function decimals() view returns (uint8)",
 ];
 
+// ReservedGovernanceVote — non-binding signaling only, never touches RSVD/the vault.
+export const GOVERNANCE_VOTE_ABI = [
+  "function voteThreshold() view returns (uint256)",
+  "function candidateCount() view returns (uint256)",
+  "function candidates(uint256) view returns (string symbol, string name, bool active)",
+  "function getVoteCounts() view returns (uint256[] counts)",
+  "function myVote(address voter) view returns (bool hasVoted, uint256 candidateId)",
+  "function castVote(uint256 candidateId)",
+];
+
 export function getTokenContract(runner: ethers.ContractRunner) {
   return new ethers.Contract(tokenInfo.tokenAddress, TOKEN_ABI, runner);
 }
 
 export function getVaultContract(runner: ethers.ContractRunner) {
   return new ethers.Contract(tokenInfo.vaultAddress, VAULT_ABI, runner);
+}
+
+export function getGovernanceVoteContract(runner: ethers.ContractRunner) {
+  return new ethers.Contract(tokenInfo.governanceVoteAddress, GOVERNANCE_VOTE_ABI, runner);
 }
