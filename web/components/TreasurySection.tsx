@@ -1,6 +1,7 @@
 import { tokenInfo } from "@/config/token";
 import { CopyAddressButton } from "./CopyAddressButton";
 import { BackingGrid } from "./BackingGrid";
+import { ReserveCoins } from "./ReserveCoins";
 import { FadeIn } from "./FadeIn";
 import { LiveTreasuryStats } from "./LiveTreasuryStats";
 import { RedeemPanel } from "./RedeemPanel";
@@ -39,8 +40,12 @@ export function TreasurySection({ locale }: { locale: Locale }) {
           <CopyAddressButton address={tokenInfo.vaultAddress} label={t.vaultContract} locale={locale} />
         </FadeIn>
 
+        <FadeIn delay={0.24} className="mt-8 flex justify-center">
+          <ReserveCoins />
+        </FadeIn>
+
         <FadeIn delay={0.28} className="mt-6 rounded-lg border border-white/10 bg-white/5 p-6">
-          <h3 className="text-sm uppercase tracking-widest text-rsvd-offwhite/40">{t.plannedReserveAssets}</h3>
+          <h3 className="text-sm uppercase tracking-widest text-rsvd-offwhite/40">{t.reserveAssets}</h3>
           <div className="mt-5">
             <BackingGrid locale={locale} />
           </div>

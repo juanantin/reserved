@@ -3,16 +3,23 @@
 import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { tokenInfo } from "@/config/token";
-import { getReadProvider, getTokenContract, getVaultContract, BNB_USD_PRICE_FEED, CHAINLINK_FEED_ABI } from "@/lib/contracts";
+import {
+  getReadProvider,
+  getTokenContract,
+  getVaultContract,
+  BNB_USD_PRICE_FEED,
+  CHAINLINK_FEED_ABI,
+  PANCAKE_V2_FACTORY,
+  USDT_ADDRESS,
+  PANCAKE_FACTORY_ABI,
+  PAIR_RESERVES_ABI,
+} from "@/lib/contracts";
 import { useWallet } from "@/lib/useWallet";
 import { Logo } from "./Logo";
 import { HistoricalValueChart } from "./HistoricalValueChart";
 import { dictionaries, type Locale } from "@/lib/i18n";
 
-const PAIR_ABI = [
-  "function getReserves() view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)",
-  "function token0() view returns (address)",
-];
+const PAIR_ABI = PAIR_RESERVES_ABI;
 
 type ReserveLine = { symbol: string; balance: string };
 type RedeemLine = { symbol: string; amount: string };
@@ -49,6 +56,8 @@ export function DashboardCard({ locale }: { locale: Locale }) {
   const [supply, setSupply] = useState<number | null>(null);
   const [treasuryBal, setTreasuryBal] = useState<number | null>(null);
   const [reserves, setReserves] = useState<ReserveLine[] | null>(null);
+  const [reserveValueUsd, setReserveValueUsd] = useState<number | null>(null);
+  const [reserveValueIncomplete, setReserveValueIncomplete] = useState(false);
   const [userBalance, setUserBalance] = useState<number | null>(null);
   const [redeemPreview, setRedeemPreview] = useState<RedeemLine[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -83,6 +92,54 @@ export function DashboardCard({ locale }: { locale: Locale }) {
             return { symbol, balance: ethers.formatUnits(balances[i], 18) };
           })
         );
+
+        // Total Reserve Value: prices each vault holding off its own USDT pair,
+        // discovered live via the PancakeSwap factory rather than a hardcoded address
+        // (see lib/contracts.ts). An asset with no such pair, or a pair with no real
+        // liquidity, just can't be priced yet — the total is marked "incomplete"
+        // rather than silently understated or guessed.
+        let reserveValue: number | null = null;
+        let reserveValuePartial = false;
+        if (tokens.length === 0) {
+          reserveValue = 0;
+        } else {
+          try {
+            const factory = new ethers.Contract(PANCAKE_V2_FACTORY, PANCAKE_FACTORY_ABI, provider);
+            let sum = 0;
+            let pricedCount = 0;
+            for (let i = 0; i < tokens.length; i++) {
+              const bal = Number(ethers.formatUnits(balances[i], 18));
+              if (bal <= 0) continue;
+              try {
+                const assetPairAddr: string = await factory.getPair(tokens[i], USDT_ADDRESS);
+                if (assetPairAddr === ethers.ZeroAddress) {
+                  reserveValuePartial = true;
+                  continue;
+                }
+                const assetPair = new ethers.Contract(assetPairAddr, PAIR_ABI, provider);
+                const [aReserve0, aReserve1]: [bigint, bigint] = await assetPair.getReserves();
+                const aToken0: string = await assetPair.token0();
+                const assetIsToken0 = aToken0.toLowerCase() === tokens[i].toLowerCase();
+                const assetReserve = assetIsToken0 ? aReserve0 : aReserve1;
+                const usdtReserve = assetIsToken0 ? aReserve1 : aReserve0;
+                if (assetReserve === BigInt(0)) {
+                  reserveValuePartial = true;
+                  continue;
+                }
+                const price = Number(ethers.formatUnits(usdtReserve, 18)) / Number(ethers.formatUnits(assetReserve, 18));
+                sum += price * bal;
+                pricedCount++;
+              } catch {
+                reserveValuePartial = true;
+              }
+            }
+            if (pricedCount > 0 || !reserveValuePartial) {
+              reserveValue = sum;
+            }
+          } catch {
+            // Factory read itself failed — leave reserveValue null (shows "—"/loading).
+          }
+        }
 
         let marketCap: number | null = null;
         if (tokenInfo.pairAddress) {
@@ -121,6 +178,8 @@ export function DashboardCard({ locale }: { locale: Locale }) {
           setReserves(lines.filter((l) => Number(l.balance) > 0));
           setMarketCapBnb(marketCap);
           setMarketCapUsd(marketCapInUsd);
+          setReserveValueUsd(reserveValue);
+          setReserveValueIncomplete(reserveValuePartial);
         }
       } catch {
         if (!cancelled) setFailed(true);
@@ -201,6 +260,20 @@ export function DashboardCard({ locale }: { locale: Locale }) {
           <div className="mt-1 truncate font-mono text-xs text-rsvd-offwhite/40">
             {marketCapBnb.toLocaleString(undefined, { maximumFractionDigits: 4 })} BNB
           </div>
+        )}
+      </div>
+
+      <div className="border-b border-white/10 px-6 py-5 text-center">
+        <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">{t.totalReserveValue}</div>
+        <div className="mt-1 truncate font-mono text-2xl font-bold text-rsvd-gold">
+          {reserveValueUsd !== null
+            ? `$${reserveValueUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+            : failed
+              ? "—"
+              : "..."}
+        </div>
+        {reserveValueUsd !== null && reserveValueIncomplete && (
+          <div className="mt-1 truncate text-[10px] text-rsvd-offwhite/40">{t.reserveValuePartial}</div>
         )}
       </div>
 

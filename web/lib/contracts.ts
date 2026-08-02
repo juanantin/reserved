@@ -49,6 +49,20 @@ export const CHAINLINK_FEED_ABI = [
   "function decimals() view returns (uint8)",
 ];
 
+// PancakeSwap V2 factory + USDT — used to price vault holdings for "Total Reserve
+// Value" (see DashboardCard) by discovering each reserve asset's own USDT pair live
+// on-chain via getPair(), rather than hardcoding per-asset pair addresses this project
+// has repeatedly found to be wrong/unconfirmed when checked for real (see
+// contracts/scripts/verify-launch-addresses.ts). An asset with no such pair simply
+// can't be priced yet — reflected in the UI as a partial/incomplete total, not faked.
+export const PANCAKE_V2_FACTORY = "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73";
+export const USDT_ADDRESS = "0x55d398326f99059fF775485246999027B3197955";
+export const PANCAKE_FACTORY_ABI = ["function getPair(address tokenA, address tokenB) view returns (address)"];
+export const PAIR_RESERVES_ABI = [
+  "function getReserves() view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)",
+  "function token0() view returns (address)",
+];
+
 // ReservedGovernanceVote — non-binding signaling only, never touches RSVD/the vault.
 export const GOVERNANCE_VOTE_ABI = [
   "function voteThreshold() view returns (uint256)",

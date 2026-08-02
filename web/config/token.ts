@@ -34,16 +34,19 @@ export const tokenInfo = {
   governanceVoteAddress: "",
 };
 
-// bStock tickers the keeper is expected to acquire per the brief. These are the
-// *planned* reserve assets, not a live holdings snapshot — the vault has not
-// acquired anything yet from this site's perspective. Starting allowlist, chosen
-// from Binance's current bStock catalog (which has grown well past its original 5 —
-// see "vote next" candidates below for names that don't have a bStock yet, e.g.
-// SpaceX, which is only teased/pending its own Nasdaq listing, not tradable).
-// Symbol/name pairs are cross-referenced via web search, not independently confirmed
-// on-chain from this build environment (see contracts/scripts/verify-launch-addresses.ts,
-// which found NVDAB itself has no PancakeSwap V2 liquidity yet) — re-verify before launch.
-export const plannedReserveAssets = [
+// bStock allowlist the keeper is authorized to acquire (see TreasuryConverter.sol's
+// setAllowedReserveAsset). The site displays these under "Reserved Assets" now that
+// it's serving a launched product, not a pre-launch mockup — but note the vault's
+// actual on-chain holdings (LiveTreasuryStats, DashboardCard) are read live and shown
+// separately; this list is the allowlist/target basket, not a claim that every asset
+// here is currently held. Chosen from Binance's current bStock catalog (which has
+// grown well past its original 5 — see "vote next" candidates below for names that
+// don't have a bStock yet, e.g. SpaceX, which is only teased/pending its own Nasdaq
+// listing, not tradable). Symbol/name pairs are cross-referenced via web search, not
+// independently confirmed on-chain from this build environment (see
+// contracts/scripts/verify-launch-addresses.ts, which found NVDAB itself has no
+// PancakeSwap V2 liquidity yet) — re-verify before launch.
+export const reserveAssets = [
   { symbol: "CRCLB", name: "Circle (bStock)" },
   { symbol: "NVDAB", name: "NVIDIA (bStock)" },
   { symbol: "SNDKB", name: "SanDisk (bStock)" },
