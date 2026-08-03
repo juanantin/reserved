@@ -35,7 +35,9 @@ export const dictionaries = {
       taglineLine1: "Real stocks. On-chain. Reserved.",
       ctaBuy: "Buy $RSVD",
       ctaViewTreasury: "View Treasury",
-      poweredByBinance: "Powered by Binance bStocks",
+      poweredByPrefix: "Powered by",
+      poweredByLink: "Binance bStocks",
+      poweredBySuffix: "",
     },
     floor: {
       eyebrow: "Verifiable Reserve",
@@ -154,6 +156,7 @@ export const dictionaries = {
         { title: "Built to last", description: "Long-term treasury, designed to compound value over time." },
         { title: "100% Reserved", description: "Vault assets 1:1 backed by tokenized stocks, verified via Binance Proof of Collateral." },
       ],
+      viewVaultOnChain: "View vault contract on BscScan",
     },
     governance: {
       title: "Governance",
@@ -244,7 +247,9 @@ export const dictionaries = {
       taglineLine1: "真实股票，链上运行，稳健守护。",
       ctaBuy: "购买 $RSVD",
       ctaViewTreasury: "查看资金库",
-      poweredByBinance: "由币安 bStocks 提供支持",
+      poweredByPrefix: "由",
+      poweredByLink: "币安 bStocks",
+      poweredBySuffix: "提供支持",
     },
     floor: {
       eyebrow: "可验证储备",
@@ -360,6 +365,7 @@ export const dictionaries = {
         { title: "为长期而建", description: "长期资金库，旨在随时间积累价值。" },
         { title: "100% 储备", description: "金库资产由代币化股票 1:1 支撑，经币安储备证明验证。" },
       ],
+      viewVaultOnChain: "在 BscScan 上查看金库合约",
     },
     governance: {
       title: "治理",
