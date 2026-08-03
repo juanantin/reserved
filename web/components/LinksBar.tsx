@@ -8,7 +8,17 @@ function shortAddr(addr: string) {
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 }
 
-function IconLink({ href, label, children }: { href: string; label: string; children: React.ReactNode }) {
+function IconLink({
+  href,
+  label,
+  gold,
+  children,
+}: {
+  href: string;
+  label: string;
+  gold?: boolean;
+  children: React.ReactNode;
+}) {
   if (!href) {
     return (
       <span
@@ -21,6 +31,9 @@ function IconLink({ href, label, children }: { href: string; label: string; chil
     );
   }
 
+  const goldClasses = "border-rsvd-gold/40 bg-rsvd-gold/10 text-rsvd-gold hover:border-rsvd-gold hover:bg-rsvd-gold/20";
+  const neutralClasses = "border-white/10 text-rsvd-offwhite/70 hover:border-rsvd-gold hover:text-rsvd-gold";
+
   return (
     <a
       href={href}
@@ -28,7 +41,7 @@ function IconLink({ href, label, children }: { href: string; label: string; chil
       rel="noopener noreferrer"
       aria-label={label}
       title={label}
-      className="flex h-9 w-9 items-center justify-center rounded-md border border-white/10 text-rsvd-offwhite/70 transition-colors hover:border-rsvd-gold hover:text-rsvd-gold focus-gold"
+      className={`flex h-9 w-9 items-center justify-center rounded-md border transition-colors focus-gold ${gold ? goldClasses : neutralClasses}`}
     >
       {children}
     </a>
@@ -41,10 +54,10 @@ export function LinksBar({ locale }: { locale: Locale }) {
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <IconLink href={tokenInfo.xUrl} label={tokenInfo.xUrl ? t.twitter : t.comingSoon(t.twitter)}>
+      <IconLink href={tokenInfo.xUrl} label={tokenInfo.xUrl ? t.twitter : t.comingSoon(t.twitter)} gold>
         <XLogo />
       </IconLink>
-      <IconLink href={tokenInfo.telegramUrl} label={tokenInfo.telegramUrl ? t.telegram : t.comingSoon(t.telegram)}>
+      <IconLink href={tokenInfo.telegramUrl} label={tokenInfo.telegramUrl ? t.telegram : t.comingSoon(t.telegram)} gold>
         <TelegramLogo />
       </IconLink>
       <IconLink href={tokenInfo.chartUrl} label={tokenInfo.chartUrl ? t.chart : t.comingSoon(t.chart)}>

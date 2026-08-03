@@ -7,7 +7,6 @@ import { TokenomicsSection } from "@/components/TokenomicsSection";
 import { TreasurySection } from "@/components/TreasurySection";
 import { TransparencySection } from "@/components/TransparencySection";
 import { GovernanceSection } from "@/components/GovernanceSection";
-import { FeatureStrip } from "@/components/FeatureStrip";
 import { Footer } from "@/components/Footer";
 
 const title = "Reserved (RSVD) — 真实股票，链上运行，稳健守护。";
@@ -33,7 +32,6 @@ export default function HomeZh() {
         <HowItWorksSection locale="zh" />
         <TransparencySection locale="zh" />
         <GovernanceSection locale="zh" />
-        <FeatureStrip locale="zh" />
       </main>
       <Footer locale="zh" />
     </>

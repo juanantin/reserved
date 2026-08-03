@@ -7,7 +7,6 @@ import { TokenomicsSection } from "@/components/TokenomicsSection";
 import { TreasurySection } from "@/components/TreasurySection";
 import { TransparencySection } from "@/components/TransparencySection";
 import { GovernanceSection } from "@/components/GovernanceSection";
-import { FeatureStrip } from "@/components/FeatureStrip";
 import { Footer } from "@/components/Footer";
 
 export const metadata: Metadata = {
@@ -26,7 +25,6 @@ export default function Home() {
         <HowItWorksSection locale="en" />
         <TransparencySection locale="en" />
         <GovernanceSection locale="en" />
-        <FeatureStrip locale="en" />
       </main>
       <Footer locale="en" />
     </>

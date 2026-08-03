@@ -26,7 +26,7 @@ function SocialLinks({ locale, className }: { locale: Locale; className?: string
           rel="noopener noreferrer"
           aria-label={t.twitter}
           title={t.twitter}
-          className="flex h-9 w-9 items-center justify-center rounded-md border border-white/10 text-rsvd-offwhite/70 transition-colors hover:border-rsvd-gold hover:text-rsvd-gold focus-gold"
+          className="flex h-9 w-9 items-center justify-center rounded-md border border-rsvd-gold/40 bg-rsvd-gold/10 text-rsvd-gold transition-colors hover:border-rsvd-gold hover:bg-rsvd-gold/20 focus-gold"
         >
           <XLogo />
         </a>
@@ -38,7 +38,7 @@ function SocialLinks({ locale, className }: { locale: Locale; className?: string
           rel="noopener noreferrer"
           aria-label={t.telegram}
           title={t.telegram}
-          className="flex h-9 w-9 items-center justify-center rounded-md border border-white/10 text-rsvd-offwhite/70 transition-colors hover:border-rsvd-gold hover:text-rsvd-gold focus-gold"
+          className="flex h-9 w-9 items-center justify-center rounded-md border border-rsvd-gold/40 bg-rsvd-gold/10 text-rsvd-gold transition-colors hover:border-rsvd-gold hover:bg-rsvd-gold/20 focus-gold"
         >
           <TelegramLogo />
         </a>
@@ -130,7 +130,7 @@ export function Navbar({ locale, langHrefOverride }: { locale: Locale; langHrefO
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <a href={locale === "zh" ? "/zh" : "/"} className="flex items-center gap-2 focus-gold" onClick={() => setOpen(false)}>
           <Logo size={32} />
-          <span className="text-lg font-semibold tracking-wide">RESERVED</span>
+          <span className="text-base font-semibold tracking-wide">RESERVED</span>
         </a>
 
         <ul className="hidden items-center gap-8 text-sm text-rsvd-offwhite/80 md:flex">

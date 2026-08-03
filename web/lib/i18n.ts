@@ -172,12 +172,6 @@ export const dictionaries = {
       cardBody:
         "RSVD holders who connect a wallet holding at least 100,000 RSVD can vote on which blue-chip stock the reserve should prioritize once Binance issues a bStock for it — see \"Vote the next\" in the Treasury section above. It's non-binding signaling, on-chain and verifiable, not a claim that the treasury is fully DAO-governed: the keeper still decides what actually gets bought.",
     },
-    featureStrip: [
-      { title: "Transparent", body: "Vault holdings on-chain, always checkable." },
-      { title: "Diversified", body: "Exposure across multiple tokenized equities." },
-      { title: "Long-term", body: "Built for compounding value over time." },
-      { title: "Basket Governance", body: "Holders vote on future acquisitions." },
-    ],
     footer: {
       disclaimer: (ticker: string) =>
         `${ticker} represents a claim on a reserve of tokenized-equity exposure; treat it accordingly and do your own research. Nothing on this site is an offer to sell securities. This page is informational only, not financial or legal advice.`,
@@ -388,12 +382,6 @@ export const dictionaries = {
       cardBody:
         "连接钱包且持有至少 100,000 RSVD 的持有者，可以为币安尚未发行 bStock 的蓝筹股投票，表达储备下一步应优先收购哪一支 — 见上方资金库板块的“为下一支投票”。这是链上可验证的非约束性信号，并不代表资金库已完全由 DAO 治理：实际购入决策仍由 keeper 执行。",
     },
-    featureStrip: [
-      { title: "透明", body: "金库持仓上链，随时可查。" },
-      { title: "多元化", body: "分散配置多支代币化股票。" },
-      { title: "长期主义", body: "为长期复利增值而设计。" },
-      { title: "资产篮治理", body: "持有者投票决定未来购入标的。" },
-    ],
     footer: {
       disclaimer: (ticker: string) =>
         `${ticker} 代表对一篮子代币化股票敞口储备的权益凭证；请据此自行判断并独立研究。本网站上的任何内容均不构成证券要约。本页面仅供参考，不构成财务或法律建议。`,
