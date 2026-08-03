@@ -1,17 +1,24 @@
+import { ArrowUpRight } from "lucide-react";
 import { tokenInfo } from "@/config/token";
 import { FadeIn } from "./FadeIn";
 import { BNBLogo } from "./icons/BNBLogo";
 import { BlockchainBackground } from "./BlockchainBackground";
 import { dictionaries, type Locale } from "@/lib/i18n";
 
+function shortAddr(addr: string) {
+  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+}
+
 export function TokenomicsSection({ locale }: { locale: Locale }) {
   const t = dictionaries[locale].tokenomics;
+  const bscscanUrl = tokenInfo.tokenAddress ? `${tokenInfo.explorerBaseUrl}${tokenInfo.tokenAddress}` : "";
 
   const tokenomics = [
     { key: "ticker", label: t.labels.ticker, value: tokenInfo.ticker },
     { key: "chain", label: t.labels.chain, value: tokenInfo.chain },
     { key: "fixedSupply", label: t.labels.fixedSupply, value: `${tokenInfo.fixedSupply} ${tokenInfo.ticker}` },
     { key: "buyTax", label: t.labels.buyTax, value: `${tokenInfo.taxBps / 100}%` },
+    { key: "contract", label: t.labels.contract, value: bscscanUrl ? shortAddr(tokenInfo.tokenAddress) : "—" },
   ];
 
   return (
@@ -29,16 +36,33 @@ export function TokenomicsSection({ locale }: { locale: Locale }) {
           </p>
         </FadeIn>
 
-        <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
-          {tokenomics.map((fact, i) => (
-            <FadeIn key={fact.key} delay={i * 0.06} className="rounded-lg border border-white/10 bg-white/5 p-4">
-              <div className="text-xs uppercase tracking-widest text-rsvd-offwhite/40">{fact.label}</div>
-              <div className="mt-1 flex items-center gap-1.5 text-lg font-semibold text-rsvd-gold">
-                {fact.key === "chain" && <BNBLogo className="h-4 w-4 shrink-0" />}
-                {fact.value}
-              </div>
-            </FadeIn>
-          ))}
+        <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+          {tokenomics.map((fact, i) =>
+            fact.key === "contract" && bscscanUrl ? (
+              <FadeIn key={fact.key} delay={i * 0.06}>
+                <a
+                  href={bscscanUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block rounded-lg border border-white/10 bg-white/5 p-4 transition-colors hover:border-rsvd-gold focus-gold"
+                >
+                  <div className="text-xs uppercase tracking-widest text-rsvd-offwhite/40">{fact.label}</div>
+                  <div className="mt-1 flex items-center gap-1 font-mono text-lg font-semibold text-rsvd-gold">
+                    {fact.value}
+                    <ArrowUpRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  </div>
+                </a>
+              </FadeIn>
+            ) : (
+              <FadeIn key={fact.key} delay={i * 0.06} className="rounded-lg border border-white/10 bg-white/5 p-4">
+                <div className="text-xs uppercase tracking-widest text-rsvd-offwhite/40">{fact.label}</div>
+                <div className="mt-1 flex items-center gap-1.5 text-lg font-semibold text-rsvd-gold">
+                  {fact.key === "chain" && <BNBLogo className="h-4 w-4 shrink-0" />}
+                  {fact.value}
+                </div>
+              </FadeIn>
+            )
+          )}
         </div>
       </div>
     </section>

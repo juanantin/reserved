@@ -98,7 +98,7 @@ export const dictionaries = {
       descriptionPrefix: "Fixed supply, taxed on every buy and sell. See",
       descriptionLink: "Treasury",
       descriptionSuffix: "for the planned reserve composition.",
-      labels: { ticker: "Ticker", chain: "Chain", fixedSupply: "Fixed supply", buyTax: "Buy/sell tax" },
+      labels: { ticker: "Ticker", chain: "Chain", fixedSupply: "Fixed supply", buyTax: "Buy/sell tax", contract: "Contract" },
     },
     treasury: {
       title: "Treasury",
@@ -180,8 +180,8 @@ export const dictionaries = {
     ],
     footer: {
       disclaimer: (ticker: string) =>
-        `${ticker} is not deployed to mainnet. Nothing on this site is an offer to sell securities, and no reserve assets have been acquired yet. RSVD represents a claim on a reserve of tokenized-equity exposure; treat it accordingly and do your own research. This page is informational only, not financial or legal advice.`,
-      copyright: (year: number) => `© ${year} Reserved. All figures on this site are illustrative until launch.`,
+        `${ticker} represents a claim on a reserve of tokenized-equity exposure; treat it accordingly and do your own research. Nothing on this site is an offer to sell securities. This page is informational only, not financial or legal advice.`,
+      copyright: (year: number) => `© ${year} Reserved.`,
     },
     linksBar: {
       twitter: "X (Twitter)",
@@ -317,7 +317,7 @@ export const dictionaries = {
       descriptionPrefix: "固定总量，每笔买卖均征税。查看",
       descriptionLink: "资金库",
       descriptionSuffix: "了解计划中的储备构成。",
-      labels: { ticker: "代币代码", chain: "所属链", fixedSupply: "固定总量", buyTax: "买卖税率" },
+      labels: { ticker: "代币代码", chain: "所属链", fixedSupply: "固定总量", buyTax: "买卖税率", contract: "合约地址" },
     },
     treasury: {
       title: "资金库",
@@ -396,8 +396,8 @@ export const dictionaries = {
     ],
     footer: {
       disclaimer: (ticker: string) =>
-        `${ticker} 尚未部署至主网。本网站上的任何内容均不构成证券要约，目前也尚未收购任何储备资产。RSVD 代表对一篮子代币化股票敞口储备的权益凭证；请据此自行判断并独立研究。本页面仅供参考，不构成财务或法律建议。`,
-      copyright: (year: number) => `© ${year} Reserved。本网站所有数据在正式上线前均为示例性质。`,
+        `${ticker} 代表对一篮子代币化股票敞口储备的权益凭证；请据此自行判断并独立研究。本网站上的任何内容均不构成证券要约。本页面仅供参考，不构成财务或法律建议。`,
+      copyright: (year: number) => `© ${year} Reserved。`,
     },
     linksBar: {
       twitter: "X（推特）",

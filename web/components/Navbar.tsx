@@ -7,9 +7,44 @@ import { tokenInfo } from "@/config/token";
 import { useWallet } from "@/lib/useWallet";
 import { dictionaries, type Locale } from "@/lib/i18n";
 import { Logo } from "./Logo";
+import { XLogo } from "./icons/XLogo";
+import { TelegramLogo } from "./icons/TelegramLogo";
 
 function shortAddr(addr: string) {
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+}
+
+function SocialLinks({ locale, className }: { locale: Locale; className?: string }) {
+  const t = dictionaries[locale].linksBar;
+  if (!tokenInfo.xUrl && !tokenInfo.telegramUrl) return null;
+  return (
+    <div className={`flex items-center gap-2 ${className ?? ""}`}>
+      {tokenInfo.xUrl && (
+        <a
+          href={tokenInfo.xUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={t.twitter}
+          title={t.twitter}
+          className="flex h-9 w-9 items-center justify-center rounded-md border border-white/10 text-rsvd-offwhite/70 transition-colors hover:border-rsvd-gold hover:text-rsvd-gold focus-gold"
+        >
+          <XLogo />
+        </a>
+      )}
+      {tokenInfo.telegramUrl && (
+        <a
+          href={tokenInfo.telegramUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={t.telegram}
+          title={t.telegram}
+          className="flex h-9 w-9 items-center justify-center rounded-md border border-white/10 text-rsvd-offwhite/70 transition-colors hover:border-rsvd-gold hover:text-rsvd-gold focus-gold"
+        >
+          <TelegramLogo />
+        </a>
+      )}
+    </div>
+  );
 }
 
 // navLinks entries are either same-page anchors ("#treasury") or absolute paths
@@ -109,6 +144,7 @@ export function Navbar({ locale, langHrefOverride }: { locale: Locale; langHrefO
         </ul>
 
         <div className="hidden items-center gap-3 md:flex">
+          <SocialLinks locale={locale} />
           <LangSwitcher locale={locale} hrefOverride={langHrefOverride} />
           <WalletButton locale={locale} />
         </div>
@@ -138,6 +174,7 @@ export function Navbar({ locale, langHrefOverride }: { locale: Locale; langHrefO
           <div className="mt-5 flex flex-col gap-3">
             <WalletButton locale={locale} className="block w-full text-center" />
             <LangSwitcher locale={locale} className="block w-full text-center" hrefOverride={langHrefOverride} />
+            <SocialLinks locale={locale} className="justify-center pt-1" />
           </div>
         </nav>
       )}

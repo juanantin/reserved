@@ -1,9 +1,12 @@
-import { LineChart, Search } from "lucide-react";
+import { LineChart, Search, ArrowUpRight } from "lucide-react";
 import { tokenInfo } from "@/config/token";
 import { XLogo } from "./icons/XLogo";
 import { TelegramLogo } from "./icons/TelegramLogo";
-import { CopyAddressButton } from "./CopyAddressButton";
 import { dictionaries, type Locale } from "@/lib/i18n";
+
+function shortAddr(addr: string) {
+  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+}
 
 function IconLink({ href, label, children }: { href: string; label: string; children: React.ReactNode }) {
   if (!href) {
@@ -50,9 +53,25 @@ export function LinksBar({ locale }: { locale: Locale }) {
       <IconLink href={bscscanUrl} label={bscscanUrl ? t.bscscan : t.comingSoon(t.bscscan)}>
         <Search className="h-4 w-4" />
       </IconLink>
-      <div className="w-52">
-        <CopyAddressButton address={tokenInfo.tokenAddress} label={t.contract} locale={locale} />
-      </div>
+      {tokenInfo.tokenAddress ? (
+        <a
+          href={bscscanUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex w-52 items-center justify-between rounded-md border border-rsvd-gold/30 bg-rsvd-gold/5 px-4 py-3 text-left transition-colors hover:border-rsvd-gold focus-gold"
+        >
+          <span className="text-sm text-rsvd-offwhite/60">{t.contract}</span>
+          <span className="flex items-center gap-1 font-mono text-sm text-rsvd-gold">
+            {shortAddr(tokenInfo.tokenAddress)}
+            <ArrowUpRight className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          </span>
+        </a>
+      ) : (
+        <div className="flex w-52 items-center justify-between rounded-md border border-white/10 bg-white/5 px-4 py-3">
+          <span className="text-sm text-rsvd-offwhite/60">{t.contract}</span>
+          <span className="text-sm text-rsvd-offwhite/40">{dictionaries[locale].copyAddressButton.comingSoon}</span>
+        </div>
+      )}
     </div>
   );
 }
