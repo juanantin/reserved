@@ -64,7 +64,9 @@ export const dictionaries = {
     },
     howItWorks: {
       title: "How It Works",
-      headline: "The tax buys real bStocks. They never leave.",
+      headlinePrefix: "The tax buys real",
+      headlineGold: "bStocks",
+      headlineSuffix: ". They never leave.",
       description:
         "Three moving parts, all on-chain. Nothing here has run yet — this is the mechanism, not a transaction log. Value only ever accrues to the vault: supply shrinks on redeem and never re-mints, so backing per token has nowhere to go but up.",
       highlights: [
@@ -276,7 +278,9 @@ export const dictionaries = {
     },
     howItWorks: {
       title: "运作机制",
-      headline: "税费买入真实 bStocks，资产永不离开。",
+      headlinePrefix: "税费买入真实",
+      headlineGold: "bStocks",
+      headlineSuffix: "，资产永不离开。",
       description:
         "三个环节，全部在链上完成。目前尚未发生任何实际交易 — 这里展示的是机制本身，而非交易记录。价值只会不断累积进金库：赎回会使总量减少且永不增发，因此单币背后的储备只会走高，不会走低。",
       highlights: [

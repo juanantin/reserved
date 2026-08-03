@@ -1,5 +1,6 @@
 import { FadeIn } from "./FadeIn";
 import { ReserveValueLine } from "./ReserveValueLine";
+import { BlockchainBackground } from "./BlockchainBackground";
 import { dictionaries, type Locale } from "@/lib/i18n";
 
 // Explains the redeem-driven price floor without the "can't go to zero" framing —
@@ -15,9 +16,10 @@ export function FloorSection({ locale }: { locale: Locale }) {
   const t = dictionaries[locale].floor;
 
   return (
-    <section className="border-t border-white/10 px-6 py-20">
+    <section className="relative overflow-hidden border-t border-white/10 px-6 py-20">
+      <BlockchainBackground className="pointer-events-none absolute inset-0 h-full w-full opacity-40" />
       <div
-        className="mx-auto max-w-4xl rounded-2xl border border-rsvd-gold/20 px-6 py-14 sm:px-12"
+        className="relative mx-auto max-w-4xl rounded-2xl border border-rsvd-gold/20 px-6 py-14 sm:px-12"
         style={{ background: "radial-gradient(circle at 20% 15%, rgba(212,175,55,0.1), transparent 65%)" }}
       >
         <FadeIn>

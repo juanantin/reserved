@@ -1,6 +1,7 @@
 import { tokenInfo } from "@/config/token";
 import { FadeIn } from "./FadeIn";
 import { BNBLogo } from "./icons/BNBLogo";
+import { BlockchainBackground } from "./BlockchainBackground";
 import { dictionaries, type Locale } from "@/lib/i18n";
 
 export function TokenomicsSection({ locale }: { locale: Locale }) {
@@ -14,8 +15,9 @@ export function TokenomicsSection({ locale }: { locale: Locale }) {
   ];
 
   return (
-    <section id="tokenomics" className="border-t border-white/10 px-6 py-20">
-      <div className="mx-auto max-w-6xl">
+    <section id="tokenomics" className="relative overflow-hidden border-t border-white/10 px-6 py-20">
+      <BlockchainBackground className="pointer-events-none absolute inset-0 h-full w-full opacity-40" />
+      <div className="relative mx-auto max-w-6xl">
         <FadeIn>
           <h2 className="text-3xl font-bold md:text-4xl">{t.title}</h2>
           <p className="mt-3 max-w-2xl text-rsvd-offwhite/70">

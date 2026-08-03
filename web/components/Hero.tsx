@@ -36,21 +36,6 @@ export function Hero({ locale }: { locale: Locale }) {
           </FadeIn>
 
           <FadeIn delay={0.24}>
-            <div className="flex flex-wrap items-center gap-2 text-lg font-medium tracking-wide text-rsvd-offwhite/50">
-              <span>{t.poweredByPrefix}</span>
-              <a
-                href="https://www.binance.com/en/bstocks-landing"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-full border border-rsvd-gold/40 px-3 py-1 text-sm font-semibold text-rsvd-gold transition-colors hover:border-rsvd-gold hover:bg-rsvd-gold/10 focus-gold"
-              >
-                {t.poweredByLink}
-              </a>
-              {t.poweredBySuffix && <span>{t.poweredBySuffix}</span>}
-            </div>
-          </FadeIn>
-
-          <FadeIn delay={0.3}>
             <div className="flex flex-wrap gap-4 pt-4">
               <a
                 href={tokenInfo.buyUrl}
@@ -66,6 +51,21 @@ export function Hero({ locale }: { locale: Locale }) {
               >
                 {t.ctaViewTreasury}
               </a>
+            </div>
+          </FadeIn>
+
+          <FadeIn delay={0.3}>
+            <div className="flex flex-wrap items-center gap-2 pt-2 text-lg font-medium tracking-wide text-rsvd-offwhite/50">
+              <span>{t.poweredByPrefix}</span>
+              <a
+                href="https://www.binance.com/en/bstocks-landing"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full border border-rsvd-gold/40 px-3 py-1 text-sm font-semibold text-rsvd-gold transition-colors hover:border-rsvd-gold hover:bg-rsvd-gold/10 focus-gold"
+              >
+                {t.poweredByLink}
+              </a>
+              {t.poweredBySuffix && <span>{t.poweredBySuffix}</span>}
             </div>
           </FadeIn>
         </div>

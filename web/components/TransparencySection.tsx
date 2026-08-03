@@ -1,6 +1,7 @@
 import { ShieldCheck, Lock, Landmark, Vault, ArrowUpRight } from "lucide-react";
 import { tokenInfo } from "@/config/token";
 import { FadeIn } from "./FadeIn";
+import { BlockchainBackground } from "./BlockchainBackground";
 import { dictionaries, type Locale } from "@/lib/i18n";
 
 const icons = [ShieldCheck, Lock, Landmark, Vault];
@@ -16,8 +17,9 @@ export function TransparencySection({ locale }: { locale: Locale }) {
   const vaultExplorerUrl = tokenInfo.vaultAddress ? `${tokenInfo.explorerBaseUrl}${tokenInfo.vaultAddress}` : "";
 
   return (
-    <section id="transparency" className="border-t border-white/10 px-6 py-20">
-      <div className="mx-auto max-w-6xl">
+    <section id="transparency" className="relative overflow-hidden border-t border-white/10 px-6 py-20">
+      <BlockchainBackground className="pointer-events-none absolute inset-0 h-full w-full opacity-40" />
+      <div className="relative mx-auto max-w-6xl">
         <FadeIn>
           <h2 className="text-3xl font-bold md:text-4xl">{t.title}</h2>
           <p className="mt-3 max-w-2xl text-rsvd-offwhite/70">{t.description}</p>
