@@ -1,4 +1,4 @@
-import { LineChart, Search, ArrowUpRight } from "lucide-react";
+import { LineChart, ArrowUpRight } from "lucide-react";
 import { tokenInfo } from "@/config/token";
 import { XLogo } from "./icons/XLogo";
 import { TelegramLogo } from "./icons/TelegramLogo";
@@ -62,9 +62,6 @@ export function LinksBar({ locale }: { locale: Locale }) {
       </IconLink>
       <IconLink href={tokenInfo.chartUrl} label={tokenInfo.chartUrl ? t.chart : t.comingSoon(t.chart)}>
         <LineChart className="h-4 w-4" />
-      </IconLink>
-      <IconLink href={bscscanUrl} label={bscscanUrl ? t.bscscan : t.comingSoon(t.bscscan)}>
-        <Search className="h-4 w-4" />
       </IconLink>
       {tokenInfo.tokenAddress ? (
         <a
