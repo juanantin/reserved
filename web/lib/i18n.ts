@@ -157,8 +157,13 @@ export const dictionaries = {
         },
         { title: "Built to last", description: "Long-term treasury, designed to compound value over time." },
         { title: "100% Reserved", description: "Vault assets 1:1 backed by tokenized stocks, verified via Binance Proof of Collateral." },
+        {
+          title: "No one can withdraw it",
+          description: "Neither the owner nor the keeper bot has a withdraw function for vault or treasury assets — it doesn't exist in the contracts. The only way reserve assets ever leave is redeem(), triggered by a holder burning their own RSVD.",
+        },
       ],
       viewVaultOnChain: "View vault contract on BscScan",
+      viewSecurityDocs: "Read the security details",
     },
     governance: {
       title: "Governance",
@@ -368,8 +373,13 @@ export const dictionaries = {
         { title: "可验证储备", description: "金库持仓可逐块在链上核实。底层股票托管情况通过币安每日储备证明进行追踪。" },
         { title: "为长期而建", description: "长期资金库，旨在随时间积累价值。" },
         { title: "100% 储备", description: "金库资产由代币化股票 1:1 支撑，经币安储备证明验证。" },
+        {
+          title: "没有人能提走它",
+          description: "无论是所有者还是 Keeper 机器人，都没有提取金库或资金库合约资产的函数 — 合约中根本不存在这样的功能。储备资产离开的唯一途径是 redeem()，由持有者主动销毁自己的 RSVD 触发。",
+        },
       ],
       viewVaultOnChain: "在 BscScan 上查看金库合约",
+      viewSecurityDocs: "查看安全性详情",
     },
     governance: {
       title: "治理",
