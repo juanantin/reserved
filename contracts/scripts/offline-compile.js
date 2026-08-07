@@ -19,6 +19,7 @@ const targets = [
   "TreasuryConverter.sol",
   "TreasuryConverterV2.sol",
   "ReservedGovernanceVote.sol",
+  "RfqProbe.sol",
   "mocks/MockERC20.sol",
   "mocks/MockERC20CustomDecimals.sol",
   "mocks/MockRevertingERC20.sol",

@@ -23,6 +23,7 @@
     "deploy:treasury-converter-v2:mainnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-treasury-converter-v2.ts --network bscMainnet --no-compile",
     "deploy:governance-vote:testnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-governance-vote.ts --network bscTestnet --no-compile",
     "deploy:governance-vote:mainnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-governance-vote.ts --network bscMainnet --no-compile",
+    "rfq-probe:mainnet": "node scripts/offline-compile.js && hardhat run scripts/rfq-probe.ts --network bscMainnet --no-compile",
     "check:mainnet": "node scripts/offline-compile.js && hardhat run scripts/mainnet-check.ts --network bscMainnet --no-compile",
     "verify:standard-json": "node scripts/verify-standard-json.js",
     "verify:launch-addresses:mainnet": "node scripts/offline-compile.js && hardhat run scripts/verify-launch-addresses.ts --network bscMainnet --no-compile"
