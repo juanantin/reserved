@@ -17,6 +17,7 @@ const targets = [
   "ReservedToken.sol",
   "ReservedVault.sol",
   "TreasuryConverter.sol",
+  "TreasuryConverterV2.sol",
   "ReservedGovernanceVote.sol",
   "mocks/MockERC20.sol",
   "mocks/MockERC20CustomDecimals.sol",
@@ -24,6 +25,7 @@ const targets = [
   "mocks/MockChainlinkFeed.sol",
   "mocks/MockUniswapV2Pair.sol",
   "mocks/MockUniswapV2Router.sol",
+  "mocks/MockSwapTarget.sol",
   "vendor/TimelockController.sol",
 ];
 
