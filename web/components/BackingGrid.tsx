@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { HelpCircle } from "lucide-react";
-import { reserveAssets } from "@/config/token";
+import { reserveAssets, tokenInfo } from "@/config/token";
 import { FadeIn } from "./FadeIn";
 import { VoteNextPanel } from "./VoteNextPanel";
 import { dictionaries, type Locale } from "@/lib/i18n";
@@ -31,13 +31,18 @@ export function BackingGrid({ locale }: { locale: Locale }) {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {reserveAssets.map((asset, i) => (
           <FadeIn key={asset.symbol} delay={i * 0.05}>
-            <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 p-4">
+            <a
+              href={`${tokenInfo.explorerBaseUrl}${asset.address}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 p-4 transition-colors hover:border-rsvd-gold focus-gold"
+            >
               <TickerBadge symbol={asset.symbol} />
               <div className="min-w-0">
                 <div className="truncate text-sm font-semibold">{asset.symbol}</div>
                 <div className="truncate text-xs text-rsvd-offwhite/50">{asset.name}</div>
               </div>
-            </div>
+            </a>
           </FadeIn>
         ))}
 

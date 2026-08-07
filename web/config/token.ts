@@ -42,14 +42,19 @@ export const tokenInfo = {
 // here is currently held. Chosen from Binance's current bStock catalog (which has
 // grown well past its original 5 — see "vote next" candidates below for names that
 // don't have a bStock yet, e.g. SpaceX, which is only teased/pending its own Nasdaq
-// listing, not tradable). Symbol/name pairs are cross-referenced via web search, not
-// independently confirmed on-chain from this build environment (see
-// contracts/scripts/verify-launch-addresses.ts, which found NVDAB itself has no
-// PancakeSwap V2 liquidity yet) — re-verify before launch.
+// listing, not tradable).
+//
+// Addresses below ARE independently confirmed: verify-launch-addresses.ts matched each
+// one's on-chain name()/symbol()/decimals() against real BSC mainnet, and every one has
+// since been round-trip traded for real (small manual buys/sells on PancakeSwap). What's
+// still unconfirmed is *how* to acquire them programmatically — they trade via a signed
+// RFQ/quote mechanism (settling against what BscScan tags as a BTech "Native: Vault"),
+// not a plain PancakeSwap V2/V3 pool TreasuryConverter.sol currently knows how to read a
+// price floor from. See contracts/README.md's Security section once that's written up.
 export const reserveAssets = [
-  { symbol: "CRCLB", name: "Circle (bStock)" },
-  { symbol: "NVDAB", name: "NVIDIA (bStock)" },
-  { symbol: "SNDKB", name: "SanDisk (bStock)" },
-  { symbol: "MUB", name: "Micron (bStock)" },
-  { symbol: "AMDB", name: "AMD (bStock)" },
+  { symbol: "CRCLB", name: "Circle (bStock)", address: "0x80f3d493ebce97e343c53d29a137942416b4ffc0" },
+  { symbol: "NVDAB", name: "NVIDIA (bStock)", address: "0x02fca66c1d1afb4e2a7884261eb00f63598a7436" },
+  { symbol: "SNDKB", name: "SanDisk (bStock)", address: "0x3ee4df61bd4f867e349beae8bfe07bc31b4850fb" },
+  { symbol: "MUB", name: "Micron (bStock)", address: "0xcdf2f3e0fa43c47a6662a91c9e4a7c5f69762699" },
+  { symbol: "AMDB", name: "AMD (bStock)", address: "0x75fd4cf6f8392e41e70391d60c90c0d5211603a1" },
 ];
