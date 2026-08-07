@@ -656,88 +656,83 @@ describe("TreasuryConverterV2", function () {
     });
   });
 
-  describe("migration escape hatch", function () {
-    it("refuses to schedule a migration to an EOA", async function () {
-      const { converter, owner, other } = await deploySystem();
-      await expect(converter.connect(owner).scheduleMigration(other.address)).to.be.revertedWithCustomError(
-        converter,
-        "NotAContract"
-      );
-    });
+  // The migration escape hatch that briefly lived here was removed: stranding is instead
+  // solved by wrapping stranded BNB into the vault as backing, which costs no trust. That
+  // makes this path the safety net, so it gets real tests rather than a comment.
+  describe("stranded-funds recovery (wrap BNB into the vault)", function () {
+    async function armWrapRecovery(ctx) {
+      const { converter, owner, bnbFeedAddress, converterAddress } = ctx;
+      const WBNB = await ethers.getContractFactory("MockWBNB");
+      const wbnbToken = await WBNB.deploy();
+      await wbnbToken.waitForDeployment();
+      const wbnbTokenAddress = await wbnbToken.getAddress();
 
-    it("refuses to execute before the delay has elapsed", async function () {
-      const { converter, owner, swapTargetAddress } = await deploySystem();
-      await converter.connect(owner).scheduleMigration(swapTargetAddress);
-      await expect(converter.connect(owner).executeMigration([])).to.be.revertedWithCustomError(
-        converter,
-        "MigrationNotReady"
-      );
-    });
+      await converter.connect(owner).setAllowedReserveAsset(wbnbTokenAddress, true);
+      await converter.connect(owner).setAllowedTarget(wbnbTokenAddress, true);
+      await converter.connect(owner).setMaxSpendPerTx(ethers.ZeroAddress, ethers.parseEther("100"));
+      await converter.connect(owner).setAssetUsdFeed(ethers.ZeroAddress, bnbFeedAddress);
+      // WBNB is BNB — same feed, same price, so the oracle floor is satisfied by a 1:1 mint.
+      await converter.connect(owner).setAssetUsdFeed(wbnbTokenAddress, bnbFeedAddress);
+      expect(converterAddress).to.be.a("string");
+      return { wbnbToken, wbnbTokenAddress };
+    }
 
-    it("refuses to execute with nothing scheduled", async function () {
-      const { converter, owner } = await deploySystem();
-      await expect(converter.connect(owner).executeMigration([])).to.be.revertedWithCustomError(
-        converter,
-        "NoMigrationScheduled"
-      );
-    });
-
-    it("lets the owner cancel a scheduled migration", async function () {
-      const { converter, owner, swapTargetAddress } = await deploySystem();
-      await converter.connect(owner).scheduleMigration(swapTargetAddress);
-      await converter.connect(owner).cancelMigration();
-      expect(await converter.pendingMigrationTarget()).to.equal(ethers.ZeroAddress);
-      await expect(converter.connect(owner).executeMigration([])).to.be.revertedWithCustomError(
-        converter,
-        "NoMigrationScheduled"
-      );
-    });
-
-    it("moves BNB and tokens to the successor contract after the delay", async function () {
+    it("wraps stranded BNB and deposits it into the vault as backing", async function () {
       const ctx = await deploySystem();
-      const { converter, owner, usdt, usdtAddress, swapTargetAddress, converterAddress } = ctx;
+      const { converter, owner, keeper, vaultAddress, converterAddress } = ctx;
+      const { wbnbToken, wbnbTokenAddress } = await armWrapRecovery(ctx);
 
-      await owner.sendTransaction({ to: converterAddress, value: ethers.parseEther("3") });
-      await usdt.mint(converterAddress, ethers.parseUnits("500", 18));
+      const stranded = ethers.parseEther("3");
+      await owner.sendTransaction({ to: converterAddress, value: stranded });
 
-      await converter.connect(owner).scheduleMigration(swapTargetAddress);
-      await ethers.provider.send("evm_increaseTime", [7 * ONE_DAY + 1]);
-      await ethers.provider.send("evm_mine", []);
+      // WBNB.deposit() — the exact selector documented in the contract header.
+      await converter
+        .connect(keeper)
+        .acquireReserveAsset(ethers.ZeroAddress, stranded, wbnbTokenAddress, "0xd0e30db0", wbnbTokenAddress, stranded);
 
-      const bnbBefore = await ethers.provider.getBalance(swapTargetAddress);
-      await expect(converter.connect(owner).executeMigration([usdtAddress])).to.emit(converter, "MigrationExecuted");
-
-      expect(await ethers.provider.getBalance(swapTargetAddress)).to.equal(bnbBefore + ethers.parseEther("3"));
-      expect(await usdt.balanceOf(swapTargetAddress)).to.equal(ethers.parseUnits("500", 18));
+      expect(await wbnbToken.balanceOf(vaultAddress)).to.equal(stranded);
       expect(await ethers.provider.getBalance(converterAddress)).to.equal(0n);
+      expect(await wbnbToken.balanceOf(converterAddress)).to.equal(0n);
     });
 
-    it("clears the schedule after executing, so it cannot be replayed", async function () {
-      const { converter, owner, swapTargetAddress } = await deploySystem();
-      await converter.connect(owner).scheduleMigration(swapTargetAddress);
-      await ethers.provider.send("evm_increaseTime", [7 * ONE_DAY + 1]);
-      await ethers.provider.send("evm_mine", []);
-      await converter.connect(owner).executeMigration([]);
-      await expect(converter.connect(owner).executeMigration([])).to.be.revertedWithCustomError(
-        converter,
-        "NoMigrationScheduled"
-      );
+    it("registers the wrapped BNB as a redeemable reserve asset on the vault", async function () {
+      const ctx = await deploySystem();
+      const { converter, vault, owner, keeper, converterAddress } = ctx;
+      const { wbnbTokenAddress } = await armWrapRecovery(ctx);
+
+      const stranded = ethers.parseEther("2");
+      await owner.sendTransaction({ to: converterAddress, value: stranded });
+      await converter
+        .connect(keeper)
+        .acquireReserveAsset(ethers.ZeroAddress, stranded, wbnbTokenAddress, "0xd0e30db0", wbnbTokenAddress, stranded);
+
+      // Recovered value has to be redeemable, not merely parked — that is the whole point.
+      expect(await vault.isReserveAsset(wbnbTokenAddress)).to.equal(true);
+      const [tokens, balances] = await vault.getReserveBalances();
+      const idx = tokens.indexOf(wbnbTokenAddress);
+      expect(idx).to.be.greaterThan(-1);
+      expect(balances[idx]).to.equal(stranded);
     });
 
-    it("only the owner can schedule, cancel, or execute a migration", async function () {
-      const { converter, other, swapTargetAddress } = await deploySystem();
-      await expect(converter.connect(other).scheduleMigration(swapTargetAddress)).to.be.revertedWithCustomError(
-        converter,
-        "OwnableUnauthorizedAccount"
-      );
-      await expect(converter.connect(other).cancelMigration()).to.be.revertedWithCustomError(
-        converter,
-        "OwnableUnauthorizedAccount"
-      );
-      await expect(converter.connect(other).executeMigration([])).to.be.revertedWithCustomError(
-        converter,
-        "OwnableUnauthorizedAccount"
-      );
+    it("still refuses an unallowlisted wrap target, so this is not a general escape hatch", async function () {
+      const ctx = await deploySystem();
+      const { converter, owner, keeper, converterAddress } = ctx;
+      const { wbnbTokenAddress } = await armWrapRecovery(ctx);
+      await converter.connect(owner).setAllowedTarget(wbnbTokenAddress, false);
+
+      await owner.sendTransaction({ to: converterAddress, value: ethers.parseEther("1") });
+      await expect(
+        converter
+          .connect(keeper)
+          .acquireReserveAsset(
+            ethers.ZeroAddress,
+            ethers.parseEther("1"),
+            wbnbTokenAddress,
+            "0xd0e30db0",
+            wbnbTokenAddress,
+            ethers.parseEther("1")
+          )
+      ).to.be.revertedWithCustomError(converter, "TargetNotAllowed");
     });
   });
 
@@ -745,10 +740,22 @@ describe("TreasuryConverterV2", function () {
     it("exposes no function that can send value to an arbitrary address", async function () {
       const { converter } = await deploySystem();
       const names = converter.interface.fragments.filter((f) => f.type === "function").map((f) => f.name);
-      // Every value-moving path is either vault-bound (acquire/deposit), venue-bound
-      // through an allowlist (acquire/sell), or migration-bound to a contract after a
-      // timelock. Nothing named like a general withdrawal should ever appear here.
-      for (const forbidden of ["withdraw", "rescue", "sweep", "emergencyWithdraw", "transferOut", "skim"]) {
+      // Every value-moving path is either vault-bound (acquire/deposit) or venue-bound
+      // through an allowlist (acquire/sell). Nothing capable of sending funds to an
+      // arbitrary address should appear here — including the migration functions an
+      // earlier draft carried, which were removed precisely because a successor contract
+      // could have shipped a withdraw function of its own.
+      for (const forbidden of [
+        "withdraw",
+        "rescue",
+        "sweep",
+        "emergencyWithdraw",
+        "transferOut",
+        "skim",
+        "scheduleMigration",
+        "executeMigration",
+        "cancelMigration",
+      ]) {
         expect(names).to.not.include(forbidden);
       }
     });

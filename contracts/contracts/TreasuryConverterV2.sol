@@ -81,13 +81,43 @@ interface IChainlinkFeedLike {
 ///    configured for an asset, price quality on that asset rests on the keeper's own
 ///    off-chain quote — see requireOracleFloor, which defaults to fail-closed.
 ///
-/// ON THE ESCAPE HATCH — V1 had no withdraw path of any kind, which reads well but created
-/// a real hazard: BNB from sellRsvd could only ever leave via the buy leg, so the venue
-/// mismatch above would have permanently bricked every BNB the keeper converted. V2 keeps
-/// "no path to a wallet" (the invariant that actually matters) while removing the
-/// permanent-lockup failure mode: funds may be migrated only to a *contract*, only by the
-/// owner, only after a 7-day timelock, and only with the destination announced on-chain in
-/// advance. There is no function on this contract that can move value to an EOA.
+/// NO WITHDRAW PATH, AND NO MIGRATION EITHER — the only destinations value can reach are
+/// the vault and an allowlisted swap venue. There is deliberately no function here that
+/// sends anything to an arbitrary address, for the owner or anyone else.
+///
+/// An earlier draft of V2 carried an owner-only migration hatch (move everything to a
+/// successor *contract* after a 7-day timelock) to avoid V1's real hazard: BNB from
+/// sellRsvd could only leave via the buy leg, so the venue mismatch above would have
+/// permanently bricked every converted BNB. That hatch was removed once it became clear the
+/// stranding problem has a cheaper answer that costs no trust — see RECOVERING STRANDED
+/// FUNDS below. Migration would have bought a narrow edge case in exchange for a permanent
+/// owner-drain vector (a malicious successor contract *with* a withdraw function, executed
+/// after the delay), which is a bad trade when the edge case is already covered.
+///
+/// RECOVERING STRANDED FUNDS — if the buy path stops working (venue retired, feeds dead,
+/// allowlist wrong) and BNB piles up here, it is NOT stuck. Wrap it and deposit it into the
+/// vault as backing, using the generic executor itself:
+///
+///   setAllowedReserveAsset(WBNB, true);
+///   setAllowedTarget(WBNB, true);
+///   setAssetUsdFeed(WBNB, <BNB/USD feed>);        // same asset, same price
+///   acquireReserveAsset(
+///       address(0),          // spend native BNB
+///       amount,
+///       WBNB,                // target: the WBNB contract itself
+///       hex"d0e30db0",       // WBNB.deposit()
+///       WBNB,                // acquire WBNB
+///       amount               // mints 1:1
+///   );
+///
+/// WBNB.deposit() mints 1:1, the balance-delta check passes, and the executor deposits the
+/// proceeds straight into the vault. The value becomes redeemable backing rather than dead
+/// weight — not the form originally intended, but not lost, and reachable without any
+/// function that could send funds to a wallet.
+///
+/// If this contract itself needs replacing rather than the venue: empty it via the above
+/// plus depositReserveAsset, deploy a fresh converter, then point ReservedToken.setTreasury
+/// and ReservedVault.setKeeper at the new one. The old contract is abandoned but empty.
 contract TreasuryConverterV2 is Ownable2Step, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -146,11 +176,6 @@ contract TreasuryConverterV2 is Ownable2Step, ReentrancyGuard {
     uint256 public maxSlippageBps = 300; // 3%
     uint256 public constant MAX_SLIPPAGE_BPS_CAP = 1000; // 10% hard ceiling
 
-    // --- Migration escape hatch ---
-    uint256 public constant MIGRATION_DELAY = 7 days;
-    address public pendingMigrationTarget;
-    uint256 public migrationEta;
-
     event KeeperUpdated(address indexed previousKeeper, address indexed newKeeper);
     event RouterUpdated(address indexed router);
     event RsvdBnbPairUpdated(address indexed pair);
@@ -176,9 +201,6 @@ contract TreasuryConverterV2 is Ownable2Step, ReentrancyGuard {
         uint256 minAcquired
     );
     event ReserveAssetDeposited(address indexed token, uint256 amount);
-    event MigrationScheduled(address indexed target, uint256 eta);
-    event MigrationCancelled(address indexed target);
-    event MigrationExecuted(address indexed target, uint256 bnbAmount);
 
     error ZeroAddress();
     error ZeroAmount();
@@ -199,8 +221,6 @@ contract TreasuryConverterV2 is Ownable2Step, ReentrancyGuard {
     error StalePriceFeed(uint256 age, uint256 maxAge);
     error OverspentBudget(uint256 spent, uint256 allowed);
     error NotAContract(address target);
-    error NoMigrationScheduled();
-    error MigrationNotReady(uint256 nowTs, uint256 eta);
 
     modifier onlyKeeper() {
         if (msg.sender != keeper && msg.sender != owner()) revert NotKeeper();
@@ -595,51 +615,14 @@ contract TreasuryConverterV2 is Ownable2Step, ReentrancyGuard {
         return _oracleFloor(spendToken, spendAmount, acquireToken);
     }
 
-    // ---------------------------------------------------------------------
-    // Migration escape hatch — contract destinations only, after a public delay
-    // ---------------------------------------------------------------------
-
-    /// @notice Announce an intended migration target. Cannot execute for MIGRATION_DELAY,
-    /// giving holders a full week to see the event and react before anything moves.
-    function scheduleMigration(address newConverter) external onlyOwner {
-        if (newConverter == address(0)) revert ZeroAddress();
-        if (newConverter.code.length == 0) revert NotAContract(newConverter);
-        if (newConverter == address(this)) revert ForbiddenTarget(newConverter);
-        pendingMigrationTarget = newConverter;
-        migrationEta = block.timestamp + MIGRATION_DELAY;
-        emit MigrationScheduled(newConverter, migrationEta);
-    }
-
-    function cancelMigration() external onlyOwner {
-        emit MigrationCancelled(pendingMigrationTarget);
-        pendingMigrationTarget = address(0);
-        migrationEta = 0;
-    }
-
-    /// @notice Move BNB and the listed tokens to the scheduled successor contract. The
-    /// destination is re-validated as a contract at execution time, so this can never
-    /// resolve to a wallet.
-    function executeMigration(address[] calldata tokens) external onlyOwner nonReentrant {
-        address target = pendingMigrationTarget;
-        if (target == address(0)) revert NoMigrationScheduled();
-        if (block.timestamp < migrationEta) revert MigrationNotReady(block.timestamp, migrationEta);
-        if (target.code.length == 0) revert NotAContract(target);
-
-        pendingMigrationTarget = address(0);
-        migrationEta = 0;
-
-        for (uint256 i = 0; i < tokens.length; i++) {
-            uint256 bal = IERC20(tokens[i]).balanceOf(address(this));
-            if (bal > 0) IERC20(tokens[i]).safeTransfer(target, bal);
-        }
-
-        uint256 bnbBal = address(this).balance;
-        if (bnbBal > 0) Address.sendValue(payable(target), bnbBal);
-
-        emit MigrationExecuted(target, bnbBal);
-    }
-
     /// @notice Receives BNB from the router's swapExactTokensForETH* call in sellRsvd, and
     /// from swap venues returning unspent native value.
     receive() external payable {}
+
+    // No withdraw, rescue, sweep, or migration function exists anywhere in this contract,
+    // for the owner or anyone else. Value leaves only via sellRsvd (bounded, TWAP-floored),
+    // acquireReserveAsset (bounded, allowlisted target, oracle-floored, deposits straight
+    // into the vault), or depositReserveAsset (vault-bound). If the buy path ever breaks,
+    // stranded BNB is recovered by wrapping it into the vault as backing rather than by any
+    // privileged exit — see RECOVERING STRANDED FUNDS in the contract header.
 }
