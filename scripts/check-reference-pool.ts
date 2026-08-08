@@ -18,7 +18,8 @@ import { DEPLOYMENTS } from "./pancake-addresses";
 
 const POOL_FEE = Number(process.env.POOL_FEE || "2500");
 const SLOT0_SELECTOR = "0x3850c7bd";
-const UINT8_MAX = 255n;
+/// The width IUniswapV3Pool.slot0 now declares for feeProtocol. Keep these in step.
+const FEE_PROTOCOL_MAX = 2n ** 32n - 1n;
 
 const POSITION_MANAGER_ABI = [
   "function WETH9() view returns (address)",
@@ -68,24 +69,22 @@ async function main() {
   console.log(`\nsqrtPriceX96 : ${sqrtPriceX96}`);
   console.log(`feeProtocol  : ${feeProtocol}`);
 
-  if (feeProtocol > UINT8_MAX) {
-    console.log(`\nBLOCKER: feeProtocol (${feeProtocol}) does not fit in uint8.`);
-    console.log("UniswapV3TokenInitializer declares `uint8 feeProtocol` in IUniswapV3Pool,");
-    console.log("so decoding this pool's slot0 reverts and the launch fails at its first step.");
-    console.log("Fix: widen that field to `uint32`. A Uniswap pool's uint8 return decodes");
-    console.log("cleanly as uint32, so the wider type is correct against both DEXes.");
+  if (feeProtocol > FEE_PROTOCOL_MAX) {
+    console.log(`\nBLOCKER: feeProtocol (${feeProtocol}) does not fit the uint32 that`);
+    console.log("IUniswapV3Pool declares, so decoding this pool's slot0 reverts and the");
+    console.log("launch fails at its first step. Widen the field to match.");
     process.exitCode = 1;
     return;
   }
 
-  if (feeProtocol === 0n) {
-    console.log("\nOK: feeProtocol is zero, so the uint8 declaration decodes today.");
-  } else {
-    console.log(`\nOK FOR NOW: feeProtocol is ${feeProtocol}, which still fits in uint8.`);
+  console.log(`\nOK: feeProtocol fits the uint32 that IUniswapV3Pool declares.`);
+  if (feeProtocol > 255n) {
+    const fee0 = feeProtocol & 0xffffn;
+    const fee1 = (feeProtocol >> 16n) & 0xffffn;
+    console.log(`This pool packs feeProtocol0=${fee0}, feeProtocol1=${fee1} — above the uint8`);
+    console.log("the interface originally declared, which is what made the launch revert");
+    console.log("before that field was widened. Narrowing it again reintroduces the bug.");
   }
-  console.log("This is a live reading, not a guarantee — PancakeSwap can change a pool's");
-  console.log("protocol fee at any time, and a value above 255 breaks the launch path.");
-  console.log("Widening the field to uint32 removes the dependency entirely.");
 }
 
 main().catch((error) => {
