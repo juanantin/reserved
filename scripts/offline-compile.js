@@ -28,6 +28,7 @@ const targets = [
   "mocks/MockUniswapV2Router.sol",
   "mocks/MockSwapTarget.sol",
   "mocks/MockSupplyInitializer.sol",
+  "mocks/MockUniswapV3.sol",
   "vendor/TimelockController.sol",
 ];
 
