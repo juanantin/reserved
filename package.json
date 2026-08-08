@@ -23,6 +23,8 @@
     "deploy:treasury-converter-v2:mainnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-treasury-converter-v2.ts --network bscMainnet --no-compile",
     "deploy:governance-vote:testnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-governance-vote.ts --network bscTestnet --no-compile",
     "deploy:governance-vote:mainnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-governance-vote.ts --network bscMainnet --no-compile",
+    "seed:testnet": "hardhat run scripts/seed-pool.ts --network bscTestnet --no-compile",
+    "seed:mainnet": "hardhat run scripts/seed-pool.ts --network bscMainnet --no-compile",
     "check:pool:testnet": "hardhat run scripts/check-reference-pool.ts --network bscTestnet --no-compile",
     "check:pool:mainnet": "hardhat run scripts/check-reference-pool.ts --network bscMainnet --no-compile",
     "launch:testnet": "node scripts/offline-compile.js && hardhat run scripts/launch.ts --network bscTestnet --no-compile",
@@ -36,7 +38,7 @@
     "@openzeppelin/contracts": "^5.1.0",
     "dotenv": "^16.4.5",
     "hardhat": "^2.22.17",
-    "solc": "^0.8.28",
+    "solc": "0.8.36",
     "typescript": "^5.6.3"
   }
 }

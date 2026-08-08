@@ -13,6 +13,42 @@ const CONTRACTS_DIR = path.join(__dirname, "..", "contracts");
 const ARTIFACTS_DIR = path.join(__dirname, "..", "artifacts");
 const NODE_MODULES = path.join(__dirname, "..", "node_modules");
 
+// The deployed bytecode comes from THIS compiler, but `hardhat verify` recompiles using
+// the version in hardhat.config.ts. When the two drift, verification fails against a
+// contract that is otherwise perfectly fine. That already happened once: package.json
+// carried "solc": "^0.8.28", a fresh npm install resolved it to 0.8.36, and the mainnet
+// deployment could not be verified against a config still declaring 0.8.28. Keep the pin
+// exact and fail loudly rather than silently emitting a different binary per machine.
+const PKG = require(path.join(__dirname, "..", "package.json"));
+const PINNED_SOLC = PKG.devDependencies.solc;
+const ACTUAL_SOLC = solc.version().split("+")[0];
+
+if (/^[\^~><=*]|x/.test(PINNED_SOLC)) {
+  console.error(
+    `package.json declares solc as "${PINNED_SOLC}". Pin an exact version — a range lets\n` +
+      `npm pick a different compiler per machine, which changes the deployed bytecode.`
+  );
+  process.exit(1);
+}
+if (ACTUAL_SOLC !== PINNED_SOLC) {
+  console.error(
+    `solc mismatch: package.json pins ${PINNED_SOLC}, node_modules has ${ACTUAL_SOLC}.\n` +
+      `Run npm install before compiling.`
+  );
+  process.exit(1);
+}
+
+const HARDHAT_CONFIG = fs.readFileSync(path.join(__dirname, "..", "hardhat.config.ts"), "utf8");
+const declaredVersions = [...HARDHAT_CONFIG.matchAll(/version:\s*"([0-9]+\.[0-9]+\.[0-9]+)"/g)].map((m) => m[1]);
+const drifted = [...new Set(declaredVersions)].filter((v) => v !== ACTUAL_SOLC);
+if (drifted.length > 0) {
+  console.error(
+    `hardhat.config.ts declares solidity ${drifted.join(", ")} but this build uses ${ACTUAL_SOLC}.\n` +
+      `They must match or 'hardhat verify' will recompile a different binary than was deployed.`
+  );
+  process.exit(1);
+}
+
 const targets = [
   "ReservedToken.sol",
   "UniswapV3TokenInitializer.sol",

@@ -9,7 +9,7 @@ const accounts = DEPLOYER_PRIVATE_KEY ? [DEPLOYER_PRIVATE_KEY] : [];
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: "0.8.28",
+    version: "0.8.36",
     settings: {
       optimizer: {
         enabled: true,
@@ -21,7 +21,7 @@ const config: HardhatUserConfig = {
     // byte-identical bytecode — see the matching note in scripts/offline-compile.js.
     overrides: {
       "contracts/UniswapV3TokenInitializer.sol": {
-        version: "0.8.28",
+        version: "0.8.36",
         settings: {
           optimizer: { enabled: true, runs: 200 },
           viaIR: true,
