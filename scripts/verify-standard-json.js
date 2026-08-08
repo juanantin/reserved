@@ -1,125 +1,95 @@
-// Verifies a contract on BscScan via Etherscan's V2 unified API, submitting the
-// EXACT Solidity Standard-JSON-Input that scripts/offline-compile.js used to
-// actually compile and deploy — not `hardhat verify`, which recompiles through
-// Hardhat's own toolchain (different source-path keys, and whatever solc version
-// Hardhat's downloader fetches) and therefore can't reproduce byte-identical
-// output for anything deployed via the offline-compile path. See README.
+// Verifies a contract on BscScan via Etherscan's V2 unified API, submitting the EXACT
+// Solidity Standard-JSON-Input that scripts/offline-compile.js used to compile and
+// deploy.
 //
-// Usage (token):
-//   CONTRACT=ReservedToken ADDRESS=0x... \
-//   TOKEN_NAME=RSVDTEST TOKEN_SYMBOL=RSVDTEST FIXED_SUPPLY_TOKENS=1000000000 \
-//   OWNER=0x... TREASURY=0x... \
-//   node scripts/verify-standard-json.js
+// `hardhat verify` cannot do this. It recompiles through Hardhat's own toolchain, which
+// keys sources as "contracts/ReservedToken.sol" where offline-compile.js keys them
+// "ReservedToken.sol". Source keys go into the metadata, the metadata hash is appended
+// to the bytecode, so the two binaries differ in their trailing bytes and Etherscan
+// rejects the match. The error it gives you — "bytecode doesn't match any of your local
+// contracts" — points at the contract rather than at the toolchain, which is misleading.
 //
-// Usage (vault):
+// Targets, settings and source keys come from scripts/compile-config.js, the same module
+// offline-compile.js builds from, so the two cannot drift apart.
+//
+// Usage:
+//   CONTRACT=ReservedToken ADDRESS=0x... TOKEN_NAME=RsvdTest TOKEN_SYMBOL=RSVDTST \
+//   OWNER=0x... TREASURY=0x... node scripts/verify-standard-json.js
+//
 //   CONTRACT=ReservedVault ADDRESS=0x... TOKEN_ADDRESS=0x... OWNER=0x... KEEPER=0x... \
 //   node scripts/verify-standard-json.js
 //
-// Reads ETHERSCAN_API_KEY from contracts/.env (same key used for hardhat-verify).
+//   CONTRACT=UniswapV3TokenInitializer ADDRESS=0x... node scripts/verify-standard-json.js
+//
+// Reads ETHERSCAN_API_KEY from .env.
 require("dotenv").config();
-const fs = require("fs");
-const path = require("path");
 const solc = require("solc");
 const { AbiCoder } = require("ethers");
+const { compileGroup, groupForSourceFile, assertCompilerConsistency } = require("./compile-config");
 
-const CONTRACTS_DIR = path.join(__dirname, "..", "contracts");
-const NODE_MODULES = path.join(__dirname, "..", "node_modules");
+assertCompilerConsistency();
 
-// Must exactly match offline-compile.js's targets, settings, and source keys —
-// any difference changes the compiled bytecode's embedded metadata hash and
-// breaks the byte-for-byte match Etherscan checks for.
-const targets = [
-  "ReservedToken.sol",
-  "ReservedVault.sol",
-  "mocks/MockERC20.sol",
-  "mocks/MockRevertingERC20.sol",
-  "vendor/TimelockController.sol",
-];
-
-// Etherscan compiles from the submitted JSON alone — no filesystem, no node_modules
-// — so every imported file (all of @openzeppelin/contracts, transitively) has to be
-// bundled into `sources` with its actual content, not just our own contract files.
-// Record every file this callback resolves (solc calls it for the full transitive
-// import graph, exactly the same resolution it used for the real local compile that
-// produced the deployed bytecode) directly into `sources` as a side effect.
-const sources = {};
-for (const file of targets) {
-  sources[file] = { content: fs.readFileSync(path.join(CONTRACTS_DIR, file), "utf8") };
-}
-
-function findImports(importPath) {
-  if (sources[importPath]) return { contents: sources[importPath].content };
-  const candidates = [path.join(CONTRACTS_DIR, importPath), path.join(NODE_MODULES, importPath)];
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) {
-      const contents = fs.readFileSync(candidate, "utf8");
-      sources[importPath] = { content: contents };
-      return { contents };
-    }
-  }
-  return { error: `File not found: ${importPath}` };
-}
-
-const input = {
-  language: "Solidity",
-  sources,
-  settings: {
-    optimizer: { enabled: true, runs: 200 },
-    outputSelection: {
-      "*": { "*": ["abi", "evm.bytecode.object", "evm.deployedBytecode.object", "metadata"] },
-    },
+const CONTRACTS = {
+  ReservedToken: {
+    sourceFile: "ReservedToken.sol",
+    // The constructor dropped fixedSupply_ when minting moved into postDeploy.
+    types: ["string", "string", "address", "address"],
+    args: () => [process.env.TOKEN_NAME, process.env.TOKEN_SYMBOL, process.env.OWNER, process.env.TREASURY],
+    envHint: "TOKEN_NAME, TOKEN_SYMBOL, OWNER, TREASURY",
+  },
+  ReservedVault: {
+    sourceFile: "ReservedVault.sol",
+    types: ["address", "address", "address"],
+    args: () => [process.env.TOKEN_ADDRESS, process.env.OWNER, process.env.KEEPER],
+    envHint: "TOKEN_ADDRESS, OWNER, KEEPER",
+  },
+  UniswapV3TokenInitializer: {
+    sourceFile: "UniswapV3TokenInitializer.sol",
+    types: [],
+    args: () => [],
+    envHint: "(no constructor arguments)",
   },
 };
 
-// Force full import resolution (populating `sources` above) by actually compiling
-// locally, exactly as offline-compile.js does, before submitting to Etherscan.
-const compileOutput = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
-for (const err of compileOutput.errors || []) {
-  if (err.severity === "error") throw new Error(`Local compile failed: ${err.formattedMessage}`);
-}
-input.sources = sources; // now the full transitive closure, not just our own files
-
-const CONTRACT = process.env.CONTRACT; // "ReservedToken" | "ReservedVault"
+const CONTRACT = process.env.CONTRACT;
 const ADDRESS = process.env.ADDRESS;
 const API_KEY = process.env.ETHERSCAN_API_KEY;
+const CHAIN_ID = process.env.CHAIN_ID || "56";
 
-if (!CONTRACT || !ADDRESS || !API_KEY) {
-  throw new Error("Set CONTRACT, ADDRESS, and ETHERSCAN_API_KEY (in .env) first — see usage comment at the top of this file.");
+const spec = CONTRACTS[CONTRACT];
+if (!spec) {
+  throw new Error(`CONTRACT must be one of: ${Object.keys(CONTRACTS).join(", ")}`);
+}
+if (!ADDRESS || !API_KEY) {
+  throw new Error("Set ADDRESS and ETHERSCAN_API_KEY (in .env) — see the usage comment at the top of this file.");
 }
 
-let sourceFile, constructorTypes, constructorArgs;
-if (CONTRACT === "ReservedToken") {
-  sourceFile = "ReservedToken.sol";
-  constructorTypes = ["string", "string", "uint256", "address", "address"];
-  constructorArgs = [
-    process.env.TOKEN_NAME,
-    process.env.TOKEN_SYMBOL,
-    process.env.FIXED_SUPPLY_TOKENS ? (BigInt(process.env.FIXED_SUPPLY_TOKENS) * 10n ** 18n).toString() : undefined,
-    process.env.OWNER,
-    process.env.TREASURY,
-  ];
-} else if (CONTRACT === "ReservedVault") {
-  sourceFile = "ReservedVault.sol";
-  constructorTypes = ["address", "address", "address"];
-  constructorArgs = [process.env.TOKEN_ADDRESS, process.env.OWNER, process.env.KEEPER];
-} else {
-  throw new Error('CONTRACT must be "ReservedToken" or "ReservedVault"');
-}
-for (const arg of constructorArgs) {
-  if (!arg) throw new Error("Missing a required constructor-arg env var — see the usage comment at the top of this file.");
+const constructorArgs = spec.args();
+if (constructorArgs.some((a) => a === undefined || a === "")) {
+  throw new Error(`${CONTRACT} needs: ${spec.envHint}`);
 }
 
-const constructorArguments = AbiCoder.defaultAbiCoder().encode(constructorTypes, constructorArgs).slice(2);
+// Submit the same compile group the deployed bytecode came from, viaIR flag included —
+// a viaIR contract verified against a legacy input will not match.
+const group = groupForSourceFile(spec.sourceFile);
+const { input, sources } = compileGroup(group);
+input.sources = sources; // full transitive closure, captured during the compile
 
-const rawVersion = solc.version(); // e.g. "0.8.28+commit.7893614a.Emscripten.clang"
+const constructorArguments =
+  spec.types.length > 0 ? AbiCoder.defaultAbiCoder().encode(spec.types, constructorArgs).slice(2) : "";
+
+const rawVersion = solc.version(); // e.g. "0.8.36+commit.8a079791.Emscripten.clang"
 const versionMatch = rawVersion.match(/^(\d+\.\d+\.\d+)\+commit\.([0-9a-fA-F]+)/);
 if (!versionMatch) throw new Error(`Couldn't parse solc version string: ${rawVersion}`);
 const compilerversion = `v${versionMatch[1]}+commit.${versionMatch[2]}`;
 
-console.log("Compiler version:", compilerversion, `(raw: ${rawVersion})`);
-console.log("Contract:", `${sourceFile}:${CONTRACT}`);
-console.log("Address:", ADDRESS);
-console.log("Constructor args (abi-encoded):", constructorArguments);
+console.log("Contract        :", `${spec.sourceFile}:${CONTRACT}`);
+console.log("Address         :", ADDRESS);
+console.log("Chain           :", CHAIN_ID);
+console.log("Compiler        :", compilerversion);
+console.log("Compile group   :", group, group === "viaIR" ? "(viaIR: true)" : "(legacy codegen)");
+console.log("Sources bundled :", Object.keys(input.sources).length);
+console.log("Constructor args:", constructorArguments || "(none)");
 
 async function main() {
   const params = new URLSearchParams({
@@ -129,43 +99,50 @@ async function main() {
     contractaddress: ADDRESS,
     sourceCode: JSON.stringify(input),
     codeformat: "solidity-standard-json-input",
-    contractname: `${sourceFile}:${CONTRACT}`,
+    contractname: `${spec.sourceFile}:${CONTRACT}`,
     compilerversion,
     constructorArguments,
   });
 
-  // The V2 API reads chainid off the URL's query string, not the POST body —
-  // it 404/NOTOKs with "Missing or unsupported chainid parameter" if it's only
-  // in the form-encoded body, even though every other param is read from there.
-  const submitRes = await fetch("https://api.etherscan.io/v2/api?chainid=56", { method: "POST", body: params });
+  // The V2 API reads chainid off the URL's query string, not the POST body — it NOTOKs
+  // with "Missing or unsupported chainid parameter" if it's only in the form-encoded
+  // body, even though every other param is read from there.
+  const submitRes = await fetch(`https://api.etherscan.io/v2/api?chainid=${CHAIN_ID}`, {
+    method: "POST",
+    body: params,
+  });
   const submitJson = await submitRes.json();
-  console.log("\nSubmit response:", submitJson);
   if (submitJson.status !== "1") {
-    throw new Error(`Verification submission failed: ${submitJson.result || submitJson.message}`);
+    throw new Error(`Submission rejected: ${submitJson.result || submitJson.message}`);
   }
-  const guid = submitJson.result;
 
-  console.log("\nPolling verification status...");
-  for (let i = 0; i < 12; i++) {
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-    const statusRes = await fetch(
-      `https://api.etherscan.io/v2/api?chainid=56&module=contract&action=checkverifystatus&guid=${guid}&apikey=${API_KEY}`
-    );
-    const statusJson = await statusRes.json();
-    console.log(`  [${i + 1}/12]`, statusJson.result);
-    if (statusJson.result === "Pass - Verified") {
-      console.log(`\nVERIFIED: https://bscscan.com/address/${ADDRESS}#code`);
+  const guid = submitJson.result;
+  console.log("\nSubmitted, guid:", guid);
+
+  for (let i = 0; i < 20; i++) {
+    await new Promise((r) => setTimeout(r, 5000));
+    const checkUrl = new URL(`https://api.etherscan.io/v2/api?chainid=${CHAIN_ID}`);
+    checkUrl.searchParams.set("module", "contract");
+    checkUrl.searchParams.set("action", "checkverifystatus");
+    checkUrl.searchParams.set("guid", guid);
+    checkUrl.searchParams.set("apikey", API_KEY);
+    const statusJson = await (await fetch(checkUrl)).json();
+    const result = statusJson.result || "";
+
+    if (result.startsWith("Pending")) {
+      console.log(`  [${i + 1}/20] pending...`);
+      continue;
+    }
+    if (statusJson.status === "1") {
+      console.log(`\nVerified: https://bscscan.com/address/${ADDRESS}#code`);
       return;
     }
-    if (typeof statusJson.result === "string" && statusJson.result.startsWith("Fail")) {
-      throw new Error(`Verification failed: ${statusJson.result}`);
-    }
+    throw new Error(`Verification failed: ${result}`);
   }
-  console.log("\nStill pending after polling — check BscScan directly in a minute:");
-  console.log(`https://bscscan.com/address/${ADDRESS}#code`);
+  throw new Error("Timed out waiting for verification status");
 }
 
 main().catch((error) => {
-  console.error(error);
+  console.error(error.message || error);
   process.exitCode = 1;
 });
