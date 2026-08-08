@@ -51,7 +51,12 @@ interface IUniswapV3Factory {
 
 interface IUniswapV3Pool {
     function tickSpacing() external view returns (int24);
-    function slot0() external view returns (uint160 sqrtPriceX96, int24 tick, uint16 observationIndex, uint16 observationCardinality, uint16 observationCardinalityNext, uint8 feeProtocol, bool unlocked);
+    // feeProtocol is uint8 on Uniswap V3 but uint32 on PancakeSwap V3, which packs it as
+    // feeProtocol0 | (feeProtocol1 << 16). Solidity's ABI decoder rejects a word that does
+    // not fit the declared type, so uint8 here reverts against any Pancake pool carrying a
+    // protocol fee — BSC's WBNB/USDT 0.25% pool reads 209718400 (3200 on both sides). The
+    // wider type decodes both, since a Uniswap pool's uint8 value fits in a uint32.
+    function slot0() external view returns (uint160 sqrtPriceX96, int24 tick, uint16 observationIndex, uint16 observationCardinality, uint16 observationCardinalityNext, uint32 feeProtocol, bool unlocked);
 }
 
 contract UniswapV3TokenInitializer {

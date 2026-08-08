@@ -365,28 +365,47 @@ describe("UniswapV3TokenInitializer.init", function () {
   });
 
   describe("PancakeSwap V3 compatibility", function () {
-    // PancakeSwap's slot0 returns `uint32 feeProtocol` (two packed uint16s), while the
-    // initializer's IUniswapV3Pool declares `uint8`. The ABI decoder rejects a value that
-    // does not fit the narrower type, so a pool with a protocol fee above 255 makes the
-    // whole launch revert. BSC pools do carry a protocol fee.
-    it("decodes slot0 from a Uniswap-shaped pool", async function () {
+    // PancakeSwap's slot0 returns `uint32 feeProtocol`, packing feeProtocol0 |
+    // (feeProtocol1 << 16); Uniswap V3 returns `uint8`. Solidity's ABI decoder rejects a
+    // word that does not fit the declared type, so declaring uint8 reverted against any
+    // Pancake pool carrying a protocol fee. IUniswapV3Pool now declares uint32, which
+    // decodes both. These tests hold that open — narrowing it again breaks the launch.
+    //
+    // Read from BSC mainnet on 2026-08-08: the WBNB/USDT 0.25% pool
+    // (0x1401ff943D08a7E098328C1d3a9d388923B115D2) reports feeProtocol 209718400.
+    const LIVE_BSC_FEE_PROTOCOL = 209_718_400; // 3200 | (3200 << 16)
+
+    it("decodes slot0 from a Uniswap-shaped pool, whose feeProtocol is a uint8", async function () {
       const ctx = await deployFixture();
       await seedReferencePool(ctx, { poolKind: "MockUniswapV3Pool" });
       await expect(ctx.token.postDeploy(ctx.initializer.target, buildPayload(ctx))).to.not.be.reverted;
     });
 
-    it("tolerates a Pancake-shaped pool while feeProtocol still fits in a byte", async function () {
+    it("decodes slot0 from a Pancake-shaped pool with a small feeProtocol", async function () {
       const ctx = await deployFixture();
       await seedReferencePool(ctx, { poolKind: "MockPancakeV3Pool", feeProtocol: 100 });
       await expect(ctx.token.postDeploy(ctx.initializer.target, buildPayload(ctx))).to.not.be.reverted;
     });
 
-    it("BLOCKER: reverts against a Pancake-shaped pool whose feeProtocol exceeds uint8", async function () {
+    it("decodes slot0 at BSC mainnet's live feeProtocol, which overflows a uint8", async function () {
       const ctx = await deployFixture();
-      // PancakeSwap packs feeProtocol0 | (feeProtocol1 << 16), so any pool with a
-      // protocol fee on the second token is far above 255.
-      await seedReferencePool(ctx, { poolKind: "MockPancakeV3Pool", feeProtocol: 3300 << 16 });
-      await expect(ctx.token.postDeploy(ctx.initializer.target, buildPayload(ctx))).to.be.reverted;
+      await seedReferencePool(ctx, { poolKind: "MockPancakeV3Pool", feeProtocol: LIVE_BSC_FEE_PROTOCOL });
+      await expect(ctx.token.postDeploy(ctx.initializer.target, buildPayload(ctx))).to.not.be.reverted;
+    });
+
+    it("prices the launch identically whatever feeProtocol the reference pool reports", async function () {
+      const priceFor = async (poolKind, feeProtocol) => {
+        const ctx = await deployFixture({ wbnbBelowToken: false });
+        await seedReferencePool(ctx, { poolKind, feeProtocol });
+        await ctx.token.postDeploy(ctx.initializer.target, buildPayload(ctx));
+        return ctx.positionManager.lastSqrtPriceX96();
+      };
+
+      // feeProtocol is not an input to the price math, so widening its type must not
+      // move the launch price.
+      expect(await priceFor("MockPancakeV3Pool", LIVE_BSC_FEE_PROTOCOL)).to.equal(
+        await priceFor("MockUniswapV3Pool", 0)
+      );
     });
   });
 });
