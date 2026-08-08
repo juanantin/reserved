@@ -1,4 +1,5 @@
 import { ethers } from "hardhat";
+import { DEPLOYMENTS } from "./pancake-addresses";
 
 /**
  * Launch script: deploys ReservedToken + ReservedVault + UniswapV3TokenInitializer,
@@ -17,45 +18,7 @@ import { ethers } from "hardhat";
  * postDeploy stops accepting calls the moment the initializer mints a supply.
  */
 
-// ---------------------------------------------------------------------------
-// Router / pool addresses.
-//
-// VERIFY THESE against PancakeSwap's published deployment list before a mainnet run.
-// They are the single most expensive thing in this file to get wrong: a bad position
-// manager address means the delegatecall reverts (cheap), but a valid-looking address
-// pointing at the wrong deployment means liquidity lands in a pool nobody trades.
-// The script checks each one has code and that the position manager answers WETH9(),
-// which catches typos and wrong-chain addresses but cannot tell you it is the router
-// your users will actually route through.
-// ---------------------------------------------------------------------------
-type Deployment = {
-  positionManager: string;
-  swapRouter: string;
-  stablecoin: string;
-  label: string;
-};
-
-const DEPLOYMENTS: Record<number, Deployment> = {
-  56: {
-    label: "BSC mainnet / PancakeSwap V3",
-    positionManager: "0x46A15B0b27311cedF172AB29E4f4766fbE7F4364",
-    swapRouter: "0x1b81D678ffb9C0263b24A97847620C99d213eB14",
-    stablecoin: "0x55d398326f99059fF775485246999027B3197955", // USDT (18 dp on BSC)
-  },
-  97: {
-    label: "BSC testnet / PancakeSwap V3",
-    positionManager: "0x427bF5b37357632377eCbEC9de3626C71A5396c1",
-    swapRouter: "0x9a489505a00cE272eAa5e07Dba6491314CaE3796",
-    stablecoin: "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd", // testnet USDT
-  },
-};
-
 const env = (k: string, fallback?: string) => process.env[k] ?? fallback;
-const required = (k: string) => {
-  const v = process.env[k];
-  if (!v) throw new Error(`Missing required env var ${k}`);
-  return v;
-};
 
 const TOKEN_NAME = env("TOKEN_NAME", "Reserved")!;
 const TOKEN_SYMBOL = env("TOKEN_SYMBOL", "RSVD")!;
