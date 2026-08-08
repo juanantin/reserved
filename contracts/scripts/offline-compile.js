@@ -12,6 +12,7 @@ const solc = require("solc");
 const CONTRACTS_DIR = path.join(__dirname, "..", "contracts");
 const ARTIFACTS_DIR = path.join(__dirname, "..", "artifacts");
 const NODE_MODULES = path.join(__dirname, "..", "node_modules");
+const STORAGE_LAYOUT_DIR = path.join(__dirname, "..", "storage-layout");
 
 const targets = [
   "ReservedToken.sol",
@@ -56,7 +57,7 @@ const input = {
     optimizer: { enabled: true, runs: 200 },
     outputSelection: {
       "*": {
-        "*": ["abi", "evm.bytecode.object", "evm.deployedBytecode.object", "metadata"],
+        "*": ["abi", "evm.bytecode.object", "evm.deployedBytecode.object", "metadata", "storageLayout"],
       },
     },
   },
@@ -98,5 +99,59 @@ for (const file of Object.keys(output.contracts)) {
     };
     fs.writeFileSync(path.join(outDir, `${contractName}.json`), JSON.stringify(artifact, null, 2));
     console.log(`Wrote artifact for ${contractName}`);
+
+    // Storage layout snapshot, written to a *committed* directory (not artifacts/, which
+    // is gitignored) so any change shows up as a reviewable diff in the PR that causes it.
+    // Deliberately mechanical rather than something a human has to remember to report:
+    // layout drift fails silently — a shifted slot writes to the wrong place rather than
+    // reverting — so it must not depend on anyone noticing. Anything inheriting from these
+    // contracts, or reading their raw storage, can diff these instead of re-deriving slots
+    // by hand. Mocks and vendored code are skipped; only contracts we actually deploy.
+    const isOwnDeployable =
+      targets.includes(file) && !file.startsWith("mocks/") && !file.startsWith("vendor/");
+    // Skip interfaces/libraries declared alongside a contract — they have no storage.
+    if (contract.storageLayout && isOwnDeployable && contract.storageLayout.storage.length > 0) {
+      fs.mkdirSync(STORAGE_LAYOUT_DIR, { recursive: true });
+      // Strip astId: it is assigned globally across the whole compilation unit, so editing
+      // any unrelated source shifts it in every file. Left in, every change would produce a
+      // layout diff for contracts whose storage didn't move — noise that trains reviewers
+      // to ignore exactly the signal this exists to surface. Slot/offset/label/type are the
+      // parts that actually define the layout.
+      // Struct and contract type identifiers embed the astId too — t_struct(Foo)1234_storage
+      // and t_contract(IBar)1234 — so they drift for the same reason. Strip the number only
+      // for those two forms: t_array(t_uint256)5_storage uses a trailing number for the
+      // array *length*, which is real layout information and must survive.
+      const normaliseType = (t) => t.replace(/(t_(?:struct|contract)\([^)]*\))\d+/g, "$1");
+      const rawTypes = contract.storageLayout.types || {};
+      const types = {};
+      for (const [key, val] of Object.entries(rawTypes)) {
+        const copy = { ...val };
+        if (copy.key) copy.key = normaliseType(copy.key);
+        if (copy.value) copy.value = normaliseType(copy.value);
+        if (copy.base) copy.base = normaliseType(copy.base);
+        if (Array.isArray(copy.members)) {
+          copy.members = copy.members.map(({ label, offset, slot, type }) => ({
+            label,
+            offset,
+            slot,
+            type: normaliseType(type),
+          }));
+        }
+        types[normaliseType(key)] = copy;
+      }
+      const stable = {
+        storage: contract.storageLayout.storage.map(({ label, offset, slot, type }) => ({
+          label,
+          offset,
+          slot,
+          type: normaliseType(type),
+        })),
+        types,
+      };
+      fs.writeFileSync(
+        path.join(STORAGE_LAYOUT_DIR, `${contractName}.json`),
+        JSON.stringify(stable, null, 2) + "\n"
+      );
+    }
   }
 }

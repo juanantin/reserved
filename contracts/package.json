@@ -2,7 +2,7 @@
   "name": "reserved-contracts",
   "version": "0.1.0",
   "private": true,
-  "description": "Solidity contracts for Reserved (RSVD) — on-chain treasury of tokenized stocks on BNB Chain",
+  "description": "Solidity contracts for Reserved (RSVD) \u2014 on-chain treasury of tokenized stocks on BNB Chain",
   "scripts": {
     "compile": "hardhat compile",
     "compile:offline": "node scripts/offline-compile.js",
@@ -26,7 +26,8 @@
     "rfq-probe:mainnet": "node scripts/offline-compile.js && hardhat run scripts/rfq-probe.ts --network bscMainnet --no-compile",
     "check:mainnet": "node scripts/offline-compile.js && hardhat run scripts/mainnet-check.ts --network bscMainnet --no-compile",
     "verify:standard-json": "node scripts/verify-standard-json.js",
-    "verify:launch-addresses:mainnet": "node scripts/offline-compile.js && hardhat run scripts/verify-launch-addresses.ts --network bscMainnet --no-compile"
+    "verify:launch-addresses:mainnet": "node scripts/offline-compile.js && hardhat run scripts/verify-launch-addresses.ts --network bscMainnet --no-compile",
+    "check:storage": "node scripts/check-storage-layout.js"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
