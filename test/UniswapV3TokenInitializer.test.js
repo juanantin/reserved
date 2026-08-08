@@ -210,7 +210,11 @@ describe("UniswapV3TokenInitializer.init", function () {
 
       expect(await ctx.token.totalSupply()).to.equal(SUPPLY);
       const pool = await ctx.positionManager.lastPool();
-      expect(await ctx.token.balanceOf(pool)).to.equal(SUPPLY);
+      // V3 leaves a few wei unconsumed by the position; init sweeps that remainder to
+      // the owner at the end.
+      const dust = await ctx.positionManager.mintShortfallWei();
+      expect(await ctx.token.balanceOf(pool)).to.equal(SUPPLY - dust);
+      expect(await ctx.token.balanceOf(ctx.owner.address)).to.equal(dust);
       expect(await ctx.token.balanceOf(ctx.tokenAddress)).to.equal(0n);
       expect(await ctx.positionManager.mintCallCount()).to.equal(1n);
     });
@@ -222,8 +226,11 @@ describe("UniswapV3TokenInitializer.init", function () {
 
       await ctx.token.postDeploy(ctx.initializer.target, buildPayload(ctx, { ownerSupply }));
 
-      expect(await ctx.token.balanceOf(ctx.owner.address)).to.equal(ownerSupply);
-      expect(await ctx.token.balanceOf(await ctx.positionManager.lastPool())).to.equal(SUPPLY - ownerSupply);
+      const dust = await ctx.positionManager.mintShortfallWei();
+      expect(await ctx.token.balanceOf(ctx.owner.address)).to.equal(ownerSupply + dust);
+      expect(await ctx.token.balanceOf(await ctx.positionManager.lastPool())).to.equal(
+        SUPPLY - ownerSupply - dust
+      );
       expect(await ctx.token.totalSupply()).to.equal(SUPPLY);
     });
 
@@ -263,6 +270,31 @@ describe("UniswapV3TokenInitializer.init", function () {
       expect(a0 + a1).to.equal(SUPPLY);
     });
 
+    // Regression: the mint bound used to be `amountMin == amountDesired`, demanding the
+    // pool consume the supply to the wei. V3 rounds liquidity down and always lands a
+    // little short, so every launch reverted with "Price slippage check" — which is
+    // exactly what BSC mainnet returned before this was loosened to 1bp.
+    it("survives the wei-level shortfall V3 leaves on every mint", async function () {
+      const ctx = await deployFixture();
+      await seedReferencePool(ctx);
+      await ctx.positionManager.setMintShortfallWei(5000);
+
+      await expect(ctx.token.postDeploy(ctx.initializer.target, buildPayload(ctx))).to.not.be.reverted;
+    });
+
+    it("still rejects a range that would consume only part of the supply", async function () {
+      const ctx = await deployFixture();
+      await seedReferencePool(ctx);
+      // A range straddling the current tick needs the other token, which this contract
+      // does not hold — the position would take a fraction and the rest would be swept
+      // to the owner. The 1bp bound has to keep failing that loudly.
+      await ctx.positionManager.setMintFillBps(5_000);
+
+      await expect(ctx.token.postDeploy(ctx.initializer.target, buildPayload(ctx))).to.be.revertedWith(
+        "Price slippage check"
+      );
+    });
+
     // Documents accepted behaviour: see the launch checklist.
     it("KNOWN RISK: sends the LP position to the owner, leaving liquidity unlocked", async function () {
       const ctx = await deployFixture();
@@ -297,8 +329,10 @@ describe("UniswapV3TokenInitializer.init", function () {
 
       expect(aliceBalance).to.be.greaterThan(0n);
       expect(bobBalance).to.be.greaterThan(0n);
-      // Nothing is lost or created in the split.
-      expect(aliceBalance + bobBalance).to.equal(bought);
+      // Nothing is lost or created in the split. The LP remainder is swept into the buy
+      // recipient before the split runs, so it is distributed along with the purchase.
+      const dust = await ctx.positionManager.mintShortfallWei();
+      expect(aliceBalance + bobBalance).to.equal(bought + dust);
     });
 
     it("recovers the wallet addresses from the masked values", async function () {
@@ -313,8 +347,11 @@ describe("UniswapV3TokenInitializer.init", function () {
         { value: BUY }
       );
 
-      // The entire buy lands on the single unmasked wallet.
-      expect(await ctx.token.balanceOf(ctx.alice.address)).to.equal(await ctx.router.lastAmountOut());
+      // The entire buy, plus the swept LP remainder, lands on the single unmasked wallet.
+      const dust = await ctx.positionManager.mintShortfallWei();
+      expect(await ctx.token.balanceOf(ctx.alice.address)).to.equal(
+        (await ctx.router.lastAmountOut()) + dust
+      );
     });
 
     it("reverts when a buy is funded but no wallets are supplied", async function () {
@@ -339,8 +376,12 @@ describe("UniswapV3TokenInitializer.init", function () {
         { value: BUY }
       );
 
-      // Untaxed: the wallet received exactly what the router paid out.
-      expect(await ctx.token.balanceOf(ctx.alice.address)).to.equal(await ctx.router.lastAmountOut());
+      // Untaxed: the wallet received the router's full payout, with nothing skimmed.
+      const dust = await ctx.positionManager.mintShortfallWei();
+      expect(await ctx.token.balanceOf(ctx.alice.address)).to.equal(
+        (await ctx.router.lastAmountOut()) + dust
+      );
+      expect(await ctx.token.balanceOf(ctx.treasury.address)).to.equal(0n);
 
       // The pool is a taxed AMM pair from here on.
       const pool = await ctx.positionManager.lastPool();

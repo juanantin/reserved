@@ -123,6 +123,15 @@ contract MockNonfungiblePositionManager {
     int24 public nextPoolTick;
     int24 public nextPoolTickSpacing = 50;
 
+    /// Real V3 derives liquidity from the desired amounts by rounding down, then
+    /// recomputes what that liquidity consumes, so the deposit lands a few wei short.
+    /// Modelling that is what makes an `amountMin == amountDesired` bound fail here the
+    /// way it fails on-chain.
+    uint256 public mintShortfallWei = 3;
+    /// 10000 = the range takes the full desired amount. Lower it to simulate a range
+    /// straddling the current tick, where the funded leg is only partly consumed.
+    uint256 public mintFillBps = 10_000;
+
     // Recorded for assertions.
     uint160 public lastSqrtPriceX96;
     address public lastPool;
@@ -144,6 +153,20 @@ contract MockNonfungiblePositionManager {
 
     function setNextPoolTickSpacing(int24 spacing_) external {
         nextPoolTickSpacing = spacing_;
+    }
+
+    function setMintShortfallWei(uint256 wei_) external {
+        mintShortfallWei = wei_;
+    }
+
+    function setMintFillBps(uint256 bps_) external {
+        mintFillBps = bps_;
+    }
+
+    function _consumed(uint256 desired) private view returns (uint256) {
+        if (desired == 0) return 0;
+        uint256 filled = (desired * mintFillBps) / 10_000;
+        return filled > mintShortfallWei ? filled - mintShortfallWei : 0;
     }
 
     function createAndInitializePoolIfNecessary(
@@ -192,16 +215,21 @@ contract MockNonfungiblePositionManager {
         address pool = MockUniswapV3Factory(factory).getPool(params.token0, params.token1, params.fee);
         require(pool != address(0), "no pool");
 
+        amount0 = _consumed(params.amount0Desired);
+        amount1 = _consumed(params.amount1Desired);
+        // Same bound, same message as the real position manager.
+        require(amount0 >= params.amount0Min && amount1 >= params.amount1Min, "Price slippage check");
+
         // Pull the funded leg through the allowance the initializer set, so the test
         // exercises the approval path and the token's own transfer hook.
-        if (params.amount0Desired > 0) {
-            IERC20(params.token0).transferFrom(msg.sender, pool, params.amount0Desired);
+        if (amount0 > 0) {
+            IERC20(params.token0).transferFrom(msg.sender, pool, amount0);
         }
-        if (params.amount1Desired > 0) {
-            IERC20(params.token1).transferFrom(msg.sender, pool, params.amount1Desired);
+        if (amount1 > 0) {
+            IERC20(params.token1).transferFrom(msg.sender, pool, amount1);
         }
 
-        return (1, 1, params.amount0Desired, params.amount1Desired);
+        return (1, 1, amount0, amount1);
     }
 }
 

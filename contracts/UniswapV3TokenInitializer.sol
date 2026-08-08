@@ -118,8 +118,15 @@ contract UniswapV3TokenInitializer {
             tickUpper : tickUpper,
             amount0Desired : amount0Desired,
             amount1Desired : amount1Desired,
-            amount0Min : amount0Desired,
-            amount1Min : amount1Desired,
+            // V3 derives liquidity from the desired amounts rounding down, then recomputes
+            // what that liquidity actually consumes, so the deposit lands a few wei under
+            // `desired` and a min == desired bound reverts with "Price slippage check"
+            // every time. 1bp of slack absorbs the rounding while still failing loudly if
+            // the range straddles the current tick — that case needs the other token,
+            // which this contract does not hold, and would otherwise deposit ~nothing and
+            // silently sweep the whole supply to the owner.
+            amount0Min : amount0Desired - amount0Desired / 10_000,
+            amount1Min : amount1Desired - amount1Desired / 10_000,
             recipient : _owner,
             deadline : block.timestamp + 1000
         }));
