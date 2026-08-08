@@ -13,7 +13,7 @@ import { ethers } from "hardhat";
 
 const TOKEN = process.env.TOKEN!;
 const FROM_BLOCK = Number(process.env.FROM_BLOCK || "0");
-const CHUNK = Number(process.env.CHUNK || "2000");
+
 
 const TOKEN_ABI = [
   "event Transfer(address indexed from, address indexed to, uint256 value)",
@@ -32,6 +32,24 @@ const VAULT_ABI = [
 ];
 
 const short = (a: string) => `${a.slice(0, 8)}…${a.slice(-4)}`;
+
+/**
+ * Providers cap eth_getLogs differently — by block span, by result count, or both — and
+ * announce it only as "limit exceeded". Rather than guess a chunk size that suits every
+ * endpoint, start with the whole range and halve on failure until each piece is accepted.
+ */
+async function fetchLogs(token: any, from: number, to: number, depth = 0): Promise<any[]> {
+  try {
+    return await token.queryFilter(token.filters.Transfer(), from, to);
+  } catch (err) {
+    if (to <= from || depth > 14) throw err;
+    const mid = Math.floor((from + to) / 2);
+    if (depth === 0) console.log(`  (provider capped the range, splitting)`);
+    const left = await fetchLogs(token, from, mid, depth + 1);
+    const right = await fetchLogs(token, mid + 1, to, depth + 1);
+    return [...left, ...right];
+  }
+}
 
 async function main() {
   if (!TOKEN) throw new Error("Set TOKEN to the token address");
@@ -53,12 +71,7 @@ async function main() {
   console.log(`Tax rate  : ${taxBps} bps (${Number(taxBps) / 100}%)`);
   console.log(`Blocks    : ${from} → ${latest}`);
 
-  // Pull the full log in chunks — public BSC endpoints cap eth_getLogs ranges.
-  const events: any[] = [];
-  for (let start = from; start <= latest; start += CHUNK) {
-    const end = Math.min(start + CHUNK - 1, latest);
-    events.push(...(await token.queryFilter(token.filters.Transfer(), start, end)));
-  }
+  const events = await fetchLogs(token, from, latest);
   console.log(`Transfers : ${events.length}`);
 
   // Group by transaction: a taxed transfer emits two events in one tx.
