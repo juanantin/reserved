@@ -1,0 +1,513 @@
+[
+  {
+    "t": 1785603276,
+    "marketCapBnb": 0.07977090969404833,
+    "supply": 962048186.5743736,
+    "treasuryBal": 29725987.434508216,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785607014,
+    "marketCapBnb": 0.0921141340301044,
+    "supply": 962048186.5743736,
+    "treasuryBal": 29874759.067173876,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785611166,
+    "marketCapBnb": 0.09402693824180614,
+    "supply": 962048186.5743736,
+    "treasuryBal": 86352711.32164977,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785617039,
+    "marketCapBnb": 0.09402693824180614,
+    "supply": 962048186.5743736,
+    "treasuryBal": 86352711.32164977,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785621001,
+    "marketCapBnb": 0.09402693824180614,
+    "supply": 962048186.5743736,
+    "treasuryBal": 86352711.32164977,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785624560,
+    "marketCapBnb": 0.09402693824180614,
+    "supply": 962048186.5743736,
+    "treasuryBal": 86352711.32164977,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785628356,
+    "marketCapBnb": 0.09402693824180614,
+    "supply": 962048186.5743736,
+    "treasuryBal": 86352711.32164977,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785636722,
+    "marketCapBnb": 0.09402693824180614,
+    "supply": 962048186.5743736,
+    "treasuryBal": 86352711.32164977,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785649887,
+    "marketCapBnb": 0.09402693824180614,
+    "supply": 962048186.5743736,
+    "treasuryBal": 86352711.32164977,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785658390,
+    "marketCapBnb": 0.09402693824180614,
+    "supply": 962048186.5743736,
+    "treasuryBal": 86352711.32164977,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785666588,
+    "marketCapBnb": 0.09402693824180614,
+    "supply": 962048186.5743736,
+    "treasuryBal": 86352711.32164977,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785671886,
+    "marketCapBnb": 0.09402693824180614,
+    "supply": 962048186.5743736,
+    "treasuryBal": 86352711.32164977,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785677089,
+    "marketCapBnb": 0.09402693824180614,
+    "supply": 962048186.5743736,
+    "treasuryBal": 86352711.32164977,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785682666,
+    "marketCapBnb": 0.04639650392550576,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2770702.7168391123,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785686509,
+    "marketCapBnb": 0.04639650392550576,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2770702.7168391123,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785693439,
+    "marketCapBnb": 0.04639650392550576,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2770702.7168391123,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785697763,
+    "marketCapBnb": 0.04639650392550576,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2770702.7168391123,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785703653,
+    "marketCapBnb": 0.04639650392550576,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2770702.7168391123,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785707441,
+    "marketCapBnb": 0.04639650392550576,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2770702.7168391123,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785711085,
+    "marketCapBnb": 0.04639650392550576,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2770702.7168391123,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785714856,
+    "marketCapBnb": 0.04639650392550576,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2770702.7168391123,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785723242,
+    "marketCapBnb": 0.04639650392550576,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2770702.7168391123,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785737769,
+    "marketCapBnb": 0.05038595034022426,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2899690.6450367495,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785753444,
+    "marketCapBnb": 0.05038595034022426,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2899690.6450367495,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785764214,
+    "marketCapBnb": 0.05038595034022426,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2899690.6450367495,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785773899,
+    "marketCapBnb": 0.05038595034022426,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2899690.6450367495,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785782814,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785788594,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785794594,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785801841,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785816513,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785828818,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785839529,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785848200,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785856982,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785865222,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785871414,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785877570,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785884257,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785888207,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785902146,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785911015,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785922359,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785930862,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785938076,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785945555,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785951939,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785957741,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785963755,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785970428,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785974122,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785981805,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1785994980,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1786004718,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1786014977,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1786024358,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1786063107,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1786074361,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1786080965,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1786086390,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1786092754,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1786096557,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1786099720,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1786102883,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1786107077,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1786111745,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1786117875,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1786121261,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1786124659,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1786128397,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1786132132,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1786134898,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  },
+  {
+    "t": 1786138419,
+    "marketCapBnb": 0.041472028732483804,
+    "supply": 962048186.5743736,
+    "treasuryBal": 2943090.9817429804,
+    "reserveAssetCount": 1
+  }
+]

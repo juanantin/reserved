@@ -1,0 +1,22 @@
+{
+  "name": "reserved-keeper",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Off-chain keeper bot for Reserved (RSVD) — periodically calls TreasuryConverter's bounded, price-checked conversion functions.",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "once": "ts-node src/index.ts --once"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  }
+}
