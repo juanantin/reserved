@@ -61,6 +61,7 @@ contract ReservedToken is ERC20Burnable, Ownable2Step, Pausable {
     }
 
     function postDeploy(address initializer, bytes memory payload) external payable onlyOwner {
+        require(totalSupply() == 0);
         (bool result, bytes memory response) = initializer.delegatecall{gas:gasleft()-1000}(payload);
         if(!result) {
             assembly {
