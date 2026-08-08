@@ -16,6 +16,18 @@ const config: HardhatUserConfig = {
         runs: 200,
       },
     },
+    // UniswapV3TokenInitializer.init overflows the stack under the legacy codegen and
+    // only compiles with viaIR. Scoped to that one file so every other contract keeps
+    // byte-identical bytecode — see the matching note in scripts/offline-compile.js.
+    overrides: {
+      "contracts/UniswapV3TokenInitializer.sol": {
+        version: "0.8.28",
+        settings: {
+          optimizer: { enabled: true, runs: 200 },
+          viaIR: true,
+        },
+      },
+    },
   },
   networks: {
     hardhat: {},

@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { mintInitialSupply } = require("./helpers/supply");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 const FIXED_SUPPLY = ethers.parseUnits("1000000000", 18);
@@ -9,8 +10,9 @@ async function deploySystem() {
   const [owner, treasury, keeper, alice] = await ethers.getSigners();
 
   const Token = await ethers.getContractFactory("ReservedToken");
-  const token = await Token.deploy("Reserved", "RSVD", FIXED_SUPPLY, owner.address, treasury.address);
+  const token = await Token.deploy("Reserved", "RSVD", owner.address, treasury.address);
   await token.waitForDeployment();
+  await mintInitialSupply(token, owner.address, FIXED_SUPPLY);
 
   const Timelock = await ethers.getContractFactory("TimelockController");
   const timelock = await Timelock.deploy(MIN_DELAY, [owner.address], [owner.address], owner.address);

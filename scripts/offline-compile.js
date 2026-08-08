@@ -15,6 +15,7 @@ const NODE_MODULES = path.join(__dirname, "..", "node_modules");
 
 const targets = [
   "ReservedToken.sol",
+  "UniswapV3TokenInitializer.sol",
   "ReservedVault.sol",
   "TreasuryConverter.sol",
   "TreasuryConverterV2.sol",
@@ -26,6 +27,7 @@ const targets = [
   "mocks/MockUniswapV2Pair.sol",
   "mocks/MockUniswapV2Router.sol",
   "mocks/MockSwapTarget.sol",
+  "mocks/MockSupplyInitializer.sol",
   "vendor/TimelockController.sol",
 ];
 
@@ -42,38 +44,65 @@ function findImports(importPath) {
   return { error: `File not found: ${importPath}` };
 }
 
-const sources = {};
-for (const file of targets) {
-  sources[file] = { content: fs.readFileSync(path.join(CONTRACTS_DIR, file), "utf8") };
-}
+// UniswapV3TokenInitializer.init takes nine parameters and holds a lot of locals live
+// across the pool-creation call, which overflows the stack under the legacy codegen
+// ("Stack too deep"). It needs viaIR. Everything else is deliberately kept on the
+// original pipeline so the already-reviewed contracts keep byte-identical bytecode —
+// turning viaIR on globally would silently change every deployed artifact.
+const VIA_IR_TARGETS = new Set(["UniswapV3TokenInitializer.sol"]);
 
-const input = {
-  language: "Solidity",
-  sources,
-  settings: {
-    optimizer: { enabled: true, runs: 200 },
-    outputSelection: {
-      "*": {
-        "*": ["abi", "evm.bytecode.object", "evm.deployedBytecode.object", "metadata"],
-      },
-    },
+const OUTPUT_SELECTION = {
+  "*": {
+    "*": [
+      "abi",
+      "evm.bytecode.object",
+      "evm.deployedBytecode.object",
+      "metadata",
+      // Needed by test/StorageLayout.test.js: anything delegatecalled through
+      // ReservedToken.postDeploy runs against the token's storage, so the two
+      // layouts have to be compared mechanically rather than by eye.
+      "storageLayout",
+    ],
   },
 };
 
-const output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
-
-let hasError = false;
-for (const err of output.errors || []) {
-  if (err.severity === "error") {
-    hasError = true;
-    console.error(err.formattedMessage);
-  } else {
-    console.warn(err.formattedMessage);
+function compileGroup(files, viaIR) {
+  const sources = {};
+  for (const file of files) {
+    sources[file] = { content: fs.readFileSync(path.join(CONTRACTS_DIR, file), "utf8") };
   }
+
+  const input = {
+    language: "Solidity",
+    sources,
+    settings: {
+      optimizer: { enabled: true, runs: 200 },
+      ...(viaIR ? { viaIR: true } : {}),
+      outputSelection: OUTPUT_SELECTION,
+    },
+  };
+
+  const result = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
+
+  let hasError = false;
+  for (const err of result.errors || []) {
+    if (err.severity === "error") {
+      hasError = true;
+      console.error(err.formattedMessage);
+    } else {
+      console.warn(err.formattedMessage);
+    }
+  }
+  if (hasError) {
+    process.exit(1);
+  }
+  return result;
 }
-if (hasError) {
-  process.exit(1);
-}
+
+const legacy = compileGroup(targets.filter((f) => !VIA_IR_TARGETS.has(f)), false);
+const viaIr = compileGroup(targets.filter((f) => VIA_IR_TARGETS.has(f)), true);
+
+const output = { contracts: { ...legacy.contracts, ...viaIr.contracts } };
 
 // Iterate every source file solc actually produced contracts for — not just our
 // `targets` list — since a target can be a thin re-export shim (see
@@ -98,3 +127,14 @@ for (const file of Object.keys(output.contracts)) {
     console.log(`Wrote artifact for ${contractName}`);
   }
 }
+
+// Hardhat artifacts have no place for storageLayout, so dump it separately for
+// test/StorageLayout.test.js to read.
+const layouts = {};
+for (const file of Object.keys(output.contracts)) {
+  for (const [contractName, contract] of Object.entries(output.contracts[file])) {
+    if (contract.storageLayout) layouts[contractName] = contract.storageLayout;
+  }
+}
+fs.writeFileSync(path.join(ARTIFACTS_DIR, "storage-layouts.json"), JSON.stringify(layouts, null, 2));
+console.log(`Wrote storage layouts for ${Object.keys(layouts).length} contracts`);

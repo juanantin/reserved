@@ -1,13 +1,15 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { mintInitialSupply } = require("./helpers/supply");
 
 const FIXED_SUPPLY = ethers.parseUnits("1000000000", 18); // 1B RSVD
 
 async function deployToken() {
   const [owner, treasury, pair, alice, bob] = await ethers.getSigners();
   const Token = await ethers.getContractFactory("ReservedToken");
-  const token = await Token.deploy("Reserved", "RSVD", FIXED_SUPPLY, owner.address, treasury.address);
+  const token = await Token.deploy("Reserved", "RSVD", owner.address, treasury.address);
   await token.waitForDeployment();
+  await mintInitialSupply(token, owner.address, FIXED_SUPPLY);
   return { token, owner, treasury, pair, alice, bob };
 }
 
