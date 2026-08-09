@@ -14,6 +14,7 @@
     "deploy:governance-vote:mainnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-governance-vote.ts --network bscMainnet --no-compile",
     "seed:testnet": "hardhat run scripts/seed-pool.ts --network bscTestnet --no-compile",
     "seed:mainnet": "hardhat run scripts/seed-pool.ts --network bscMainnet --no-compile",
+    "close:positions:mainnet": "hardhat run scripts/close-positions.ts --network bscMainnet --no-compile",
     "check:pool:testnet": "hardhat run scripts/check-reference-pool.ts --network bscTestnet --no-compile",
     "check:pool:mainnet": "hardhat run scripts/check-reference-pool.ts --network bscMainnet --no-compile",
     "launch:testnet": "node scripts/offline-compile.js && hardhat run scripts/launch.ts --network bscTestnet --no-compile",
