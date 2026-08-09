@@ -7,19 +7,23 @@ export const tokenInfo = {
   chain: "BNB Chain",
   chainId: 56,
   fixedSupply: "1,000,000,000",
-  taxBps: 300, // 3% buy/sell tax, see PROJECT_BRIEF.md
+  // RSVD has no transfer tax. A fee on transfers cannot work on a V3 pool — the pool
+  // demands the full input amount and reverts otherwise — so trading costs only the
+  // pool's own swap fee. A treasury fee returns via an Infinity hook, at which point
+  // this becomes the hook fee plus the pool fee.
+  poolFeeBps: 25, // 0.25% PancakeSwap V3 fee tier
 
   // Set once each contract is deployed and verified.
-  tokenAddress: "0x8761873C64C1fB8e8174b9Ee39f11FFe4a3D8883",
-  vaultAddress: "0x0Ec27569eb6Ac155aE18161DF1F5332c8f8900ea",
+  tokenAddress: "",
+  vaultAddress: "",
 
   // Set once a PancakeSwap pool exists. Used to read live price off the pair's
   // reserves (see DashboardCard) — not just for the buy/chart links below.
-  pairAddress: "0x064B8301aC475789e8D6B7b8A4920127d5FCb80B",
+  pairAddress: "",
 
   // Set once a PancakeSwap pool exists / the token is listed somewhere.
-  buyUrl: "https://pancakeswap.finance/swap?outputCurrency=0x8761873C64C1fB8e8174b9Ee39f11FFe4a3D8883",
-  chartUrl: "https://www.dextools.io/app/en/bnb/pair-explorer/0x064B8301aC475789e8D6B7b8A4920127d5FCb80B",
+  buyUrl: "",
+  chartUrl: "",
   explorerBaseUrl: "https://bscscan.com/address/",
 
   // Redemption happens directly on this site now (see RedeemPanel) — no external

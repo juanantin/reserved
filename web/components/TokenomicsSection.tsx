@@ -17,7 +17,7 @@ export function TokenomicsSection({ locale }: { locale: Locale }) {
     { key: "ticker", label: t.labels.ticker, value: tokenInfo.ticker },
     { key: "chain", label: t.labels.chain, value: tokenInfo.chain },
     { key: "fixedSupply", label: t.labels.fixedSupply, value: `${tokenInfo.fixedSupply} ${tokenInfo.ticker}` },
-    { key: "buyTax", label: t.labels.buyTax, value: `${tokenInfo.taxBps / 100}%` },
+    { key: "swapFee", label: t.labels.swapFee, value: `${tokenInfo.poolFeeBps / 100}%` },
     { key: "contract", label: t.labels.contract, value: bscscanUrl ? shortAddr(tokenInfo.tokenAddress) : "—" },
   ];
 

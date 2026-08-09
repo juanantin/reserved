@@ -18,7 +18,7 @@ const en: DocsSection[] = [
     title: "Overview",
     blocks: [
       p(
-        "Reserved is an on-chain treasury on BNB Chain that acquires and holds tokenized stocks (Binance bStocks) for the long term. RSVD is a fixed-supply BEP-20 token; a 3% tax on buys and sells funds the treasury, and any RSVD holder can burn their tokens at any time to redeem a pro-rata share of everything the vault holds — no permission, no waiting period, no DAO vote required to exit."
+        "Reserved is an on-chain treasury on BNB Chain that acquires and holds tokenized stocks (Binance bStocks) for the long term. RSVD is a fixed-supply BEP-20 token with no transfer tax and no admin functions of any kind. Any RSVD holder can burn their tokens at any time to redeem a pro-rata share of everything the vault holds — no permission, no waiting period, no DAO vote required to exit."
       ),
       p(
         "The mechanic is modeled on backed.is (Robinhood Chain), retargeted to BNB Chain and Binance's own bStocks. It was built without access to backed.is's deployed source, so treat it as a reconstruction of the described mechanic, not a line-by-line port."
@@ -36,7 +36,7 @@ const en: DocsSection[] = [
         "RSVD is a standard BEP-20 with a fixed supply set at deployment — there is no mint function reachable after deploy, by anyone, including the owner. Total supply only ever goes down, via burns."
       ),
       ul([
-        "3% tax on transfers that touch a registered AMM pair (buys and sells alike — there's no separate, higher sell tax, which is the classic honeypot pattern this deliberately avoids).",
+        "No tax on transfers at all. A fee charged at the token level cannot work against a Uniswap-V3-style pool: the pool verifies it received the full input amount and reverts otherwise, so a taxed sale fails while buys still succeed — which is the honeypot pattern itself. Trading costs only the pool's own swap fee.",
         "The tax rate is owner-adjustable but hard-capped at 5% — it can never be raised to a level that functions as a rug.",
         "Ordinary wallet-to-wallet transfers are never taxed, only trades against a registered pair.",
         "Burn (via ERC20Burnable) is how redemption removes tokens from supply — see Vault & Redemption below.",
@@ -111,7 +111,7 @@ const en: DocsSection[] = [
       p("What's been deliberately hardened, verified by an automated test suite covering every contract:"),
       ul([
         "No fund-drain backdoor: no owner-only withdraw/rescue function for vault or treasury assets, anywhere.",
-        "No mint, no blacklist, symmetric buy/sell tax — the standard scanner/honeypot heuristics all come back clean.",
+        "No mint, no blacklist, no pause, no owner — the contract exposes nothing beyond ERC20 and burn, so there is no privileged call for a scanner to flag or for anyone to make.",
         "Ownable2Step everywhere, not plain Ownable.",
         "Emergency pause exists but is structurally incapable of blocking an exit: burns are exempt from the token's pause, and redeem() doesn't carry the vault's pause modifier at all.",
         "Timelock-ready ownership: contracts can be handed to a TimelockController so admin changes require a schedule-then-execute delay rather than taking effect instantly.",
@@ -141,7 +141,7 @@ const zh: DocsSection[] = [
     title: "概述",
     blocks: [
       p(
-        "Reserved 是一个运行于 BNB Chain 的链上资金库，长期收购并持有代币化股票（币安 bStocks）。RSVD 是固定总量的 BEP-20 代币；每笔买卖征收 3% 的税用于注资，任何 RSVD 持有者均可随时销毁代币，按比例赎回金库持有的全部资产 — 无需许可、无需等待、无需 DAO 投票即可退出。"
+        "Reserved 是一个运行于 BNB Chain 的链上资金库，长期收购并持有代币化股票（币安 bStocks）。RSVD 是固定总量的 BEP-20 代币，不收取任何转账税，也没有任何管理员权限。任何 RSVD 持有者均可随时销毁代币，按比例赎回金库持有的全部资产 — 无需许可、无需等待、无需 DAO 投票即可退出。"
       ),
       p(
         "该机制参照 backed.is（Robinhood Chain）设计，并针对 BNB Chain 与币安自有的 bStocks 进行了改造。由于构建过程中无法访问 backed.is 的已部署源码，请将其视为对所述机制的重新实现，而非逐行移植。"
@@ -157,7 +157,7 @@ const zh: DocsSection[] = [
     blocks: [
       p("RSVD 是标准的 BEP-20 代币，总量在部署时固定 — 部署后任何人（包括所有者）都无法再增发。总供应量只会因销毁而减少。"),
       ul([
-        "对触及已注册 AMM 交易对的转账征收 3% 税费（买卖同税 — 没有更高的单独卖出税，这正是本项目刻意避免的经典蜜罐模式）。",
+        "完全不收取转账税。在 Uniswap V3 架构的池子中，代币层面的税费无法运作：池子会校验是否收到完整的输入数量，否则直接回滚，因此卖出会失败而买入仍然成功 — 这正是蜜罐的表现。交易成本仅为池子本身的手续费。",
         "税率可由所有者调整，但硬性上限为 5% — 永远不会被提高到足以构成收割的程度。",
         "普通钱包间转账不征税，仅针对与已注册交易对的交易征税。",
         "赎回通过销毁（ERC20Burnable）将代币从总供应量中移除 — 详见下方“金库与赎回”。",
@@ -226,7 +226,7 @@ const zh: DocsSection[] = [
       p("以下是经过刻意加固、并由覆盖全部合约的自动化测试套件验证过的部分："),
       ul([
         "不存在资金抽离后门：金库或资金库资产不存在任何仅所有者可用的提现/救援函数。",
-        "无增发、无黑名单、买卖同税 — 各类常见的扫描器/蜜罐检测规则均可顺利通过。",
+        "无增发、无黑名单、无暂停、无 owner — 合约除 ERC20 与销毁之外不暴露任何函数，因此没有任何特权调用可供扫描器标记或被任何人使用。",
         "全部采用 Ownable2Step，而非普通 Ownable。",
         "存在紧急暂停功能，但在结构上无法阻止退出：销毁操作不受代币暂停影响，金库的 redeem() 函数也完全不带暂停修饰符。",
         "所有权已为时间锁做好准备：合约可移交给 TimelockController，使管理变更需经过“先排期、后执行”的延迟，而非即时生效。",

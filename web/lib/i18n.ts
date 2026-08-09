@@ -98,7 +98,7 @@ export const dictionaries = {
       descriptionPrefix: "Fixed supply, taxed on every buy and sell. See",
       descriptionLink: "Treasury",
       descriptionSuffix: "for the planned reserve composition.",
-      labels: { ticker: "Ticker", chain: "Chain", fixedSupply: "Fixed supply", buyTax: "Buy/sell tax", contract: "Contract" },
+      labels: { ticker: "Ticker", chain: "Chain", fixedSupply: "Fixed supply", swapFee: "Swap fee", contract: "Contract" },
     },
     treasury: {
       title: "Treasury",
@@ -310,7 +310,7 @@ export const dictionaries = {
       descriptionPrefix: "固定总量，每笔买卖均征税。查看",
       descriptionLink: "资金库",
       descriptionSuffix: "了解计划中的储备构成。",
-      labels: { ticker: "代币代码", chain: "所属链", fixedSupply: "固定总量", buyTax: "买卖税率", contract: "合约地址" },
+      labels: { ticker: "代币代码", chain: "所属链", fixedSupply: "固定总量", swapFee: "交易手续费", contract: "合约地址" },
     },
     treasury: {
       title: "资金库",
