@@ -1,16 +1,15 @@
 import { ethers } from "hardhat";
 
 // Deploys a TimelockController and hands ownership of an already-deployed
-// ReservedToken + ReservedVault to it, so every onlyOwner call (setTaxBps,
+// ReservedVault to it, so every onlyOwner call (setKeeper,
 // setTreasury, setAmmPair, setTaxExempt, pause/unpause, setKeeper, ...) has to go
 // through schedule() -> wait minDelay -> execute() instead of taking effect
 // instantly. This is the single most commonly-flagged pattern by security
 // scanners ("owner can instantly change fees") — fixed with zero changes to
-// ReservedToken.sol/ReservedVault.sol, since Ownable2Step already accepts any
+// ReservedVault.sol, since Ownable2Step already accepts any
 // address, including a contract, as owner.
 //
 // Fill these in before running.
-const TOKEN_ADDRESS = process.env.TOKEN_ADDRESS || "";
 const VAULT_ADDRESS = process.env.VAULT_ADDRESS || "";
 
 // 24h is the mainnet-appropriate default — enough time for holders to notice and
@@ -27,8 +26,8 @@ const AUTO_EXECUTE_THRESHOLD_SECONDS = 900; // 15 minutes
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
-  if (!TOKEN_ADDRESS || !VAULT_ADDRESS) {
-    throw new Error("Set TOKEN_ADDRESS and VAULT_ADDRESS env vars to the deployed contracts first.");
+  if (!VAULT_ADDRESS) {
+    throw new Error("Set VAULT_ADDRESS to the deployed vault. The token has no owner to hand over.");
   }
 
   const [deployer] = await ethers.getSigners();
@@ -52,22 +51,17 @@ async function main() {
   await timelock.waitForDeployment();
   const timelockAddress = await timelock.getAddress();
   console.log("TimelockController deployed to:", timelockAddress);
-
-  const token: any = await ethers.getContractAt("ReservedToken", TOKEN_ADDRESS);
   const vault: any = await ethers.getContractAt("ReservedVault", VAULT_ADDRESS);
-
-  await (await token.connect(deployer).transferOwnership(timelockAddress)).wait();
   await (await vault.connect(deployer).transferOwnership(timelockAddress)).wait();
-  console.log("Started ownership transfer of token + vault to the timelock (pending acceptance).");
+  console.log("Started ownership transfer of the vault to the timelock (pending acceptance).");
 
   // The timelock must call acceptOwnership() *as itself*, which means scheduling and
   // (after the delay) executing that call, rather than a direct transaction.
-  const acceptOwnershipData = token.interface.encodeFunctionData("acceptOwnership");
+  const acceptOwnershipData = vault.interface.encodeFunctionData("acceptOwnership");
   const salt = ethers.id(`reserved-timelock-accept-${Date.now()}`);
 
   const scheduled: Array<{ label: string; address: string; data: string }> = [];
   for (const [label, address, data] of [
-    ["token", TOKEN_ADDRESS, acceptOwnershipData],
     ["vault", VAULT_ADDRESS, vault.interface.encodeFunctionData("acceptOwnership")],
   ] as const) {
     await (
@@ -83,7 +77,7 @@ async function main() {
     console.log("\nNext steps:");
     console.log(`- Wait ${MIN_DELAY_SECONDS}s, then call timelock.execute(...) for each scheduled acceptOwnership()`);
     console.log("  (same target/value/data/predecessor/salt used above — see this script for the encoding).");
-    console.log("- After that, token.owner() and vault.owner() both equal the timelock address.");
+    console.log("- After that, vault.owner() equals the timelock address.");
     console.log("- All future admin calls (setTaxBps, setAmmPair, pause, setKeeper, ...) must go through");
     console.log("  timelock.schedule() then timelock.execute() after the delay — direct calls will revert.");
     return;
@@ -100,11 +94,9 @@ async function main() {
   // Public testnet RPC nodes can lag a beat behind the block that was just mined —
   // see testnet-check.ts for the same issue. Give it a moment before reading state.
   await sleep(3000);
-
-  const tokenOwner = await token.owner();
   const vaultOwner = await vault.owner();
-  const handoffOk = tokenOwner === timelockAddress && vaultOwner === timelockAddress;
-  console.log(`\nOwnership handoff: token.owner()=${tokenOwner}, vault.owner()=${vaultOwner}`);
+  const handoffOk = vaultOwner === timelockAddress;
+  console.log(`\nOwnership handoff: vault.owner()=${vaultOwner}`);
   console.log(`HANDOFF: ${handoffOk ? "PASS" : "FAIL"} (expected both to equal ${timelockAddress})`);
 
   // Live proof, not just an assertion: the original deployer, still holding the
@@ -112,15 +104,14 @@ async function main() {
   // function directly now that ownership sits with the timelock.
   let directCallBlocked = false;
   try {
-    await token.connect(deployer).pause();
+    await vault.connect(deployer).setKeeper(deployer.address);
   } catch {
     directCallBlocked = true;
   }
   if (directCallBlocked) {
-    console.log("DIRECT OWNER CALL AFTER HANDOFF: PASS (deployer's direct token.pause() call reverted, as expected)");
+    console.log("DIRECT OWNER CALL AFTER HANDOFF: PASS (deployer's direct vault.setKeeper() call reverted, as expected)");
   } else {
     console.log("DIRECT OWNER CALL AFTER HANDOFF: FAIL (deployer could still call pause() directly — investigate)");
-    console.log("Token is now paused as a side effect of this check — unpause via the timelock before using it further.");
   }
 }
 
