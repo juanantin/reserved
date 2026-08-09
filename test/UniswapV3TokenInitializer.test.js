@@ -384,9 +384,10 @@ describe("UniswapV3TokenInitializer.init", function () {
       expect(await ctx.token.balanceOf(ctx.treasury.address)).to.equal(0n);
 
       // The pool is a taxed AMM pair from here on.
+      // The sell tax is charged on top, so alice needs 500 + 15 in hand.
       const pool = await ctx.positionManager.lastPool();
-      await ctx.token.connect(ctx.alice).transfer(pool, 1000n * WAD);
-      expect(await ctx.token.balanceOf(ctx.treasury.address)).to.equal(30n * WAD); // 3%
+      await ctx.token.connect(ctx.alice).transfer(pool, 500n * WAD);
+      expect(await ctx.token.balanceOf(ctx.treasury.address)).to.equal(15n * WAD); // 3% of 500
     });
 
     it("KNOWN RISK: swaps with no slippage floor", async function () {

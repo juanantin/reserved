@@ -1,6 +1,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { mintInitialSupply } = require("./helpers/supply");
+const { deployOnSide, lt } = require("./helpers/ordering");
 
 // Covers only what V3 changed: the sell leg's oracle and swap path. Everything else —
 // the generic buy executor, oracle floors, spend windows, migration — is carried over
@@ -11,8 +12,6 @@ const SUPPLY = 1_000_000_000n * WAD;
 const FEE = 2500;
 const SLIPPAGE_BPS = 500n; // 500 ticks ≈ 5%
 const TWAP_TICK = -179_000;
-
-const lt = (a, b) => BigInt(a) < BigInt(b);
 
 async function deployFixture({ rsvdIsToken0 = true } = {}) {
   // Fund the pool from a signer nothing else touches: Hardhat state persists across
@@ -28,12 +27,7 @@ async function deployFixture({ rsvdIsToken0 = true } = {}) {
   // Token ordering decides which way a sale pushes the tick, so pick a WBNB address on
   // the required side of the token rather than hoping.
   const WBNBFactory = await ethers.getContractFactory("MockWBNB");
-  let wbnb = await WBNBFactory.deploy();
-  await wbnb.waitForDeployment();
-  for (let i = 0; i < 40 && lt(tokenAddress, await wbnb.getAddress()) !== rsvdIsToken0; i++) {
-    wbnb = await WBNBFactory.deploy();
-    await wbnb.waitForDeployment();
-  }
+  const wbnb = await deployOnSide(WBNBFactory, owner, tokenAddress, rsvdIsToken0);
   const wbnbAddress = await wbnb.getAddress();
   expect(lt(tokenAddress, wbnbAddress), "could not place WBNB on the required side").to.equal(rsvdIsToken0);
 

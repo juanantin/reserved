@@ -51,10 +51,29 @@ describe("ReservedToken", function () {
     const sellAmount = ethers.parseUnits("400", 18);
     await token.connect(alice).transfer(pair.address, sellAmount);
 
+    // On a sell the pair must receive the FULL amount — a V3 pool checks that it did
+    // and reverts otherwise — so the tax is charged on top and the seller pays both.
     const expectedTax = (sellAmount * 300n) / 10000n;
-    expect(await token.balanceOf(pair.address)).to.equal(sellAmount - expectedTax);
+    expect(await token.balanceOf(pair.address)).to.equal(sellAmount);
     expect(await token.balanceOf(treasury.address)).to.equal(expectedTax);
-    expect(await token.balanceOf(alice.address)).to.equal(startAmount - sellAmount);
+    expect(await token.balanceOf(alice.address)).to.equal(startAmount - sellAmount - expectedTax);
+  });
+
+  it("charging the sell tax on top means a holder cannot sell their entire balance", async function () {
+    const { token, owner, pair, alice } = await deployToken();
+    await token.connect(owner).setAmmPair(pair.address, true);
+    const startAmount = ethers.parseUnits("1000", 18);
+    await token.connect(owner).transfer(alice.address, startAmount);
+
+    // The tax has to come from somewhere beyond the amount the pair is owed.
+    await expect(token.connect(alice).transfer(pair.address, startAmount)).to.be.revertedWithCustomError(
+      token,
+      "ERC20InsufficientBalance"
+    );
+
+    // Selling 100/(1 + tax) of the balance is the most that fits.
+    const sellable = (startAmount * 10000n) / 10300n;
+    await expect(token.connect(alice).transfer(pair.address, sellable)).to.not.be.reverted;
   });
 
   it("does not tax exempt accounts even when touching a pair", async function () {

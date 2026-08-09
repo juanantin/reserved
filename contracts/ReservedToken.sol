@@ -121,9 +121,28 @@ contract ReservedToken is ERC20Burnable, Ownable2Step, Pausable {
 
         if (!isMintOrBurn && touchesPair && !exempt && taxBps > 0) {
             uint256 taxAmount = (value * taxBps) / BPS_DENOMINATOR;
-            uint256 netAmount = value - taxAmount;
-            super._update(from, treasury, taxAmount);
-            super._update(from, to, netAmount);
+
+            if (isAmmPair[to]) {
+                // SELL (or an LP deposit). A Uniswap-V3-style pool measures its own
+                // balance across the swap callback and reverts with "IIA" unless it
+                // received the full `value`, so the tax cannot come out of the amount
+                // the pool is owed — that is what made every non-exempt sell fail.
+                // Charge it on top instead: the pool receives `value` whole, the
+                // treasury receives `taxAmount`, and `from` pays both.
+                //
+                // The consequence is that a sale needs a balance of value + taxAmount,
+                // so selling an entire balance reverts and a holder must leave the tax
+                // behind — a "max" button has to sell at most 100/(1 + tax) of it.
+                // Deducting instead would silently reintroduce the V3 failure.
+                super._update(from, treasury, taxAmount);
+                super._update(from, to, value);
+            } else {
+                // BUY. Here the taxed leg is pool -> buyer, and the pool only accounts
+                // for what it RECEIVES (the quote asset, untaxed), so taking the skim
+                // out of the output is safe on every venue.
+                super._update(from, treasury, taxAmount);
+                super._update(from, to, value - taxAmount);
+            }
             return;
         }
 
