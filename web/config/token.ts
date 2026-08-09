@@ -11,7 +11,11 @@ export const tokenInfo = {
   // demands the full input amount and reverts otherwise — so trading costs only the
   // pool's own swap fee. A treasury fee returns via an Infinity hook, at which point
   // this becomes the hook fee plus the pool fee.
-  poolFeeBps: 25, // 0.25% PancakeSwap V3 fee tier
+  poolFeeBps: 25, // 0.25% PancakeSwap V3 fee tier — goes to liquidity providers
+  // Charged by the swap hook, in BNB, and routed to the treasury. The token itself
+  // charges nothing on transfers. Ships after the token and pool — see the docs.
+  protocolFeeBps: 300,
+  protocolFeeLive: false,
 
   // Set once each contract is deployed and verified.
   tokenAddress: "",

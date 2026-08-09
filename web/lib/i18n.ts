@@ -85,8 +85,8 @@ export const dictionaries = {
       ],
       diagram: {
         trade: { title: "Trade RSVD", subtitle: "Buy or sell on the open market" },
-        tax: { title: "Pool swap fee", subtitle: "Collected at the pool, not the token" },
-        keeper: { title: "Keeper bot", subtitle: "Converts fee proceeds" },
+        tax: { title: "3% protocol fee", subtitle: "Taken in BNB at the pool, not by the token" },
+        keeper: { title: "Keeper bot", subtitle: "Turns BNB into bStocks" },
         swapDex: { title: "Swap on PancakeSwap", subtitle: "bStocks / USDT pools", eyebrow: "Primary — on-chain" },
         swapCex: { title: "Buy via Binance", subtitle: "Withdraw as BEP-20", eyebrow: "Fallback — high slippage" },
         vault: { title: "Vault contract", subtitle: "Holds bStocks on-chain" },
@@ -98,7 +98,7 @@ export const dictionaries = {
       descriptionPrefix: "Fixed supply, no transfer tax, no admin functions. See",
       descriptionLink: "Treasury",
       descriptionSuffix: "for the planned reserve composition.",
-      labels: { ticker: "Ticker", chain: "Chain", fixedSupply: "Fixed supply", swapFee: "Swap fee", contract: "Contract" },
+      labels: { ticker: "Ticker", chain: "Chain", fixedSupply: "Fixed supply", swapFee: "Swap fee", protocolFee: "Protocol fee", transferTax: "Transfer tax", contract: "Contract" },
     },
     treasury: {
       title: "Treasury",
@@ -297,8 +297,8 @@ export const dictionaries = {
       ],
       diagram: {
         trade: { title: "交易 RSVD", subtitle: "在公开市场买入或卖出" },
-        tax: { title: "池子交易手续费", subtitle: "在池子层面收取，而非代币层面" },
-        keeper: { title: "Keeper 机器人", subtitle: "兑换手续费所得" },
+        tax: { title: "3% 协议手续费", subtitle: "在池子层面以 BNB 收取，而非由代币收取" },
+        keeper: { title: "Keeper 机器人", subtitle: "将 BNB 转换为 bStocks" },
         swapDex: { title: "通过 PancakeSwap 兑换", subtitle: "bStocks / USDT 交易池", eyebrow: "主要方式 — 链上" },
         swapCex: { title: "通过 Binance 购买", subtitle: "以 BEP-20 形式提现", eyebrow: "备用方案 — 高滑点时" },
         vault: { title: "金库合约", subtitle: "链上持有 bStocks" },
@@ -310,7 +310,7 @@ export const dictionaries = {
       descriptionPrefix: "固定总量，无转账税，无管理员权限。查看",
       descriptionLink: "资金库",
       descriptionSuffix: "了解计划中的储备构成。",
-      labels: { ticker: "代币代码", chain: "所属链", fixedSupply: "固定总量", swapFee: "交易手续费", contract: "合约地址" },
+      labels: { ticker: "代币代码", chain: "所属链", fixedSupply: "固定总量", swapFee: "交易手续费", protocolFee: "协议手续费", transferTax: "转账税", contract: "合约地址" },
     },
     treasury: {
       title: "资金库",

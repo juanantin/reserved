@@ -17,7 +17,15 @@ export function TokenomicsSection({ locale }: { locale: Locale }) {
     { key: "ticker", label: t.labels.ticker, value: tokenInfo.ticker },
     { key: "chain", label: t.labels.chain, value: tokenInfo.chain },
     { key: "fixedSupply", label: t.labels.fixedSupply, value: `${tokenInfo.fixedSupply} ${tokenInfo.ticker}` },
+    { key: "transferTax", label: t.labels.transferTax, value: "None" },
     { key: "swapFee", label: t.labels.swapFee, value: `${tokenInfo.poolFeeBps / 100}%` },
+    {
+      key: "protocolFee",
+      label: t.labels.protocolFee,
+      // Flagged rather than stated flat: the hook ships after the pool, and a site
+      // asserting a fee that is not yet charged is just wrong.
+      value: `${tokenInfo.protocolFeeBps / 100}%${tokenInfo.protocolFeeLive ? "" : " (at launch of the hook)"}`,
+    },
     { key: "contract", label: t.labels.contract, value: bscscanUrl ? shortAddr(tokenInfo.tokenAddress) : "—" },
   ];
 

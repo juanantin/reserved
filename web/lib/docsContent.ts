@@ -45,18 +45,44 @@ const en: DocsSection[] = [
     ],
   },
   {
-    id: "treasury-converter",
-    title: "Where the tax goes: the treasury converter",
+    id: "fee",
+    title: "The 3% fee, and why it lives at the pool",
     blocks: [
       p(
-        "Tax revenue is routed to a contract, not a wallet. A plain wallet holding accumulated tax revenue would mean whoever holds that private key can do anything with it before conversion — no on-chain constraint at all. TreasuryConverter closes that gap."
+        "RSVD charges nothing on transfers. The 3% is charged by a swap hook attached to the pool, not by the token — and that distinction is the whole design, not an implementation detail."
       ),
-      p("The converter exposes exactly three keeper-gated functions, each bounded, and nothing else moves value out of it:"),
+      p(
+        "A fee taken at the token level cannot work against a modern concentrated-liquidity pool. Such a pool measures its own balance across the swap and reverts unless it received the full input amount, so a fee skimmed on the way in leaves it short and the sale fails. Buys still succeed, because there the taxed leg is the pool paying the buyer and the pool never inspects that side. Buys working while sells revert is exactly the honeypot signature — which is why so many taxed tokens are stuck on older AMMs."
+      ),
+      p("Moving the fee to the pool avoids that entirely, and buys three things:"),
       ul([
-        "sellRsvd — swaps RSVD for BNB, capped by a per-transaction spend limit, and checked against a genuine time-weighted average price (TWAP) computed from the RSVD/BNB pool's own cumulative-price accumulator. This is the standard AMM oracle pattern specifically because spot price can be manipulated within a single transaction (a sandwich attack); a TWAP measured over a minimum window cannot be moved as cheaply.",
-        "buyReserveAsset — swaps BNB for an owner-allowlisted bStock, capped by its own per-transaction spend limit. When a bStock has a configured USDT trading pair and a Chainlink BNB/USD price feed, this is bounded by the same kind of TWAP floor, converted to BNB terms via Chainlink's independent price feed rather than a single AMM pool's spot price. By default, any allowlisted asset missing that configuration makes this function refuse to execute rather than silently trusting an unverified price.",
-        "depositReserveAsset — forwards an allowlisted bStock the converter is holding into the vault. This is the only way value ever reaches the vault from here.",
+        "RSVD stays a plain ERC20. No fee-on-transfer means aggregators, lending markets, bridges and centralised venues can all handle it — a taxed token is excluded or mishandled by most of them.",
+        "Holders can always sell their entire position. A token-level fee has to come from somewhere beyond the amount the pool is owed, so a taxed sale needs a balance larger than the sale itself. At the pool, that constraint disappears.",
+        "The fee is collected in BNB rather than RSVD. On a buy the hook takes its share of the BNB going in; on a sell, of the BNB coming out. Either way the treasury receives BNB directly.",
       ]),
+      p(
+        "That last point removes an entire subsystem. A treasury funded in RSVD has to sell it before it can buy anything, which means the protocol itself becomes a persistent seller of its own token, and that sale needs oracle machinery — a time-weighted price floor, slippage bounds, per-transaction caps — to stop a compromised keeper dumping into the pool. Collecting in BNB deletes the sale, the sell pressure and the oracle surface together."
+      ),
+      p(
+        "Sequencing: the token and pool launch first, and the hook follows. A hook binds to a pool at creation, so enabling it means a new pool and moving liquidity across. Until it is live, treasury income is the pool's own 0.25% trading fee on protocol-owned liquidity."
+      ),
+    ],
+  },
+  {
+    id: "treasury-converter",
+    title: "From fee to bStock",
+    blocks: [
+      p(
+        "Fee revenue is routed to a contract, not a wallet. A wallet holding accumulated revenue would mean whoever holds that private key can do anything with it before conversion — no on-chain constraint at all. The converter closes that gap."
+      ),
+      p("It exposes keeper-gated functions, each bounded, and nothing else moves value out of it:"),
+      ul([
+        "acquireReserveAsset — spends BNB on an owner-allowlisted bStock, capped by a per-transaction limit and by a rolling cumulative window, so a compromised key cannot drain by repetition the way a per-transaction cap alone allows. Where a Chainlink USD feed exists for the asset, the contract computes its own price floor and takes the stricter of that and the keeper's own quote. By default an allowlisted asset with no feed makes the call refuse rather than silently trust an unverified price.",
+        "depositReserveAsset — forwards an allowlisted bStock the converter holds into the vault. This is the only way value ever reaches the vault from here.",
+      ]),
+      p(
+        "The buy leg is deliberately venue-agnostic: it forwards opaque calldata to an owner-allowlisted target and judges the result purely by observed balance deltas plus that independent oracle floor. Binding a treasury contract to one market structure guarantees a rediscovery later — this project has already had to relearn that once."
+      ),
       p(
         "There is no withdraw, rescue, or sweep function anywhere in this contract, for the owner or anyone else. A compromised keeper key can only trigger bounded, price-checked, pre-allowlisted conversions into the vault — it cannot extract value in any direction."
       ),
@@ -166,19 +192,41 @@ const zh: DocsSection[] = [
     ],
   },
   {
-    id: "treasury-converter",
-    title: "税费流向：资金库转换合约",
+    id: "fee",
+    title: "3% 手续费，以及它为何位于池子层面",
     blocks: [
+      p("RSVD 对转账不收取任何费用。3% 由挂载在池子上的 swap hook 收取，而非由代币本身收取 —— 这一区别正是整体设计的核心，而非实现细节。"),
       p(
-        "税收会进入合约，而非钱包。若由普通钱包持有累积的税收资金，持有该私钥的人可在兑换前对资金为所欲为 — 完全没有链上约束。TreasuryConverter 正是为弥补这一漏洞而设计。"
+        "在现代集中流动性池中，代币层面的费用根本无法运作。此类池会在交换过程中校验自身余额，若未收到完整的输入数量便直接回滚；因此在转入途中被抽走的费用会使池子收款不足，卖出随之失败。而买入仍能成功，因为此时被征税的一方是池子向买家付款，池子并不校验这一侧。买入正常、卖出回滚 —— 这正是蜜罐的典型特征，也是众多征税代币被困在老版本 AMM 上的原因。"
       ),
-      p("该合约仅暴露三个受 keeper 权限限制的函数，且均设有边界，除此之外没有任何途径可将价值转出："),
+      p("将费用移至池子层面可彻底规避该问题，并带来三点收益："),
       ul([
-        "sellRsvd — 将 RSVD 兑换为 BNB，受单笔交易限额约束，并依据 RSVD/BNB 交易池自身的累积价格计算出真实的时间加权平均价格（TWAP）进行校验。这是标准的 AMM 预言机模式，原因在于现货价格可在单笔交易内被操纵（三明治攻击）；而在最短时间窗口内计算的 TWAP 则难以被低成本操纵。",
-        "buyReserveAsset — 将 BNB 兑换为所有者已允许的 bStock，同样受单笔交易限额约束。当某 bStock 配置了 USDT 交易对及 Chainlink BNB/USD 价格源时，该函数会以相同方式受 TWAP 价格下限约束，并通过 Chainlink 独立价格源（而非单一 AMM 池的现货价格）折算为 BNB 计价。默认情况下，任何已允许但缺少该配置的资产会导致此函数直接拒绝执行，而不会悄悄信任未经验证的价格。",
+        "RSVD 保持为标准 ERC20。没有转账税意味着聚合器、借贷市场、跨链桥以及中心化平台都能正常支持它 —— 征税代币会被其中大多数排除或错误处理。",
+        "持有者可随时卖出全部仓位。代币层面的费用必须来自池子应收数量之外的部分，因此一笔被征税的卖出所需余额会大于卖出本身。在池子层面收费后，这一限制不复存在。",
+        "费用以 BNB 而非 RSVD 收取。买入时 hook 从流入的 BNB 中抽取份额，卖出时则从流出的 BNB 中抽取。无论哪种情况，资金库都直接收到 BNB。",
+      ]),
+      p(
+        "最后一点消除了一整个子系统。以 RSVD 计价的资金库必须先卖出代币才能进行采购，这意味着协议自身会成为其代币的长期卖方，而该卖出操作还需要预言机机制 —— 时间加权价格下限、滑点约束、单笔交易上限 —— 来防止 keeper 私钥被攻破后向池子倾销。以 BNB 收取费用同时消除了这笔卖出、卖压与预言机攻击面。"
+      ),
+      p(
+        "推进顺序：代币与池子先行上线，hook 随后跟进。hook 在池子创建时即绑定，因此启用它意味着创建新池并迁移流动性。在其上线之前，资金库收入来自协议自持流动性所产生的池子 0.25% 交易手续费。"
+      ),
+    ],
+  },
+  {
+    id: "treasury-converter",
+    title: "从手续费到 bStock",
+    blocks: [
+      p("手续费收入会进入合约，而非钱包。若由钱包持有累积收入，持有该私钥的人可在兑换前对资金为所欲为 —— 完全没有链上约束。转换合约正是为弥补这一漏洞而设计。"),
+      p("它暴露若干受 keeper 权限限制的函数，且均设有边界，除此之外没有任何途径可将价值转出："),
+      ul([
+        "acquireReserveAsset — 使用 BNB 购入所有者已允许的 bStock，受单笔交易限额与滚动累计窗口双重约束，因此即便私钥被攻破，也无法像仅有单笔限额时那样通过反复调用抽干资金。当该资产存在 Chainlink 美元价格源时，合约会自行计算价格下限，并在其与 keeper 报价之间取更严格者。默认情况下，已允许但缺少价格源的资产会导致调用直接拒绝，而不会悄悄信任未经验证的价格。",
         "depositReserveAsset — 将转换合约持有的已允许 bStock 转入金库。这是价值从此处进入金库的唯一途径。",
       ]),
-      p("该合约中不存在任何提现、救援或清扫函数，无论是所有者还是任何其他人皆无法使用。即便 keeper 私钥被攻破，也只能触发受限、经价格校验、预先白名单化的兑换操作转入金库 — 无法向任何方向提取价值。"),
+      p(
+        "买入环节刻意与交易场所解耦：它将不透明的 calldata 转发至所有者已允许的目标合约，并仅依据观测到的余额变化以及上述独立预言机下限来判定结果。将资金库合约绑定到单一市场结构必然导致日后重新发现问题 —— 本项目已经为此付出过一次代价。"
+      ),
+      p("该合约中不存在任何提现、救援或清扫函数，无论是所有者还是任何其他人皆无法使用。即便 keeper 私钥被攻破，也只能触发受限、经价格校验、预先白名单化的兑换操作转入金库 —— 无法向任何方向提取价值。"),
     ],
   },
   {
