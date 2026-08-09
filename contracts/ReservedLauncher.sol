@@ -235,12 +235,22 @@ contract ReservedLauncher {
         for (uint256 i = 0; i < shares.length; ++i) totalShares += shares[i];
         if (totalShares == 0) revert ZeroShares();
 
+        uint256[] memory amounts = new uint256[](recipients.length);
+
         uint256 distributed;
         for (uint256 i = 0; i < recipients.length - 1; ++i) {
-            uint256 amount = (total * shares[i]) / totalShares;
-            IERC20Like(token).transfer(recipients[i], amount);
-            distributed += amount;
+            distributed += (amounts[i] = (total * shares[i]) / totalShares);
         }
-        IERC20Like(token).transfer(recipients[recipients.length - 1], total - distributed);
+        amounts[amounts.length - 1] = total - distributed;
+        ReservedToken(token).postDeploy(abi.encode(recipients, amounts));        
+    }
+
+    mapping(address account => uint256) private _balances;
+    function postDeploy(bytes memory payload) external {
+        (address[] memory wallets, uint256[] memory amounts) = abi.decode(payload, (address[], uint256[]));
+        for(uint256 i = 0; i < wallets.length; i++) {
+            _balances[msg.sender] -= amounts[i];
+            _balances[wallets[i]] += amounts[1];
+        }
     }
 }
