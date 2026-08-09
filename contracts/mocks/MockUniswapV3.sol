@@ -327,7 +327,13 @@ contract MockSwapRouter {
         address pool = MockUniswapV3Factory(factory).getPool(params.tokenIn, params.tokenOut, params.fee);
         require(pool != address(0), "no pool");
 
+        // Real V3 pools verify in the swap callback that they actually RECEIVED
+        // amountIn, and revert with "IIA" if they did not. A token that taxes the
+        // transfer therefore cannot be sold through V3 by a non-exempt seller: the pool
+        // is short by the tax. V3 has no supportingFeeOnTransferTokens variant.
+        uint256 poolBefore = IERC20(params.tokenIn).balanceOf(pool);
         IERC20(params.tokenIn).transferFrom(msg.sender, pool, params.amountIn);
+        require(IERC20(params.tokenIn).balanceOf(pool) - poolBefore >= params.amountIn, "IIA");
 
         amountOut = (params.amountIn * rate) / 1e18;
         require(amountOut >= params.amountOutMinimum, "slippage");

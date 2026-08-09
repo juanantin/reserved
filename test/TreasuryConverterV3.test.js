@@ -15,7 +15,9 @@ const TWAP_TICK = -179_000;
 const lt = (a, b) => BigInt(a) < BigInt(b);
 
 async function deployFixture({ rsvdIsToken0 = true } = {}) {
-  const [owner, keeper, alice] = await ethers.getSigners();
+  // Fund the pool from a signer nothing else touches: Hardhat state persists across
+  // test files, so draining signers[0] here breaks unrelated suites later.
+  const [owner, keeper, alice, , , , , , , funder] = await ethers.getSigners();
 
   const Token = await ethers.getContractFactory("ReservedToken");
   const token = await Token.deploy("Reserved", "RSVD", owner.address, owner.address);
@@ -53,8 +55,8 @@ async function deployFixture({ rsvdIsToken0 = true } = {}) {
   await factory.setPool(tokenAddress, wbnbAddress, FEE, await pool.getAddress());
 
   // The pool pays the WBNB leg out of its own inventory.
-  await wbnb.deposit({ value: ethers.parseEther("200") });
-  await wbnb.transfer(await pool.getAddress(), ethers.parseEther("200"));
+  await wbnb.connect(funder).deposit({ value: ethers.parseEther("50") });
+  await wbnb.connect(funder).transfer(await pool.getAddress(), ethers.parseEther("50"));
 
   const Vault = await ethers.getContractFactory("ReservedVault");
   const vault = await Vault.deploy(tokenAddress, owner.address, keeper.address);
