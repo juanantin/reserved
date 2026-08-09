@@ -11,7 +11,7 @@ export function Hero({ locale }: { locale: Locale }) {
 
   return (
     <section id="top" className="relative overflow-hidden px-6 pb-16 pt-16 md:pt-20">
-      <BlockchainBackground className="pointer-events-none absolute inset-0 h-full w-full" />
+      <BlockchainBackground variant="hero" className="pointer-events-none absolute inset-0 h-full w-full" />
       <div className="relative mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2">
         <div className="flex flex-col items-start gap-5">
           <FadeIn delay={0} immediate>

@@ -36,12 +36,26 @@ const COIN_GLYPHS = [
 ];
 
 // Radius of a travelling coin, in viewBox units. The plain dots this replaced were 2.5,
-// which is too small for a glyph to read at all — 7 keeps them subtle against the
-// background while making them recognisably coins. Adjust here if they want more or
-// less presence.
-const COIN_R = 7;
+// which is too small for a glyph to resolve at all; 5 is about the floor for reading as
+// a coin rather than a smudge.
+const COIN_R = 5;
 
-export function BlockchainBackground({ className = "" }: { className?: string }) {
+// Every section below the hero renders this at opacity-40, so the coins arrive already
+// dimmed there — but they still carried more weight than the faded graph behind them.
+// The section variant drops their peak opacity further so they sit in the background
+// rather than on top of it. Hero, at full strength, keeps them bright.
+const PEAK_OPACITY = { hero: 0.75, section: 0.32 } as const;
+
+export function BlockchainBackground({
+  className = "",
+  variant = "section",
+}: {
+  className?: string;
+  /// "hero" only for the full-strength top-of-page background; everything else is
+  /// rendered at opacity-40 and wants the quieter coins.
+  variant?: "hero" | "section";
+}) {
+  const peak = PEAK_OPACITY[variant];
   return (
     <svg
       viewBox="0 0 1440 440"
@@ -108,7 +122,7 @@ export function BlockchainBackground({ className = "" }: { className?: string })
             />
             <animate
               attributeName="opacity"
-              values="0;0.75;0.75;0"
+              values={`0;${peak};${peak};0`}
               keyTimes="0;0.1;0.9;1"
               dur={`${dur}s`}
               begin={`${begin}s`}
