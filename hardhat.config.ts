@@ -16,6 +16,13 @@ const config: HardhatUserConfig = {
         runs: 200,
       },
     },
+    // See the matching note in scripts/compile-config.js.
+    overrides: {
+      "contracts/ReservedLauncher.sol": {
+        version: "0.8.36",
+        settings: { optimizer: { enabled: true, runs: 200 }, viaIR: true },
+      },
+    },
   },
   networks: {
     hardhat: {},

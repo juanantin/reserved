@@ -18,6 +18,7 @@ const ROOT = path.join(__dirname, "..");
 const TARGETS = [
   "ReservedToken.sol",
   "LaunchPricing.sol",
+  "ReservedLauncher.sol",
   "ReservedVault.sol",
   "ReservedGovernanceVote.sol",
   "mocks/MockERC20.sol",
@@ -27,10 +28,12 @@ const TARGETS = [
   "vendor/TimelockController.sol",
 ];
 
-// Nothing needs viaIR any more. The only contract that did was the initializer, whose
-// nine-parameter init overflowed the stack; the pricing maths now lives in LaunchPricing
-// as small view functions and compiles on the default pipeline.
-const VIA_IR_TARGETS = new Set();
+// ReservedLauncher.launch keeps a lot of locals live across the pool-creation and mint
+// calls and overflows the stack under the legacy codegen — the same failure the original
+// initializer's nine-parameter init hit. Scoped to that one file so every other contract
+// keeps byte-identical bytecode; enabling viaIR globally would silently change every
+// deployed artifact.
+const VIA_IR_TARGETS = new Set(["ReservedLauncher.sol"]);
 
 const OPTIMIZER = { enabled: true, runs: 200 };
 
