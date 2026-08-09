@@ -1,6 +1,5 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { mintInitialSupply } = require("./helpers/supply");
 
 const FIXED_SUPPLY = ethers.parseUnits("1000000000", 18); // 1B RSVD
 
@@ -8,9 +7,8 @@ async function deploySystem() {
   const [owner, treasury, keeper, alice, bob] = await ethers.getSigners();
 
   const Token = await ethers.getContractFactory("ReservedToken");
-  const token = await Token.deploy("Reserved", "RSVD", owner.address, treasury.address);
+  const token = await Token.deploy("Reserved", "RSVD", FIXED_SUPPLY, owner.address);
   await token.waitForDeployment();
-  await mintInitialSupply(token, owner.address, FIXED_SUPPLY);
 
   const Vault = await ethers.getContractFactory("ReservedVault");
   const vault = await Vault.deploy(await token.getAddress(), owner.address, keeper.address);
@@ -161,21 +159,6 @@ describe("ReservedVault", function () {
     expect(await nvdab.balanceOf(alice.address)).to.equal(ethers.parseUnits("10", 18));
   });
 
-  it("pausing the token (not the vault) also never blocks redeem, since redeem burns", async function () {
-    const { token, vault, nvdab, owner, keeper, alice } = await deploySystem();
-    await depositAsset(vault, nvdab, keeper, ethers.parseUnits("1000", 18));
-
-    const amount = ethers.parseUnits("10000000", 18); // 1%
-    await token.connect(owner).transfer(alice.address, amount);
-    await token.connect(alice).approve(await vault.getAddress(), amount);
-
-    await token.connect(owner).pause();
-
-    // A holder's exit route survives even a fully paused token.
-    await vault.connect(alice).redeem(amount);
-    expect(await nvdab.balanceOf(alice.address)).to.equal(ethers.parseUnits("10", 18));
-    expect(await token.balanceOf(alice.address)).to.equal(0n);
-  });
 
   it("only the owner can pause or unpause the vault", async function () {
     const { vault, alice } = await deploySystem();

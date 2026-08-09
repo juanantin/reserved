@@ -17,29 +17,20 @@ const ROOT = path.join(__dirname, "..");
 
 const TARGETS = [
   "ReservedToken.sol",
-  "UniswapV3TokenInitializer.sol",
+  "LaunchPricing.sol",
   "ReservedVault.sol",
-  "TreasuryConverter.sol",
-  "TreasuryConverterV2.sol",
-  "TreasuryConverterV3.sol",
   "ReservedGovernanceVote.sol",
   "mocks/MockERC20.sol",
   "mocks/MockERC20CustomDecimals.sol",
   "mocks/MockRevertingERC20.sol",
-  "mocks/MockChainlinkFeed.sol",
-  "mocks/MockUniswapV2Pair.sol",
-  "mocks/MockUniswapV2Router.sol",
-  "mocks/MockSwapTarget.sol",
-  "mocks/MockSupplyInitializer.sol",
   "mocks/MockUniswapV3.sol",
   "vendor/TimelockController.sol",
 ];
 
-// UniswapV3TokenInitializer.init holds too many locals live across the pool-creation
-// call for the legacy codegen ("Stack too deep") and only compiles with viaIR. Scoped to
-// that one file so every other contract keeps byte-identical bytecode — enabling it
-// globally would silently change every deployed artifact.
-const VIA_IR_TARGETS = new Set(["UniswapV3TokenInitializer.sol"]);
+// Nothing needs viaIR any more. The only contract that did was the initializer, whose
+// nine-parameter init overflowed the stack; the pricing maths now lives in LaunchPricing
+// as small view functions and compiles on the default pipeline.
+const VIA_IR_TARGETS = new Set();
 
 const OPTIMIZER = { enabled: true, runs: 200 };
 
@@ -87,8 +78,13 @@ function makeFindImports(sources) {
 }
 
 function compileGroup(group) {
+  const files = filesInGroup(group);
+  // A group can legitimately be empty — nothing currently needs viaIR — and solc errors
+  // out on an input with no sources rather than returning nothing.
+  if (files.length === 0) return { input: null, output: { contracts: {} }, sources: {} };
+
   const sources = {};
-  for (const file of filesInGroup(group)) {
+  for (const file of files) {
     sources[file] = { content: fs.readFileSync(path.join(CONTRACTS_DIR, file), "utf8") };
   }
 

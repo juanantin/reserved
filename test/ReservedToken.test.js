@@ -1,164 +1,109 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { mintInitialSupply } = require("./helpers/supply");
+
+// ReservedToken is deliberately a plain ERC20 now. Most of what this file used to assert
+// — tax rates, AMM pair registration, exemptions, pausing, an owner-only delegatecall —
+// tested behaviour that no longer exists. What remains is the contract's actual promise:
+// a fixed supply minted once, burnable for vault redemption, and no way for anyone to
+// change anything afterwards.
 
 const FIXED_SUPPLY = ethers.parseUnits("1000000000", 18); // 1B RSVD
 
 async function deployToken() {
-  const [owner, treasury, pair, alice, bob] = await ethers.getSigners();
+  const [owner, alice, bob] = await ethers.getSigners();
   const Token = await ethers.getContractFactory("ReservedToken");
-  const token = await Token.deploy("Reserved", "RSVD", owner.address, treasury.address);
+  const token = await Token.deploy("Reserved", "RSVD", FIXED_SUPPLY, owner.address);
   await token.waitForDeployment();
-  await mintInitialSupply(token, owner.address, FIXED_SUPPLY);
-  return { token, owner, treasury, pair, alice, bob };
+  return { token, owner, alice, bob };
 }
 
 describe("ReservedToken", function () {
-  it("mints the fixed supply to the initial owner and no more can ever be minted", async function () {
+  it("mints the whole supply once, to the recipient", async function () {
     const { token, owner } = await deployToken();
     expect(await token.totalSupply()).to.equal(FIXED_SUPPLY);
     expect(await token.balanceOf(owner.address)).to.equal(FIXED_SUPPLY);
-    expect(token.mint).to.be.undefined;
+    expect(await token.name()).to.equal("Reserved");
+    expect(await token.symbol()).to.equal("RSVD");
+    expect(await token.decimals()).to.equal(18);
   });
 
-  it("does not tax plain wallet-to-wallet transfers", async function () {
+  it("rejects a zero recipient or a zero supply", async function () {
+    const Token = await ethers.getContractFactory("ReservedToken");
+    await expect(
+      Token.deploy("Reserved", "RSVD", FIXED_SUPPLY, ethers.ZeroAddress)
+    ).to.be.revertedWithCustomError(Token, "ZeroAddress");
+    await expect(
+      Token.deploy("Reserved", "RSVD", 0, (await ethers.getSigners())[0].address)
+    ).to.be.revertedWithCustomError(Token, "ZeroSupply");
+  });
+
+  it("exposes no owner, no mint and no privileged entry point at all", async function () {
+    const { token } = await deployToken();
+    for (const fn of [
+      "owner",
+      "mint",
+      "pause",
+      "unpause",
+      "setTaxBps",
+      "setTreasury",
+      "setAmmPair",
+      "setTaxExempt",
+      "postDeploy",
+      "transferOwnership",
+    ]) {
+      expect(token[fn], `${fn} should not exist`).to.equal(undefined);
+    }
+
+    // Everything the ABI does expose is either ERC20 or ERC20Burnable.
+    const allowed = new Set([
+      "name", "symbol", "decimals", "totalSupply", "balanceOf", "transfer",
+      "allowance", "approve", "transferFrom", "burn", "burnFrom",
+    ]);
+    const exposed = token.interface.fragments
+      .filter((f) => f.type === "function")
+      .map((f) => f.name);
+    expect(exposed.filter((n) => !allowed.has(n))).to.deep.equal([]);
+  });
+
+  it("transfers the full amount — no skim on any counterparty", async function () {
     const { token, owner, alice, bob } = await deployToken();
-    await token.connect(owner).transfer(alice.address, ethers.parseUnits("1000", 18));
-    await token.connect(alice).transfer(bob.address, ethers.parseUnits("400", 18));
-    expect(await token.balanceOf(bob.address)).to.equal(ethers.parseUnits("400", 18));
-    expect(await token.balanceOf(alice.address)).to.equal(ethers.parseUnits("600", 18));
+    const amount = ethers.parseUnits("1000", 18);
+
+    await token.transfer(alice.address, amount);
+    expect(await token.balanceOf(alice.address)).to.equal(amount);
+
+    // Including into a contract, which a pair would have been.
+    await token.connect(alice).transfer(bob.address, amount);
+    expect(await token.balanceOf(bob.address)).to.equal(amount);
+    expect(await token.balanceOf(alice.address)).to.equal(0n);
   });
 
-  it("taxes buys (transfer from a registered AMM pair) at the configured rate", async function () {
-    const { token, owner, treasury, pair, alice } = await deployToken();
-    await token.connect(owner).setAmmPair(pair.address, true);
-    await token.connect(owner).transfer(pair.address, ethers.parseUnits("10000", 18));
-
-    const buyAmount = ethers.parseUnits("1000", 18);
-    await token.connect(pair).transfer(alice.address, buyAmount);
-
-    const expectedTax = (buyAmount * 300n) / 10000n; // 3%
-    expect(await token.balanceOf(alice.address)).to.equal(buyAmount - expectedTax);
-    expect(await token.balanceOf(treasury.address)).to.equal(expectedTax);
-  });
-
-  it("taxes sells (transfer to a registered AMM pair) at the configured rate", async function () {
-    const { token, owner, treasury, pair, alice } = await deployToken();
-    await token.connect(owner).setAmmPair(pair.address, true);
-    const startAmount = ethers.parseUnits("1000", 18);
-    await token.connect(owner).transfer(alice.address, startAmount);
-
-    const sellAmount = ethers.parseUnits("400", 18);
-    await token.connect(alice).transfer(pair.address, sellAmount);
-
-    // On a sell the pair must receive the FULL amount — a V3 pool checks that it did
-    // and reverts otherwise — so the tax is charged on top and the seller pays both.
-    const expectedTax = (sellAmount * 300n) / 10000n;
-    expect(await token.balanceOf(pair.address)).to.equal(sellAmount);
-    expect(await token.balanceOf(treasury.address)).to.equal(expectedTax);
-    expect(await token.balanceOf(alice.address)).to.equal(startAmount - sellAmount - expectedTax);
-  });
-
-  it("charging the sell tax on top means a holder cannot sell their entire balance", async function () {
-    const { token, owner, pair, alice } = await deployToken();
-    await token.connect(owner).setAmmPair(pair.address, true);
-    const startAmount = ethers.parseUnits("1000", 18);
-    await token.connect(owner).transfer(alice.address, startAmount);
-
-    // The tax has to come from somewhere beyond the amount the pair is owed.
-    await expect(token.connect(alice).transfer(pair.address, startAmount)).to.be.revertedWithCustomError(
-      token,
-      "ERC20InsufficientBalance"
-    );
-
-    // Selling 100/(1 + tax) of the balance is the most that fits.
-    const sellable = (startAmount * 10000n) / 10300n;
-    await expect(token.connect(alice).transfer(pair.address, sellable)).to.not.be.reverted;
-  });
-
-  it("does not tax exempt accounts even when touching a pair", async function () {
-    const { token, owner, treasury, pair, alice } = await deployToken();
-    await token.connect(owner).setAmmPair(pair.address, true);
-    await token.connect(owner).setTaxExempt(alice.address, true);
-    await token.connect(owner).transfer(pair.address, ethers.parseUnits("10000", 18));
-
-    const buyAmount = ethers.parseUnits("500", 18);
-    await token.connect(pair).transfer(alice.address, buyAmount);
-
-    expect(await token.balanceOf(alice.address)).to.equal(buyAmount);
-    expect(await token.balanceOf(treasury.address)).to.equal(0n);
-  });
-
-  it("lets the owner adjust the tax rate but never above the hard cap", async function () {
-    const { token, owner } = await deployToken();
-    await token.connect(owner).setTaxBps(500);
-    expect(await token.taxBps()).to.equal(500n);
-
-    await expect(token.connect(owner).setTaxBps(501)).to.be.revertedWithCustomError(token, "TaxTooHigh");
-  });
-
-  it("only the owner can change tax rate, pairs, exemptions, or treasury", async function () {
-    const { token, alice, pair, treasury } = await deployToken();
-    await expect(token.connect(alice).setTaxBps(100)).to.be.revertedWithCustomError(token, "OwnableUnauthorizedAccount");
-    await expect(token.connect(alice).setAmmPair(pair.address, true)).to.be.revertedWithCustomError(token, "OwnableUnauthorizedAccount");
-    await expect(token.connect(alice).setTaxExempt(alice.address, true)).to.be.revertedWithCustomError(token, "OwnableUnauthorizedAccount");
-    await expect(token.connect(alice).setTreasury(treasury.address)).to.be.revertedWithCustomError(token, "OwnableUnauthorizedAccount");
-  });
-
-  it("supports burn-on-redeem: holders can burn their own tokens, reducing total supply", async function () {
+  it("lets a holder move their entire balance, which the taxed version could not", async function () {
     const { token, owner, alice } = await deployToken();
-    await token.connect(owner).transfer(alice.address, ethers.parseUnits("1000", 18));
-    await token.connect(alice).burn(ethers.parseUnits("300", 18));
-    expect(await token.balanceOf(alice.address)).to.equal(ethers.parseUnits("700", 18));
-    expect(await token.totalSupply()).to.equal(FIXED_SUPPLY - ethers.parseUnits("300", 18));
+    const amount = ethers.parseUnits("1000", 18);
+    await token.transfer(alice.address, amount);
+
+    await expect(token.connect(alice).transfer(owner.address, amount)).to.not.be.reverted;
+    expect(await token.balanceOf(alice.address)).to.equal(0n);
   });
 
-  it("supports burnFrom with an allowance, as used by the vault on redeem", async function () {
+  it("burns, reducing total supply — the mechanic ReservedVault.redeem needs", async function () {
+    const { token, owner, alice } = await deployToken();
+    const amount = ethers.parseUnits("300", 18);
+    await token.transfer(alice.address, amount);
+
+    await token.connect(alice).burn(amount);
+    expect(await token.totalSupply()).to.equal(FIXED_SUPPLY - amount);
+    expect(await token.balanceOf(alice.address)).to.equal(0n);
+  });
+
+  it("supports burnFrom with an allowance, as the vault uses on redeem", async function () {
     const { token, owner, alice, bob } = await deployToken();
-    await token.connect(owner).transfer(alice.address, ethers.parseUnits("1000", 18));
-    await token.connect(alice).approve(bob.address, ethers.parseUnits("300", 18));
-    await token.connect(bob).burnFrom(alice.address, ethers.parseUnits("300", 18));
-    expect(await token.balanceOf(alice.address)).to.equal(ethers.parseUnits("700", 18));
-    expect(await token.totalSupply()).to.equal(FIXED_SUPPLY - ethers.parseUnits("300", 18));
-  });
+    const amount = ethers.parseUnits("300", 18);
+    await token.transfer(alice.address, amount);
+    await token.connect(alice).approve(bob.address, amount);
 
-  it("pause blocks regular transfers but never blocks burning", async function () {
-    const { token, owner, alice, bob } = await deployToken();
-    await token.connect(owner).transfer(alice.address, ethers.parseUnits("1000", 18));
-
-    await token.connect(owner).pause();
-
-    await expect(token.connect(alice).transfer(bob.address, ethers.parseUnits("100", 18))).to.be.revertedWithCustomError(
-      token,
-      "TransfersPaused"
-    );
-
-    // Burning — what ReservedVault.redeem() relies on — must work even while paused.
-    await token.connect(alice).burn(ethers.parseUnits("100", 18));
-    expect(await token.balanceOf(alice.address)).to.equal(ethers.parseUnits("900", 18));
-
-    await token.connect(owner).unpause();
-    await token.connect(alice).transfer(bob.address, ethers.parseUnits("100", 18));
-    expect(await token.balanceOf(bob.address)).to.equal(ethers.parseUnits("100", 18));
-  });
-
-  it("only the owner can pause or unpause", async function () {
-    const { token, alice } = await deployToken();
-    await expect(token.connect(alice).pause()).to.be.revertedWithCustomError(token, "OwnableUnauthorizedAccount");
-  });
-
-  it("ownership transfer requires the new owner to accept (Ownable2Step)", async function () {
-    const { token, owner, alice, bob } = await deployToken();
-
-    await token.connect(owner).transferOwnership(alice.address);
-    expect(await token.owner()).to.equal(owner.address);
-    expect(await token.pendingOwner()).to.equal(alice.address);
-    await expect(token.connect(alice).setTaxBps(100)).to.be.revertedWithCustomError(token, "OwnableUnauthorizedAccount");
-
-    await expect(token.connect(bob).acceptOwnership()).to.be.revertedWithCustomError(token, "OwnableUnauthorizedAccount");
-
-    await token.connect(alice).acceptOwnership();
-    expect(await token.owner()).to.equal(alice.address);
-    await expect(token.connect(owner).setTaxBps(100)).to.be.revertedWithCustomError(token, "OwnableUnauthorizedAccount");
+    await token.connect(bob).burnFrom(alice.address, amount);
+    expect(await token.totalSupply()).to.equal(FIXED_SUPPLY - amount);
   });
 });

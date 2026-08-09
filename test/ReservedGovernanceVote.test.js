@@ -1,6 +1,5 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { mintInitialSupply } = require("./helpers/supply");
 
 const FIXED_SUPPLY = ethers.parseUnits("1000000000", 18);
 const THRESHOLD = ethers.parseUnits("100000", 18);
@@ -9,9 +8,8 @@ async function deploySystem() {
   const [owner, holder, smallHolder, other] = await ethers.getSigners();
 
   const Token = await ethers.getContractFactory("ReservedToken");
-  const token = await Token.deploy("Reserved", "RSVD", owner.address, owner.address);
+  const token = await Token.deploy("Reserved", "RSVD", FIXED_SUPPLY, owner.address);
   await token.waitForDeployment();
-  await mintInitialSupply(token, owner.address, FIXED_SUPPLY);
   const tokenAddress = await token.getAddress();
 
   const Vote = await ethers.getContractFactory("ReservedGovernanceVote");

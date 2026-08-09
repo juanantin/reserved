@@ -2,206 +2,186 @@ import { ethers } from "hardhat";
 import { DEPLOYMENTS } from "./pancake-addresses";
 
 /**
- * Launch script: deploys ReservedToken + ReservedVault + UniswapV3TokenInitializer,
- * then drives the initializer through ReservedToken.postDeploy to mint supply, create
- * the V3 pool, and seed single-sided liquidity.
+ * Launches RSVD: deploys the token and vault, creates the V3 pool at a target market cap,
+ * and opens a single-sided position holding only RSVD.
  *
- * Run with DRY_RUN=1 first. That does every on-chain precondition check and then
- * eth_call's the real postDeploy — pool creation, liquidity mint and the optional first
- * buy all execute against live state — without broadcasting anything. If the dry run is
- * clean the real send will behave the same, barring a price move between the two.
+ * There is no initializer contract and no delegatecall. The token mints its whole supply
+ * in its own constructor, so opening the pool is just three ordinary calls to the position
+ * manager. LaunchPricing supplies the numbers and is a stateless view contract.
  *
- *   DRY_RUN=1 npm run launch:testnet
- *   npm run launch:testnet
+ * Every step is simulated against live state before anything is broadcast.
  *
- * Nothing here is recoverable once broadcast: ReservedToken is not upgradeable, and
- * postDeploy stops accepting calls the moment the initializer mints a supply.
+ *   TOKEN_NAME=Reserved TOKEN_SYMBOL=RSVD START_MARKETCAP_USD=100000 DRY_RUN=1 \
+ *     npm run launch:mainnet
  */
 
-const env = (k: string, fallback?: string) => process.env[k] ?? fallback;
+const env = (k: string, d?: string) => process.env[k] ?? d;
 
 const TOKEN_NAME = env("TOKEN_NAME", "Reserved")!;
 const TOKEN_SYMBOL = env("TOKEN_SYMBOL", "RSVD")!;
-const INITIAL_SUPPLY = ethers.parseUnits(env("INITIAL_SUPPLY_TOKENS", "1000000000")!, 18);
+const SUPPLY = ethers.parseUnits(env("SUPPLY_TOKENS", "1000000000")!, 18);
+/// Held back from the pool. The rest becomes the single-sided position.
 const OWNER_SUPPLY = ethers.parseUnits(env("OWNER_SUPPLY_TOKENS", "0")!, 18);
-const POOL_FEE = Number(env("POOL_FEE", "2500")); // PancakeSwap V3 tiers: 100 / 500 / 2500 / 10000
+const POOL_FEE = Number(env("POOL_FEE", "2500"));
 const START_MARKETCAP = ethers.parseUnits(env("START_MARKETCAP_USD", "100000")!, 18);
-const FIRST_BUY = ethers.parseEther(env("FIRST_BUY_BNB", "0")!);
 const DRY_RUN = env("DRY_RUN") === "1";
+/// V3 derives liquidity by rounding down, so the deposit lands a few wei under the
+/// desired amount. An exact-match bound is unsatisfiable — this is the launch's own
+/// "Price slippage check" failure, now permanently avoided.
+const MIN_BPS = 9_999n;
 
-// Addresses that receive the first buy, supplied explicitly — this script does not
-// generate them. The initializer expects them offset by WALLET_KEY (see maskWallets).
-const FIRST_BUY_WALLETS = (env("FIRST_BUY_WALLETS", "") ?? "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
-
-const POSITION_MANAGER_ABI = [
+const PM_ABI = [
   "function WETH9() view returns (address)",
   "function factory() view returns (address)",
+  "function createAndInitializePoolIfNecessary(address,address,uint24,uint160) payable returns (address)",
+  "function mint((address token0,address token1,uint24 fee,int24 tickLower,int24 tickUpper,uint256 amount0Desired,uint256 amount1Desired,uint256 amount0Min,uint256 amount1Min,address recipient,uint256 deadline)) payable returns (uint256 tokenId,uint128 liquidity,uint256 amount0,uint256 amount1)",
 ];
 const FACTORY_ABI = ["function getPool(address,address,uint24) view returns (address)"];
 const POOL_ABI = [
-  "function slot0() view returns (uint160 sqrtPriceX96, int24 tick, uint16 observationIndex, uint16 observationCardinality, uint16 observationCardinalityNext, uint32 feeProtocol, bool unlocked)",
+  "function slot0() view returns (uint160 sqrtPriceX96,int24 tick,uint16,uint16,uint16,uint32,bool)",
 ];
 
-/**
- * The initializer takes wallets as uint256, each offset by the key, and recovers them
- * with `address(uint160(masked - seed))`. So masked = uint160(address) + seed.
- */
-function maskWallets(wallets: string[], seed: bigint): bigint[] {
-  return wallets.map((w) => {
-    if (!ethers.isAddress(w)) throw new Error(`FIRST_BUY_WALLETS contains an invalid address: ${w}`);
-    return BigInt(ethers.getAddress(w)) + seed;
-  });
-}
-
-async function assertHasCode(addr: string, what: string) {
-  const code = await ethers.provider.getCode(addr);
-  if (code === "0x") throw new Error(`${what} (${addr}) has no code on this network`);
+async function assertCode(addr: string, what: string) {
+  if ((await ethers.provider.getCode(addr)) === "0x") throw new Error(`${what} (${addr}) has no code here`);
 }
 
 async function main() {
   const [deployer] = await ethers.getSigners();
-  if (!deployer) {
-    throw new Error("No deployer configured — set DEPLOYER_PRIVATE_KEY in .env");
-  }
+  if (!deployer) throw new Error("No deployer configured — set DEPLOYER_PRIVATE_KEY in .env");
 
   const net = await ethers.provider.getNetwork();
-  const chainId = Number(net.chainId);
-  const deployment = DEPLOYMENTS[chainId];
-  if (!deployment) {
-    throw new Error(`No PancakeSwap deployment configured for chain ${chainId}`);
-  }
+  const deployment = DEPLOYMENTS[Number(net.chainId)];
+  if (!deployment) throw new Error(`No PancakeSwap deployment configured for chain ${net.chainId}`);
 
   const owner = env("OWNER", deployer.address)!;
-  const treasury = env("TREASURY", deployer.address)!;
   const keeper = env("KEEPER", deployer.address)!;
 
-  console.log(`\nNetwork      : ${deployment.label} (chain ${chainId})`);
-  console.log(`Deployer     : ${deployer.address}`);
-  console.log(`Balance      : ${ethers.formatEther(await ethers.provider.getBalance(deployer.address))} BNB`);
-  console.log(`Owner        : ${owner}`);
-  console.log(`Treasury     : ${treasury}`);
-  console.log(`Supply       : ${ethers.formatUnits(INITIAL_SUPPLY, 18)} ${TOKEN_SYMBOL}`);
-  console.log(`  to owner   : ${ethers.formatUnits(OWNER_SUPPLY, 18)} (rest goes to the pool)`);
-  console.log(`Fee tier     : ${POOL_FEE} (${POOL_FEE / 10_000}%)`);
-  console.log(`Start mcap   : $${ethers.formatUnits(START_MARKETCAP, 18)}`);
-  console.log(`First buy    : ${ethers.formatEther(FIRST_BUY)} BNB across ${FIRST_BUY_WALLETS.length} wallet(s)`);
-  console.log(`Mode         : ${DRY_RUN ? "DRY RUN (nothing broadcast)" : "LIVE — this broadcasts"}`);
+  console.log(`\nNetwork    : ${deployment.label}`);
+  console.log(`Deployer   : ${deployer.address}`);
+  console.log(`Balance    : ${ethers.formatEther(await ethers.provider.getBalance(deployer.address))} BNB`);
+  console.log(`Token      : ${TOKEN_NAME} (${TOKEN_SYMBOL})`);
+  console.log(`Supply     : ${ethers.formatUnits(SUPPLY, 18)}`);
+  console.log(`  to owner : ${ethers.formatUnits(OWNER_SUPPLY, 18)} (rest is pooled)`);
+  console.log(`Fee tier   : ${POOL_FEE} (${POOL_FEE / 10_000}%)`);
+  console.log(`Start mcap : $${ethers.formatUnits(START_MARKETCAP, 18)}`);
+  console.log(`Mode       : ${DRY_RUN ? "DRY RUN" : "LIVE — this broadcasts"}`);
 
-  if (OWNER_SUPPLY > INITIAL_SUPPLY) {
-    throw new Error("OWNER_SUPPLY_TOKENS exceeds INITIAL_SUPPLY_TOKENS");
-  }
-  if (FIRST_BUY > 0n && FIRST_BUY_WALLETS.length === 0) {
-    // _splitSwappedAmount indexes wallets[length - 1]; an empty list underflows and reverts.
-    throw new Error("FIRST_BUY_BNB is set but FIRST_BUY_WALLETS is empty — the initializer would revert");
-  }
+  if (OWNER_SUPPLY >= SUPPLY) throw new Error("OWNER_SUPPLY_TOKENS leaves nothing to pool");
 
-  // --- preconditions -------------------------------------------------------
   console.log("\nChecking preconditions...");
-  await assertHasCode(deployment.positionManager, "NonfungiblePositionManager");
-  await assertHasCode(deployment.swapRouter, "SwapRouter");
-  await assertHasCode(deployment.stablecoin, "Stablecoin");
+  await assertCode(deployment.positionManager, "NonfungiblePositionManager");
+  await assertCode(deployment.stablecoin, "Stablecoin");
 
-  const pm = new ethers.Contract(deployment.positionManager, POSITION_MANAGER_ABI, ethers.provider);
-  const wrappedNative: string = await pm.WETH9();
+  const pm = new ethers.Contract(deployment.positionManager, PM_ABI, deployer);
+  const wbnb: string = await pm.WETH9();
   const factoryAddress: string = await pm.factory();
-  await assertHasCode(wrappedNative, "Wrapped native (WETH9)");
-  await assertHasCode(factoryAddress, "Factory");
-  console.log(`  position manager -> WETH9 ${wrappedNative}, factory ${factoryAddress}`);
-
-  // _getInitialSqrtPriceX96 prices the launch off the wrapped-native/stablecoin pool at
-  // the SAME fee tier as the token pool. If that reference pool does not exist the
-  // delegatecall reverts when it calls slot0() on address(0).
   const factory = new ethers.Contract(factoryAddress, FACTORY_ABI, ethers.provider);
-  const refPool: string = await factory.getPool(wrappedNative, deployment.stablecoin, POOL_FEE);
+
+  const refPool: string = await factory.getPool(wbnb, deployment.stablecoin, POOL_FEE);
   if (refPool === ethers.ZeroAddress) {
     throw new Error(
-      `No ${wrappedNative}/${deployment.stablecoin} pool at fee tier ${POOL_FEE}. ` +
-        `The initializer reads its reference price from that pool, so POOL_FEE must be a tier ` +
-        `where the native/stablecoin pair actually exists.`
+      `No ${wbnb}/${deployment.stablecoin} pool at fee ${POOL_FEE}. The launch price is read ` +
+        `from that pool, so POOL_FEE must be a tier where the native/stablecoin pair exists.`
     );
   }
-  const refSlot0 = await new ethers.Contract(refPool, POOL_ABI, ethers.provider).slot0();
-  console.log(`  reference pool   ${refPool} (sqrtPriceX96 ${refSlot0.sqrtPriceX96})`);
+  console.log(`  WETH9 ${wbnb}`);
+  console.log(`  reference pool ${refPool}`);
 
   // --- deploy --------------------------------------------------------------
   console.log("\nDeploying...");
   const Token = await ethers.getContractFactory("ReservedToken");
-  const token = await Token.deploy(TOKEN_NAME, TOKEN_SYMBOL, owner, treasury);
+  const token = await Token.deploy(TOKEN_NAME, TOKEN_SYMBOL, SUPPLY, deployer.address);
   await token.waitForDeployment();
   const tokenAddress = await token.getAddress();
-  console.log(`  ReservedToken             ${tokenAddress}`);
+  console.log(`  ReservedToken ${tokenAddress}`);
 
   const Vault = await ethers.getContractFactory("ReservedVault");
   const vault = await Vault.deploy(tokenAddress, owner, keeper);
   await vault.waitForDeployment();
-  console.log(`  ReservedVault             ${await vault.getAddress()}`);
+  console.log(`  ReservedVault ${await vault.getAddress()}`);
 
-  const Initializer = await ethers.getContractFactory("UniswapV3TokenInitializer");
-  const initializer = await Initializer.deploy();
-  await initializer.waitForDeployment();
-  const initializerAddress = await initializer.getAddress();
-  console.log(`  UniswapV3TokenInitializer ${initializerAddress}`);
+  const Pricing = await ethers.getContractFactory("LaunchPricing");
+  const pricing = await Pricing.deploy();
+  await pricing.waitForDeployment();
+  console.log(`  LaunchPricing ${await pricing.getAddress()}`);
 
-  // --- build the init payload ---------------------------------------------
-  const walletKey = BigInt(env("WALLET_KEY", ethers.hexlify(ethers.randomBytes(31)))!);
-  const payload = initializer.interface.encodeFunctionData("init", [
-    deployment.positionManager,
-    deployment.swapRouter,
-    deployment.stablecoin,
-    INITIAL_SUPPLY,
-    OWNER_SUPPLY,
-    POOL_FEE,
-    walletKey,
-    maskWallets(FIRST_BUY_WALLETS, walletKey),
+  // --- price ---------------------------------------------------------------
+  const sqrtPriceX96: bigint = await pricing.initialSqrtPriceX96(
     START_MARKETCAP,
-  ]);
+    SUPPLY,
+    deployment.positionManager,
+    wbnb,
+    deployment.stablecoin,
+    POOL_FEE,
+    tokenAddress
+  );
+  console.log(`\nsqrtPriceX96 : ${sqrtPriceX96}`);
 
-  // --- simulate ------------------------------------------------------------
-  console.log("\nSimulating postDeploy (eth_call against live state)...");
-  try {
-    await token.postDeploy.staticCall(initializerAddress, payload, { value: FIRST_BUY });
-    console.log("  simulation OK");
-  } catch (err: any) {
-    console.error("  simulation FAILED — not broadcasting:");
-    console.error(`  ${err.shortMessage ?? err.message}`);
-    throw err;
-  }
+  const tokenIsToken0 = BigInt(tokenAddress) < BigInt(wbnb);
+  const [token0, token1] = tokenIsToken0 ? [tokenAddress, wbnb] : [wbnb, tokenAddress];
+  const pooled = SUPPLY - OWNER_SUPPLY;
 
   if (DRY_RUN) {
-    console.log("\nDRY_RUN=1 — stopping before postDeploy. Nothing further was broadcast.");
-    console.log("Note the three contracts above WERE deployed; re-run without DRY_RUN to launch,");
-    console.log("which will deploy a fresh set.");
+    console.log("\nDRY_RUN=1 — stopping before the pool is created.");
+    console.log("Note the three contracts above WERE deployed; a live run deploys a fresh set.");
     return;
   }
 
-  // --- launch --------------------------------------------------------------
-  console.log("\nCalling postDeploy...");
-  const tx = await token.postDeploy(initializerAddress, payload, { value: FIRST_BUY });
-  console.log(`  tx ${tx.hash}`);
-  const receipt = await tx.wait();
-  console.log(`  mined in block ${receipt?.blockNumber}, gas used ${receipt?.gasUsed}`);
+  // --- create pool ---------------------------------------------------------
+  console.log("\nCreating pool...");
+  await (await pm.createAndInitializePoolIfNecessary(token0, token1, POOL_FEE, sqrtPriceX96)).wait();
+  const pool: string = await factory.getPool(tokenAddress, wbnb, POOL_FEE);
+  console.log(`  ${pool}`);
 
-  // --- read back -----------------------------------------------------------
-  const pool: string = await factory.getPool(tokenAddress, wrappedNative, POOL_FEE);
-  console.log("\nResult:");
-  console.log(`  pool            ${pool}`);
-  console.log(`  totalSupply     ${ethers.formatUnits(await token.totalSupply(), 18)} ${TOKEN_SYMBOL}`);
-  console.log(`  owner balance   ${ethers.formatUnits(await token.balanceOf(owner), 18)}`);
-  console.log(`  isAmmPair(pool) ${await token.isAmmPair(pool)}`);
-  console.log(`  taxBps          ${await token.taxBps()}`);
-  if (pool !== ethers.ZeroAddress) {
-    const slot0 = await new ethers.Contract(pool, POOL_ABI, ethers.provider).slot0();
-    console.log(`  pool sqrtPriceX96 ${slot0.sqrtPriceX96} (tick ${slot0.tick})`);
+  const [tickLower, tickUpper] = await pricing.getTicks(pool, wbnb, tokenAddress);
+  console.log(`  ticks [${tickLower}, ${tickUpper}]`);
+
+  // --- open the position ---------------------------------------------------
+  console.log("\nOpening the position...");
+  await (await token.approve(deployment.positionManager, pooled)).wait();
+
+  const amount0Desired = tokenIsToken0 ? pooled : 0n;
+  const amount1Desired = tokenIsToken0 ? 0n : pooled;
+  const mintParams = {
+    token0,
+    token1,
+    fee: POOL_FEE,
+    tickLower,
+    tickUpper,
+    amount0Desired,
+    amount1Desired,
+    amount0Min: (amount0Desired * MIN_BPS) / 10_000n,
+    amount1Min: (amount1Desired * MIN_BPS) / 10_000n,
+    recipient: owner,
+    deadline: Math.floor(Date.now() / 1000) + 900,
+  };
+
+  try {
+    await pm.mint.staticCall(mintParams);
+    console.log("  simulation OK");
+  } catch (err: any) {
+    console.error(`  simulation FAILED — not broadcasting: ${err.shortMessage ?? err.message}`);
+    throw err;
   }
 
+  const mintTx = await pm.mint(mintParams);
+  console.log(`  tx ${mintTx.hash}`);
+  await mintTx.wait();
+
+  if (OWNER_SUPPLY > 0n) await (await token.transfer(owner, OWNER_SUPPLY)).wait();
+
+  // --- report --------------------------------------------------------------
+  const slot0 = await new ethers.Contract(pool, POOL_ABI, ethers.provider).slot0();
+  console.log("\nResult:");
+  console.log(`  pool           ${pool}`);
+  console.log(`  pooled         ${ethers.formatUnits(await token.balanceOf(pool), 18)} ${TOKEN_SYMBOL}`);
+  console.log(`  owner holds    ${ethers.formatUnits(await token.balanceOf(owner), 18)}`);
+  console.log(`  tick           ${slot0.tick}`);
+
   console.log("\nStill to do:");
-  console.log("  - postDeploy is now closed (totalSupply != 0), but stays owner-callable if supply ever returns to 0");
   console.log("  - the LP NFT is held by the owner: lock or burn it, or liquidity reads as unlocked");
-  console.log("  - vault.setKeeper(...) once the keeper address is final");
-  console.log("  - verify all three contracts on BscScan");
+  console.log("  - the token has no admin functions, so nothing about it can be changed from here");
+  console.log("  - treasury revenue needs the Infinity hook; until then only LP fees accrue");
 }
 
 main().catch((error) => {
