@@ -49,7 +49,7 @@ export const dictionaries = {
       marketCap: "Market Cap",
       totalReserveValue: "Total Reserve Value",
       reserveValuePartial: "Partial — not every holding could be priced yet",
-      taxCollected: "Tax Collected",
+      taxCollected: "Fees Collected",
       reserveAssets: "Reserve Assets",
       vaultHoldings: "Vault holdings",
       assetCount: (n: number) => `${n} asset${n === 1 ? "" : "s"}`,
@@ -64,15 +64,15 @@ export const dictionaries = {
     },
     howItWorks: {
       title: "How It Works",
-      headlinePrefix: "The tax buys real",
+      headlinePrefix: "The fees buy real",
       headlineGold: "bStocks",
       headlineSuffix: ". They never leave.",
       description:
         "Three moving parts, all on-chain. Nothing here has run yet — this is the mechanism, not a transaction log. Value only ever accrues to the vault: supply shrinks on redeem and never re-mints, so backing per token has nowhere to go but up.",
       highlights: [
         {
-          title: "Every trade pays 3%",
-          body: "A 3% tax on every RSVD buy and sell is collected in RSVD and routed to the treasury converter — a bounded contract, not a wallet someone could drain.",
+          title: "Every trade funds the vault",
+          body: "Trading fees accrue to protocol-owned liquidity and flow into the treasury. RSVD itself charges nothing on transfers — the fee sits at the pool, which is what keeps the token a plain ERC20 that every venue can handle.",
         },
         {
           title: "It buys real bStocks",
@@ -80,13 +80,13 @@ export const dictionaries = {
         },
         {
           title: "Backing only grows",
-          body: "Redeemed RSVD is burned, never re-minted, so supply only shrinks. Tax revenue keeps flowing into the vault on top of that, so backing per token trends up, not down.",
+          body: "Redeemed RSVD is burned, never re-minted, so supply only shrinks. Fee revenue keeps flowing into the vault on top of that, so backing per token trends up, not down.",
         },
       ],
       diagram: {
         trade: { title: "Trade RSVD", subtitle: "Buy or sell on the open market" },
-        tax: { title: "3% buy/sell tax", subtitle: "Collected in RSVD" },
-        keeper: { title: "Keeper bot", subtitle: "Converts tax proceeds" },
+        tax: { title: "Pool swap fee", subtitle: "Collected at the pool, not the token" },
+        keeper: { title: "Keeper bot", subtitle: "Converts fee proceeds" },
         swapDex: { title: "Swap on PancakeSwap", subtitle: "bStocks / USDT pools", eyebrow: "Primary — on-chain" },
         swapCex: { title: "Buy via Binance", subtitle: "Withdraw as BEP-20", eyebrow: "Fallback — high slippage" },
         vault: { title: "Vault contract", subtitle: "Holds bStocks on-chain" },
@@ -95,7 +95,7 @@ export const dictionaries = {
     },
     tokenomics: {
       title: "Tokenomics",
-      descriptionPrefix: "Fixed supply, taxed on every buy and sell. See",
+      descriptionPrefix: "Fixed supply, no transfer tax, no admin functions. See",
       descriptionLink: "Treasury",
       descriptionSuffix: "for the planned reserve composition.",
       labels: { ticker: "Ticker", chain: "Chain", fixedSupply: "Fixed supply", swapFee: "Swap fee", contract: "Contract" },
@@ -261,7 +261,7 @@ export const dictionaries = {
       marketCap: "市值",
       totalReserveValue: "储备总价值",
       reserveValuePartial: "部分数据 — 尚未能为全部持仓定价",
-      taxCollected: "已收取税费",
+      taxCollected: "已收取手续费",
       reserveAssets: "储备资产",
       vaultHoldings: "金库持仓",
       assetCount: (n: number) => `${n} 项资产`,
@@ -276,15 +276,15 @@ export const dictionaries = {
     },
     howItWorks: {
       title: "运作机制",
-      headlinePrefix: "税费买入真实",
+      headlinePrefix: "手续费买入真实",
       headlineGold: "bStocks",
       headlineSuffix: "，资产永不离开。",
       description:
         "三个环节，全部在链上完成。目前尚未发生任何实际交易 — 这里展示的是机制本身，而非交易记录。价值只会不断累积进金库：赎回会使总量减少且永不增发，因此单币背后的储备只会走高，不会走低。",
       highlights: [
         {
-          title: "每笔交易征收 3%",
-          body: "每笔 RSVD 买卖均征收 3% 的税，以 RSVD 形式收取并转入资金库转换合约 —— 那是一个有边界约束的合约，而非可能被人卷走资金的钱包。",
+          title: "每笔交易都在充实金库",
+          body: "交易手续费归属于协议自持的流动性，并流入资金库。RSVD 代币本身不对转账收取任何费用 —— 费用发生在池子层面，这正是它能保持为标准 ERC20、被所有平台正常支持的原因。",
         },
         {
           title: "买入真实的 bStocks",
@@ -292,13 +292,13 @@ export const dictionaries = {
         },
         {
           title: "储备只增不减",
-          body: "被赎回的 RSVD 会被销毁、永不增发，因此总量只会减少。税收持续注入金库，单币背后的储备呈上升趋势，而非下降。",
+          body: "被赎回的 RSVD 会被销毁、永不增发，因此总量只会减少。手续费收入持续注入金库，单币背后的储备呈上升趋势，而非下降。",
         },
       ],
       diagram: {
         trade: { title: "交易 RSVD", subtitle: "在公开市场买入或卖出" },
-        tax: { title: "3% 买卖税", subtitle: "以 RSVD 形式收取" },
-        keeper: { title: "Keeper 机器人", subtitle: "兑换税收所得" },
+        tax: { title: "池子交易手续费", subtitle: "在池子层面收取，而非代币层面" },
+        keeper: { title: "Keeper 机器人", subtitle: "兑换手续费所得" },
         swapDex: { title: "通过 PancakeSwap 兑换", subtitle: "bStocks / USDT 交易池", eyebrow: "主要方式 — 链上" },
         swapCex: { title: "通过 Binance 购买", subtitle: "以 BEP-20 形式提现", eyebrow: "备用方案 — 高滑点时" },
         vault: { title: "金库合约", subtitle: "链上持有 bStocks" },
@@ -307,7 +307,7 @@ export const dictionaries = {
     },
     tokenomics: {
       title: "代币经济学",
-      descriptionPrefix: "固定总量，每笔买卖均征税。查看",
+      descriptionPrefix: "固定总量，无转账税，无管理员权限。查看",
       descriptionLink: "资金库",
       descriptionSuffix: "了解计划中的储备构成。",
       labels: { ticker: "代币代码", chain: "所属链", fixedSupply: "固定总量", swapFee: "交易手续费", contract: "合约地址" },
