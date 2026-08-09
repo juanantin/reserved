@@ -23,6 +23,8 @@
     "deploy:treasury-converter-v2:mainnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-treasury-converter-v2.ts --network bscMainnet --no-compile",
     "deploy:governance-vote:testnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-governance-vote.ts --network bscTestnet --no-compile",
     "deploy:governance-vote:mainnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-governance-vote.ts --network bscMainnet --no-compile",
+    "deploy:converter-v3:testnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-treasury-converter-v3.ts --network bscTestnet --no-compile",
+    "deploy:converter-v3:mainnet": "node scripts/offline-compile.js && hardhat run scripts/deploy-treasury-converter-v3.ts --network bscMainnet --no-compile",
     "check:tax:mainnet": "hardhat run scripts/check-tax.ts --network bscMainnet --no-compile",
     "seed:testnet": "hardhat run scripts/seed-pool.ts --network bscTestnet --no-compile",
     "seed:mainnet": "hardhat run scripts/seed-pool.ts --network bscMainnet --no-compile",
