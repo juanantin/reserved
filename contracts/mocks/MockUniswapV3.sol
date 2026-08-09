@@ -15,6 +15,14 @@ contract MockWBNB is ERC20 {
     function deposit() external payable {
         _mint(msg.sender, msg.value);
     }
+
+    /// TreasuryConverterV3.sellRsvd unwraps its WBNB proceeds so the buy leg keeps
+    /// spending native BNB.
+    function withdraw(uint256 amount) external {
+        _burn(msg.sender, amount);
+        (bool ok, ) = msg.sender.call{value: amount}("");
+        require(ok, "WBNB: withdraw failed");
+    }
 }
 
 /// @notice A V3 pool with the Uniswap slot0 shape — `uint8 feeProtocol`, which is what
@@ -42,6 +50,37 @@ contract MockUniswapV3Pool {
 
     function setTick(int24 tick_) external {
         currentTick = tick_;
+    }
+
+    // --- observation ring, as TreasuryConverterV3's TWAP reads it ---
+    int24 public twapTickValue;
+    bool public observeReverts;
+    uint16 public observationCardinalityNext = 1;
+
+    function setTwapTick(int24 t) external {
+        twapTickValue = t;
+    }
+
+    /// A fresh V3 pool holds one observation, so observe() over a real window reverts
+    /// with "OLD" until the ring has grown. This models that state.
+    function setObserveReverts(bool v) external {
+        observeReverts = v;
+    }
+
+    function increaseObservationCardinalityNext(uint16 n) external {
+        observationCardinalityNext = n;
+    }
+
+    function observe(
+        uint32[] calldata secondsAgos
+    ) external view returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s) {
+        require(!observeReverts, "OLD");
+        tickCumulatives = new int56[](2);
+        secondsPerLiquidityCumulativeX128s = new uint160[](2);
+        // The consumer computes (c[1] - c[0]) / window, so seed a cumulative whose delta
+        // over the requested window averages exactly twapTickValue.
+        tickCumulatives[0] = 0;
+        tickCumulatives[1] = int56(twapTickValue) * int56(uint56(secondsAgos[0]));
     }
 
     function slot0()
@@ -239,6 +278,22 @@ contract MockSwapRouter {
     /// Output per unit of input, scaled 1e18. Set by the test.
     uint256 public rate = 1e18;
 
+    address public WETH9;
+    int24 public tickAfterSwap;
+    bool public movesTick;
+
+    function setWETH9(address w) external {
+        WETH9 = w;
+    }
+
+    /// Where the pool's tick ends up once the swap has been executed. Real V3 derives
+    /// this from the trade size; tests set it directly so the tick-floor bound in
+    /// TreasuryConverterV3.sellRsvd can be exercised at chosen distances from the TWAP.
+    function setTickAfterSwap(int24 t) external {
+        tickAfterSwap = t;
+        movesTick = true;
+    }
+
     address public lastRecipient;
     uint256 public lastAmountIn;
     uint256 public lastAmountOut;
@@ -277,6 +332,7 @@ contract MockSwapRouter {
         amountOut = (params.amountIn * rate) / 1e18;
         require(amountOut >= params.amountOutMinimum, "slippage");
         MockUniswapV3Pool(pool).payOut(params.tokenOut, params.recipient, amountOut);
+        if (movesTick) MockUniswapV3Pool(pool).setTick(tickAfterSwap);
 
         lastRecipient = params.recipient;
         lastAmountIn = params.amountIn;

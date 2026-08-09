@@ -21,6 +21,7 @@ const TARGETS = [
   "ReservedVault.sol",
   "TreasuryConverter.sol",
   "TreasuryConverterV2.sol",
+  "TreasuryConverterV3.sol",
   "ReservedGovernanceVote.sol",
   "mocks/MockERC20.sol",
   "mocks/MockERC20CustomDecimals.sol",
