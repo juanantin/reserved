@@ -19,6 +19,7 @@
     "check:pool:mainnet": "hardhat run scripts/check-reference-pool.ts --network bscMainnet --no-compile",
     "launch:testnet": "node scripts/offline-compile.js && hardhat run scripts/launch.ts --network bscTestnet --no-compile",
     "launch:mainnet": "node scripts/offline-compile.js && hardhat run scripts/launch.ts --network bscMainnet --no-compile",
+    "audit:token": "node scripts/audit-token.js",
     "verify:standard-json": "node scripts/verify-standard-json.js",
     "verify:launch-addresses:mainnet": "node scripts/offline-compile.js && hardhat run scripts/verify-launch-addresses.ts --network bscMainnet --no-compile"
   },
