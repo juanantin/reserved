@@ -123,16 +123,28 @@ async function main() {
   const holders = new Set(EXTRA.map((a) => ethers.getAddress(a)));
   const credited = new Map(); // address -> net tokens received via Transfer events
   let logCount = 0;
-  const STEP = 2_000; // public BSC RPCs cap getLogs at a few thousand blocks
+  let windows = 0;
+  let windowsFailed = 0;
+  const STEP = Number(process.env.LOG_STEP || "500"); // public BSC RPCs are stingy with getLogs
   for (let start = from; start <= head; start += STEP) {
     const end = Math.min(start + STEP - 1, head);
-    let logs;
-    try {
-      logs = await token.queryFilter("Transfer", start, end);
-    } catch (e) {
-      info(`getLogs [${start}-${end}] failed`, e.shortMessage ?? e.message);
-      continue;
+    windows++;
+    let logs = null;
+    // Public endpoints drop getLogs under load far more often than they drop eth_call,
+    // so a single failure is not evidence of anything. Retry before giving up on a window.
+    for (let attempt = 0; attempt < 3 && logs === null; attempt++) {
+      try {
+        logs = await token.queryFilter("Transfer", start, end);
+      } catch (e) {
+        if (attempt === 2) {
+          windowsFailed++;
+          info(`getLogs [${start}-${end}] failed after 3 tries`, e.shortMessage ?? e.message);
+        } else {
+          await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+        }
+      }
     }
+    if (logs === null) continue;
     logCount += logs.length;
     for (const log of logs) {
       const { from: f, to: t, value } = log.args;
@@ -143,6 +155,21 @@ async function main() {
   }
   holders.delete(ethers.ZeroAddress);
   info(`${logCount} Transfer events over blocks ${from}-${head}, ${holders.size} addresses`);
+
+  // An audit that finds nothing to inspect has not audited anything. Say so loudly —
+  // silently passing on an empty holder set is worse than reporting a failure, because
+  // the summary line then reads as a clean bill of health.
+  const logScanUsable = windowsFailed < windows && holders.size > 0;
+  if (windowsFailed === windows) {
+    fail("Transfer log scan", `all ${windows} windows failed — this RPC will not serve getLogs`);
+    info("retry with BSC_MAINNET_RPC_URL=https://bsc-rpc.publicnode.com, or LOG_STEP=200");
+  } else if (windowsFailed > 0) {
+    fail("Transfer log scan", `${windowsFailed}/${windows} windows failed — holder set is incomplete`);
+  } else if (holders.size === 0) {
+    fail("Transfer log scan", "no Transfer events in range — set FROM_BLOCK=<deploy block>");
+  } else {
+    pass("Transfer log scan", `${logCount} events, ${holders.size} addresses`);
+  }
 
   let sum = 0n;
   const rows = [];
@@ -161,7 +188,9 @@ async function main() {
   }
   console.log("");
 
-  if (sum > totalSupply) {
+  if (!logScanUsable) {
+    info("supply invariant NOT CHECKED — the holder set above is empty or partial");
+  } else if (sum > totalSupply) {
     fail("sum(balances) == totalSupply", `${fmt(sum - totalSupply)} MORE tokens exist than supply reports`);
     info("balances were written directly instead of transferred — accounting is broken");
   } else if (sum < totalSupply) {
@@ -187,8 +216,15 @@ async function main() {
   // --- 4. can holders move their full bag? -----------------------------------
   console.log("\n[4] Transferability (the honeypot check)");
   const sink = ethers.Wallet.createRandom().address;
+  const wallets = [];
   for (const r of rows.slice(0, 8)) {
-    if ((await provider.getCode(r.addr)) !== "0x") continue; // pools/routers, not wallets
+    if ((await provider.getCode(r.addr)) === "0x") wallets.push(r); // skip pools/routers
+  }
+  if (wallets.length === 0) {
+    fail("transferability", "NOT CHECKED — no wallet holders found to simulate a sell from");
+    info("this is the check that catches a honeypot; it needs a usable log scan first");
+  }
+  for (const r of wallets) {
     try {
       const ok = await token.transfer.staticCall(sink, r.bal, { from: r.addr });
       if (ok === false) fail(`${r.addr.slice(0, 10)} can move its full balance`, "transfer returned false");
@@ -203,18 +239,24 @@ async function main() {
   // A taxed token emits two Transfer events for one transfer. Group the logs by tx and
   // look for a transaction whose legs do not net out across sender and recipient.
   const taxed = [];
-  for (const r of rows.slice(0, 6)) {
-    if ((await provider.getCode(r.addr)) !== "0x") continue;
-    const probe = r.bal > 0n ? r.bal / 2n : 0n;
+  let probed = 0;
+  for (const r of wallets.slice(0, 6)) {
+    const probe = r.bal / 2n;
     if (probe === 0n) continue;
+    probed++;
     try {
       await token.transfer.staticCall(sink, probe, { from: r.addr });
     } catch {
       taxed.push(r.addr);
     }
   }
-  if (taxed.length === 0) pass("transfers of a partial balance simulate cleanly");
-  else fail("transfers of a partial balance simulate cleanly", taxed.join(", "));
+  if (probed === 0) {
+    fail("fee on transfer", "NOT CHECKED — no wallet holder with a non-zero balance");
+  } else if (taxed.length === 0) {
+    pass("transfers of a partial balance simulate cleanly", `${probed} wallet(s)`);
+  } else {
+    fail("transfers of a partial balance simulate cleanly", taxed.join(", "));
+  }
   info("a true 0% token emits exactly one Transfer per transfer — confirm on a real buy tx");
 
   // --- 6. pool health --------------------------------------------------------
