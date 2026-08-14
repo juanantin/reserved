@@ -72,24 +72,23 @@ async function fetchHoldersFromBscscan(tokenAddress: string): Promise<number | n
   }
 }
 
-// Bounded, recent-window holder count — the fallback when BscScan's key isn't
-// configured or its response doesn't carry a holder count on this key's tier. NOT a
-// full historical scan: there is no indexer behind this site, so "every holder ever"
-// would mean walking the chain from the contract's genesis block on every cache
-// refresh, which only gets more expensive as the token ages and risks timing out the
-// serverless function outright. Scanning the last ~30k blocks (roughly a day on BSC)
-// and counting addresses that both appeared in that window and currently hold a
-// non-zero balance is a live, honest sample — not a claim of completeness. `complete`
-// says whether the scan actually reached genesis (true only for a token young enough
-// that 30k blocks covers its whole life so far).
-const HOLDER_SCAN_MAX_BLOCKS = 30_000;
+// Fallback when BscScan's key isn't configured or its response doesn't carry a holder
+// count on this key's tier. Scans from the token's actual launch block (tx
+// 0x9444fa2a...d44355, see docsContent.ts) rather than a trailing window — an earlier
+// version scanned only the last ~30k blocks, which looked fine on day one and then
+// silently undercounted (down to 0) the moment the token got older than the window,
+// since the launch mint itself fell out of range. Scanning from true genesis is exact
+// while the token is this young; as it ages this scan gets slower every cache refresh,
+// and at some point (months of history, not days) this needs a real indexer instead of
+// a wider window. `complete` is true only when every chunk of the scan succeeded.
+const LAUNCH_BLOCK = 115_905_080;
 const LOG_STEP = 2_000;
 
 async function countHoldersOnChain(tokenAddress: string) {
   const provider = getReadProvider();
   const token = new ethers.Contract(tokenAddress, TOKEN_ABI, provider);
   const head = await provider.getBlockNumber();
-  const from = Math.max(0, head - HOLDER_SCAN_MAX_BLOCKS);
+  const from = LAUNCH_BLOCK;
 
   const holders = new Set<string>();
   let anyWindowFailed = false;
@@ -118,7 +117,7 @@ async function countHoldersOnChain(tokenAddress: string) {
     nonZero += balances.filter((b) => b > BigInt(0)).length;
   }
 
-  return { count: nonZero, complete: !anyWindowFailed && from === 0 };
+  return { count: nonZero, complete: !anyWindowFailed };
 }
 
 async function getHolders(tokenAddress: string) {

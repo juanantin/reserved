@@ -124,12 +124,12 @@ export const dictionaries = {
       redemptionLive: "Pro-rata, confirmed on-chain",
     },
     treasuryActivity: {
-      title: "Recent bStock purchases",
+      title: "bStock purchases",
       viewFullHistory: "View full history on BscScan",
       loading: "Loading...",
       unableToLoad: "Unable to load recent activity.",
-      none: "No bStock purchases in the scanned window yet.",
-      disclaimer: "Recent activity only, not the full history — see BscScan for everything.",
+      none: "No bStock purchases since launch yet.",
+      disclaimer: "Scanned from the token's launch block — shows the 25 most recent. See BscScan for the complete record.",
     },
     redeemPanel: {
       comingSoon: "Redeem — Coming Soon",
@@ -342,12 +342,12 @@ export const dictionaries = {
       redemptionLive: "按比例赎回，已链上确认",
     },
     treasuryActivity: {
-      title: "近期 bStock 购入记录",
+      title: "bStock 购入记录",
       viewFullHistory: "在 BscScan 查看完整记录",
       loading: "加载中...",
       unableToLoad: "近期动态加载失败。",
-      none: "扫描窗口内暂无 bStock 购入记录。",
-      disclaimer: "仅展示近期动态，非完整历史 — 完整记录请见 BscScan。",
+      none: "自启动以来暂无 bStock 购入记录。",
+      disclaimer: "自代币启动区块起扫描 — 展示最近 25 笔。完整记录请见 BscScan。",
     },
     redeemPanel: {
       comingSoon: "赎回 — 即将上线",
