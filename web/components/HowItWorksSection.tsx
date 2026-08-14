@@ -1,5 +1,4 @@
 import { FadeIn } from "./FadeIn";
-import { HowItWorksDiagram } from "./HowItWorksDiagram";
 import { BlockchainBackground } from "./BlockchainBackground";
 import { dictionaries, type Locale } from "@/lib/i18n";
 
@@ -36,10 +35,6 @@ export function HowItWorksSection({ locale }: { locale: Locale }) {
             </FadeIn>
           ))}
         </div>
-
-        <FadeIn delay={0.2} className="mx-auto mt-12 hidden max-w-3xl md:block">
-          <HowItWorksDiagram locale={locale} />
-        </FadeIn>
       </div>
     </section>
   );
