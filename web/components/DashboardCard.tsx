@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { tokenInfo } from "@/config/token";
-import { getReadProvider, getTokenContract, getVaultContract, BNB_USD_PRICE_FEED, CHAINLINK_FEED_ABI, PAIR_RESERVES_ABI } from "@/lib/contracts";
+import { getReadProvider, getTokenContract, getTreasuryHoldings, BNB_USD_PRICE_FEED, CHAINLINK_FEED_ABI, PAIR_RESERVES_ABI } from "@/lib/contracts";
 import { useWallet } from "@/lib/useWallet";
 import { useTotalReserveValue } from "@/lib/useTotalReserveValue";
 import { Logo } from "./Logo";
@@ -13,7 +13,6 @@ import { dictionaries, type Locale } from "@/lib/i18n";
 const PAIR_ABI = PAIR_RESERVES_ABI;
 
 type ReserveLine = { symbol: string; balance: string };
-type RedeemLine = { symbol: string; amount: string };
 
 // Monochrome gold shades only — no off-brand colors for per-asset visual variety.
 const MONOGRAM_SHADES = [1, 0.75, 0.55, 0.4];
@@ -45,43 +44,27 @@ export function DashboardCard({ locale }: { locale: Locale }) {
   const [marketCapBnb, setMarketCapBnb] = useState<number | null>(null);
   const [marketCapUsd, setMarketCapUsd] = useState<number | null>(null);
   const [supply, setSupply] = useState<number | null>(null);
-  const [treasuryBal, setTreasuryBal] = useState<number | null>(null);
   const [reserves, setReserves] = useState<ReserveLine[] | null>(null);
   const { value: reserveValueUsd, incomplete: reserveValueIncomplete } = useTotalReserveValue();
   const [userBalance, setUserBalance] = useState<number | null>(null);
-  const [redeemPreview, setRedeemPreview] = useState<RedeemLine[] | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    if (!tokenInfo.tokenAddress || !tokenInfo.vaultAddress) return;
+    if (!tokenInfo.tokenAddress) return;
     let cancelled = false;
 
     async function load() {
       try {
         const provider = getReadProvider();
         const token = getTokenContract(provider);
-        const vault = getVaultContract(provider);
 
-        const treasuryAddr: string = await token.treasury();
-        const [supplyWei, [tokens, balances], treasuryWei]: [bigint, [string[], bigint[]], bigint] = await Promise.all([
+        const [supplyWei, holdings]: [bigint, Awaited<ReturnType<typeof getTreasuryHoldings>>] = await Promise.all([
           token.totalSupply(),
-          vault.getReserveBalances(),
-          token.balanceOf(treasuryAddr),
+          getTreasuryHoldings(provider),
         ]);
         const supplyNum = Number(ethers.formatUnits(supplyWei, 18));
 
-        const lines = await Promise.all(
-          tokens.map(async (t: string, i: number) => {
-            let symbol = `${t.slice(0, 6)}...`;
-            try {
-              const meta = new ethers.Contract(t, ["function symbol() view returns (string)"], provider);
-              symbol = await meta.symbol();
-            } catch {
-              // Fall back to the shortened address if the reserve asset's metadata call fails.
-            }
-            return { symbol, balance: ethers.formatUnits(balances[i], 18) };
-          })
-        );
+        const lines = holdings.map((h) => ({ symbol: h.symbol, balance: ethers.formatUnits(h.balance, 18) }));
 
         let marketCap: number | null = null;
         if (tokenInfo.pairAddress) {
@@ -116,7 +99,6 @@ export function DashboardCard({ locale }: { locale: Locale }) {
 
         if (!cancelled) {
           setSupply(supplyNum);
-          setTreasuryBal(Number(ethers.formatUnits(treasuryWei, 18)));
           setReserves(lines.filter((l) => Number(l.balance) > 0));
           setMarketCapBnb(marketCap);
           setMarketCapUsd(marketCapInUsd);
@@ -136,37 +118,13 @@ export function DashboardCard({ locale }: { locale: Locale }) {
     let cancelled = false;
     async function loadUser() {
       if (!address || wrongNetwork) {
-        if (!cancelled) {
-          setUserBalance(null);
-          setRedeemPreview(null);
-        }
+        if (!cancelled) setUserBalance(null);
         return;
       }
       const provider = getReadProvider();
       const token = getTokenContract(provider);
-      const vault = getVaultContract(provider);
       const bal: bigint = await token.balanceOf(address);
-      if (cancelled) return;
-      setUserBalance(Number(ethers.formatUnits(bal, 18)));
-
-      if (bal > BigInt(0)) {
-        const [tokens, amounts]: [string[], bigint[]] = await vault.previewRedeem(bal);
-        const lines = await Promise.all(
-          tokens.map(async (t: string, i: number) => {
-            let symbol = `${t.slice(0, 6)}...`;
-            try {
-              const meta = new ethers.Contract(t, ["function symbol() view returns (string)"], provider);
-              symbol = await meta.symbol();
-            } catch {
-              // Fall back to the shortened address if metadata isn't readable.
-            }
-            return { symbol, amount: ethers.formatUnits(amounts[i], 18) };
-          })
-        );
-        if (!cancelled) setRedeemPreview(lines.filter((l) => Number(l.amount) > 0));
-      } else if (!cancelled) {
-        setRedeemPreview([]);
-      }
+      if (!cancelled) setUserBalance(Number(ethers.formatUnits(bal, 18)));
     }
     loadUser();
     return () => {
@@ -217,22 +175,10 @@ export function DashboardCard({ locale }: { locale: Locale }) {
         )}
       </div>
 
-      <div className="grid grid-cols-2 divide-x divide-white/10 border-b border-white/10 px-6 py-5 text-center">
-        <div>
-          <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">{t.taxCollected}</div>
-          <div className="mt-1 truncate font-mono text-lg font-bold text-rsvd-offwhite">
-            {treasuryBal !== null
-              ? `${treasuryBal.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${tokenInfo.ticker}`
-              : failed
-                ? "—"
-                : "..."}
-          </div>
-        </div>
-        <div>
-          <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">{t.reserveAssets}</div>
-          <div className="mt-1 font-mono text-lg font-bold text-rsvd-offwhite">
-            {reserves !== null ? reserves.length : failed ? "—" : "..."}
-          </div>
+      <div className="border-b border-white/10 px-6 py-5 text-center">
+        <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">{t.reserveAssets}</div>
+        <div className="mt-1 font-mono text-lg font-bold text-rsvd-offwhite">
+          {reserves !== null ? reserves.length : failed ? "—" : "..."}
         </div>
       </div>
 
@@ -271,28 +217,12 @@ export function DashboardCard({ locale }: { locale: Locale }) {
               {tokenInfo.ticker}
             </div>
 
-            <div className="mt-3 grid grid-cols-2 gap-4 border-t border-rsvd-gold/10 pt-3">
-              <div>
-                <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">{t.share}</div>
-                <div className="mt-1 font-mono text-sm font-semibold text-rsvd-offwhite">
-                  {sharePct !== null ? `${sharePct.toFixed(4)}%` : "—"}
-                </div>
-              </div>
-              <div>
-                <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">{t.redeemable}</div>
-                <div className="mt-1 font-mono text-sm font-semibold text-rsvd-offwhite">
-                  {redeemPreview === null ? "..." : redeemPreview.length === 0 ? t.nothingYet : t.assetCount(redeemPreview.length)}
-                </div>
+            <div className="mt-3 border-t border-rsvd-gold/10 pt-3">
+              <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">{t.share}</div>
+              <div className="mt-1 font-mono text-sm font-semibold text-rsvd-offwhite">
+                {sharePct !== null ? `${sharePct.toFixed(4)}%` : "—"}
               </div>
             </div>
-
-            {redeemPreview && redeemPreview.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {redeemPreview.map((r, i) => (
-                  <Monogram key={r.symbol} symbol={r.symbol} index={i} />
-                ))}
-              </div>
-            )}
           </>
         ) : (
           <p className="mt-2 text-sm text-rsvd-offwhite/50">{t.connectPrompt}</p>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { tokenInfo } from "@/config/token";
-import { getReadProvider, getTokenContract, getVaultContract } from "@/lib/contracts";
+import { getReadProvider, getTokenContract, getTreasuryHoldings } from "@/lib/contracts";
 import { FadeIn } from "./FadeIn";
 import { dictionaries, type Locale } from "@/lib/i18n";
 
@@ -17,35 +17,23 @@ export function LiveTreasuryStats({ locale }: { locale: Locale }) {
   const dc = dictionaries[locale].dashboardCard;
 
   useEffect(() => {
-    if (!tokenInfo.tokenAddress || !tokenInfo.vaultAddress) return;
+    if (!tokenInfo.tokenAddress) return;
     let cancelled = false;
 
     async function load() {
       try {
         const provider = getReadProvider();
         const token = getTokenContract(provider);
-        const vault = getVaultContract(provider);
 
-        const [totalSupply, [tokens, balances]]: [bigint, [string[], bigint[]]] = await Promise.all([
-          token.totalSupply(),
-          vault.getReserveBalances(),
+        const [totalSupply, holdings] = await Promise.all([
+          token.totalSupply() as Promise<bigint>,
+          getTreasuryHoldings(provider),
         ]);
         if (cancelled) return;
         setSupply(ethers.formatUnits(totalSupply, 18));
 
-        const lines = await Promise.all(
-          tokens.map(async (t: string, i: number) => {
-            let symbol = t;
-            try {
-              const meta = new ethers.Contract(t, ["function symbol() view returns (string)"], provider);
-              symbol = await meta.symbol();
-            } catch {
-              // Fall back to the raw address if the reserve asset's metadata call fails.
-            }
-            return { token: t, symbol, balance: ethers.formatUnits(balances[i], 18) };
-          })
-        );
-        if (!cancelled) setReserves(lines.filter((l) => Number(l.balance) > 0));
+        const lines = holdings.map((h) => ({ token: h.address, symbol: h.symbol, balance: ethers.formatUnits(h.balance, 18) }));
+        setReserves(lines.filter((l) => Number(l.balance) > 0));
       } catch {
         if (!cancelled) setFailed(true);
       }
@@ -57,14 +45,17 @@ export function LiveTreasuryStats({ locale }: { locale: Locale }) {
     };
   }, []);
 
-  if (!tokenInfo.tokenAddress || !tokenInfo.vaultAddress) return null;
+  if (!tokenInfo.tokenAddress) return null;
 
+  // No vault contract holds an approval to pay out bStocks on burn — there is nowhere
+  // for redeem() to live under this design, so it stays labeled honestly rather than
+  // reusing the "pro-rata, on-chain, any time" line that was written for one.
   const facts = [
     {
       label: t.reserveAssetsHeld,
       value: failed ? t.unableToLoad : reserves === null ? t.loading : reserves.length === 0 ? t.none : dc.assetCount(reserves.length),
     },
-    { label: t.redemption, value: t.redemptionValue },
+    { label: t.redemption, value: t.redemptionNotLive },
     {
       label: t.circulatingSupply,
       value: failed ? t.unableToLoad : supply !== null ? `${Number(supply).toLocaleString()} ${tokenInfo.ticker}` : t.loading,

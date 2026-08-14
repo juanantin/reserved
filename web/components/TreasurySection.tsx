@@ -24,7 +24,7 @@ export function TreasurySection({ locale }: { locale: Locale }) {
           <RedeemPanel locale={locale} />
         </FadeIn>
 
-        {tokenInfo.tokenAddress && tokenInfo.vaultAddress ? (
+        {tokenInfo.tokenAddress ? (
           <LiveTreasuryStats locale={locale} />
         ) : (
           <div className="mt-10 grid gap-4 sm:grid-cols-3">
@@ -37,9 +37,8 @@ export function TreasurySection({ locale }: { locale: Locale }) {
           </div>
         )}
 
-        <FadeIn delay={0.2} className="mt-6 grid gap-3 sm:grid-cols-2">
+        <FadeIn delay={0.2} className="mt-6">
           <CopyAddressButton address={tokenInfo.tokenAddress} label={t.tokenContract} locale={locale} />
-          <CopyAddressButton address={tokenInfo.vaultAddress} label={t.vaultContract} locale={locale} />
         </FadeIn>
 
         <FadeIn delay={0.24} className="mt-6 rounded-lg border border-white/10 bg-white/5 p-6">

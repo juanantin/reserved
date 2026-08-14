@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { tokenInfo } from "@/config/token";
-import { getReadProvider, getVaultContract, PANCAKE_V2_FACTORY, USDT_ADDRESS, PANCAKE_FACTORY_ABI, PAIR_RESERVES_ABI } from "./contracts";
+import { getReadProvider, getTreasuryHoldings, PANCAKE_V2_FACTORY, USDT_ADDRESS, PANCAKE_FACTORY_ABI, PAIR_RESERVES_ABI } from "./contracts";
 
 export type TotalReserveValue = {
   value: number | null;
@@ -25,29 +25,28 @@ export function useTotalReserveValue(): TotalReserveValue {
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    if (!tokenInfo.vaultAddress) return;
+    if (!tokenInfo.tokenAddress) return;
     let cancelled = false;
 
     async function load() {
       try {
         const provider = getReadProvider();
-        const vault = getVaultContract(provider);
-        const [tokens, balances]: [string[], bigint[]] = await vault.getReserveBalances();
+        const holdings = await getTreasuryHoldings(provider);
 
         let reserveValue: number | null = null;
         let reserveValuePartial = false;
 
-        if (tokens.length === 0) {
+        if (holdings.length === 0) {
           reserveValue = 0;
         } else {
           const factory = new ethers.Contract(PANCAKE_V2_FACTORY, PANCAKE_FACTORY_ABI, provider);
           let sum = 0;
           let pricedCount = 0;
-          for (let i = 0; i < tokens.length; i++) {
-            const bal = Number(ethers.formatUnits(balances[i], 18));
+          for (const holding of holdings) {
+            const bal = Number(ethers.formatUnits(holding.balance, 18));
             if (bal <= 0) continue;
             try {
-              const pairAddr: string = await factory.getPair(tokens[i], USDT_ADDRESS);
+              const pairAddr: string = await factory.getPair(holding.address, USDT_ADDRESS);
               if (pairAddr === ethers.ZeroAddress) {
                 reserveValuePartial = true;
                 continue;
@@ -55,7 +54,7 @@ export function useTotalReserveValue(): TotalReserveValue {
               const pair = new ethers.Contract(pairAddr, PAIR_RESERVES_ABI, provider);
               const [r0, r1]: [bigint, bigint] = await pair.getReserves();
               const token0: string = await pair.token0();
-              const isToken0 = token0.toLowerCase() === tokens[i].toLowerCase();
+              const isToken0 = token0.toLowerCase() === holding.address.toLowerCase();
               const assetReserve = isToken0 ? r0 : r1;
               const usdtReserve = isToken0 ? r1 : r0;
               if (assetReserve === BigInt(0)) {

@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { tokenInfo } from "@/config/token";
+import { tokenInfo, reserveAssets } from "@/config/token";
 
 // BNB Chain mainnet, hex chain id as MetaMask/EIP-1193 wallets expect it.
 export const BSC_CHAIN_ID_HEX = "0x38"; // 56
@@ -83,4 +83,25 @@ export function getVaultContract(runner: ethers.ContractRunner) {
 
 export function getGovernanceVoteContract(runner: ethers.ContractRunner) {
   return new ethers.Contract(tokenInfo.governanceVoteAddress, GOVERNANCE_VOTE_ABI, runner);
+}
+
+const RESERVE_BALANCE_ABI = ["function balanceOf(address account) view returns (uint256)"];
+
+// There is no vault contract holding the reserve — acquired bStocks are sent straight to
+// the token contract's own address, which can hold ERC20 balances like any other account.
+// So "what does the treasury hold" is just balanceOf(tokenAddress) on each allowlisted
+// bStock, not an aggregate call to a vault. A balance read failing (bad address, reverting
+// token) drops that one asset to zero rather than failing the whole treasury view.
+export async function getTreasuryHoldings(provider: ethers.ContractRunner) {
+  return Promise.all(
+    reserveAssets.map(async (asset) => {
+      try {
+        const erc20 = new ethers.Contract(asset.address, RESERVE_BALANCE_ABI, provider);
+        const balance: bigint = await erc20.balanceOf(tokenInfo.tokenAddress);
+        return { address: asset.address, symbol: asset.symbol, balance };
+      } catch {
+        return { address: asset.address, symbol: asset.symbol, balance: BigInt(0) };
+      }
+    })
+  );
 }
