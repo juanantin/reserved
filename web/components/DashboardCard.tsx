@@ -194,6 +194,21 @@ export function DashboardCard({ locale }: { locale: Locale }) {
                 {sharePct !== null ? `${sharePct.toFixed(4)}%` : failed ? "—" : "..."}
               </div>
             </div>
+
+            {userBalance !== null && userBalance > 0 && supply && reserves && reserves.length > 0 && (
+              <div className="mt-3 border-t border-rsvd-gold/10 pt-3">
+                <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">{t.yourShareOfReserve}</div>
+                <ul className="mt-2 space-y-1">
+                  {reserves.map((r) => (
+                    <li key={r.address} className="flex justify-between font-mono text-xs text-rsvd-offwhite/80">
+                      <span>{r.symbol}</span>
+                      <span>{((userBalance / supply) * r.balance).toLocaleString(undefined, { maximumFractionDigits: 6 })}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-[10px] leading-relaxed text-rsvd-offwhite/40">{t.yourShareDisclaimer}</p>
+              </div>
+            )}
           </>
         ) : (
           <p className="mt-2 text-sm text-rsvd-offwhite/50">{t.connectPrompt}</p>

@@ -57,6 +57,9 @@ export const dictionaries = {
       assetCount: (n: number) => `${n} asset${n === 1 ? "" : "s"}`,
       priceUnavailable: "price unavailable",
       total: "Total",
+      yourShareOfReserve: "Your pro-rata share of the reserve",
+      yourShareDisclaimer:
+        "Computed live from your RSVD balance's share of total supply × current treasury holdings — not a quote from a redeem call. Redemption is not live yet (see the Treasury section), so this is a projection of what your share represents today, not an amount you can currently claim.",
       yourPosition: "Your position",
       connectToSeePosition: "Connect to see your position",
       share: "Share",
@@ -277,6 +280,9 @@ export const dictionaries = {
       assetCount: (n: number) => `${n} 项资产`,
       priceUnavailable: "暂无价格",
       total: "总计",
+      yourShareOfReserve: "您按比例应得的储备份额",
+      yourShareDisclaimer:
+        "根据您的 RSVD 余额占总供应量的比例 × 当前资金库持仓实时计算得出 —— 并非来自赎回调用的报价。赎回功能尚未上线（见资金库部分），因此这只是您当前份额所代表数值的预测，并非您现在可以领取的金额。",
       yourPosition: "您的持仓",
       connectToSeePosition: "连接钱包查看持仓",
       share: "占比",
