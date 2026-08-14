@@ -3,14 +3,13 @@
 import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { tokenInfo } from "@/config/token";
-import { getReadProvider, getTokenContract, getTreasuryHoldings, BNB_USD_PRICE_FEED, CHAINLINK_FEED_ABI, PAIR_RESERVES_ABI } from "@/lib/contracts";
+import { getReadProvider, getTokenContract, getTreasuryHoldings } from "@/lib/contracts";
 import { useWallet } from "@/lib/useWallet";
 import { useTotalReserveValue } from "@/lib/useTotalReserveValue";
+import { useTokenStats } from "@/lib/useTokenStats";
 import { Logo } from "./Logo";
 import { HistoricalValueChart } from "./HistoricalValueChart";
 import { dictionaries, type Locale } from "@/lib/i18n";
-
-const PAIR_ABI = PAIR_RESERVES_ABI;
 
 type ReserveLine = { symbol: string; balance: string };
 
@@ -41,11 +40,10 @@ export function DashboardCard({ locale }: { locale: Locale }) {
   const { address, wrongNetwork } = useWallet();
   const t = dictionaries[locale].dashboardCard;
 
-  const [marketCapBnb, setMarketCapBnb] = useState<number | null>(null);
-  const [marketCapUsd, setMarketCapUsd] = useState<number | null>(null);
   const [supply, setSupply] = useState<number | null>(null);
   const [reserves, setReserves] = useState<ReserveLine[] | null>(null);
   const { value: reserveValueUsd, incomplete: reserveValueIncomplete } = useTotalReserveValue();
+  const { marketCapUsd, volume24hUsd, holders, holdersComplete, loading: statsLoading, failed: statsFailed } = useTokenStats();
   const [userBalance, setUserBalance] = useState<number | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -66,42 +64,9 @@ export function DashboardCard({ locale }: { locale: Locale }) {
 
         const lines = holdings.map((h) => ({ symbol: h.symbol, balance: ethers.formatUnits(h.balance, 18) }));
 
-        let marketCap: number | null = null;
-        if (tokenInfo.pairAddress) {
-          const pair = new ethers.Contract(tokenInfo.pairAddress, PAIR_ABI, provider);
-          const [reserve0, reserve1]: [bigint, bigint] = await pair.getReserves();
-          const token0: string = await pair.token0();
-          const tokenIsToken0 = token0.toLowerCase() === tokenInfo.tokenAddress.toLowerCase();
-          const tokenReserve = tokenIsToken0 ? reserve0 : reserve1;
-          const bnbReserve = tokenIsToken0 ? reserve1 : reserve0;
-          if (tokenReserve > BigInt(0)) {
-            const price = Number(ethers.formatEther(bnbReserve)) / Number(ethers.formatUnits(tokenReserve, 18));
-            marketCap = price * supplyNum;
-          }
-        }
-
-        // Chainlink's own on-chain feed, not a third-party API — no key, no
-        // extra backend, consistent with everything else this reads directly.
-        let marketCapInUsd: number | null = null;
-        if (marketCap !== null) {
-          try {
-            const feed = new ethers.Contract(BNB_USD_PRICE_FEED, CHAINLINK_FEED_ABI, provider);
-            const [decimals, roundData]: [number, [bigint, bigint, bigint, bigint, bigint]] = await Promise.all([
-              feed.decimals(),
-              feed.latestRoundData(),
-            ]);
-            const bnbUsd = Number(roundData[1]) / 10 ** Number(decimals);
-            marketCapInUsd = marketCap * bnbUsd;
-          } catch {
-            // Price feed read failed — fall back to BNB-only display below.
-          }
-        }
-
         if (!cancelled) {
           setSupply(supplyNum);
           setReserves(lines.filter((l) => Number(l.balance) > 0));
-          setMarketCapBnb(marketCap);
-          setMarketCapUsd(marketCapInUsd);
         }
       } catch {
         if (!cancelled) setFailed(true);
@@ -148,17 +113,33 @@ export function DashboardCard({ locale }: { locale: Locale }) {
         <div className="mt-2 truncate font-mono text-4xl font-bold text-rsvd-gold">
           {marketCapUsd !== null
             ? `$${marketCapUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
-            : marketCapBnb !== null
-              ? `${marketCapBnb.toLocaleString(undefined, { maximumFractionDigits: 2 })} BNB`
-              : failed
-                ? "—"
-                : "..."}
+            : statsFailed
+              ? "—"
+              : statsLoading
+                ? "..."
+                : t.noPoolYet}
         </div>
-        {marketCapUsd !== null && marketCapBnb !== null && (
-          <div className="mt-1 truncate font-mono text-xs text-rsvd-offwhite/40">
-            {marketCapBnb.toLocaleString(undefined, { maximumFractionDigits: 4 })} BNB
+      </div>
+
+      <div className="grid grid-cols-2 divide-x divide-white/10 border-b border-white/10 px-6 py-5 text-center">
+        <div>
+          <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">{t.volume24h}</div>
+          <div className="mt-1 truncate font-mono text-lg font-bold text-rsvd-offwhite">
+            {volume24hUsd !== null
+              ? `$${volume24hUsd.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+              : statsFailed
+                ? "—"
+                : statsLoading
+                  ? "..."
+                  : "$0"}
           </div>
-        )}
+        </div>
+        <div>
+          <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">{t.holders}</div>
+          <div className="mt-1 font-mono text-lg font-bold text-rsvd-offwhite">
+            {holders !== null ? (holdersComplete ? holders.toLocaleString() : `${holders.toLocaleString()}+`) : statsFailed ? "—" : "..."}
+          </div>
+        </div>
       </div>
 
       <div className="border-b border-white/10 px-6 py-5 text-center">

@@ -47,6 +47,9 @@ export const dictionaries = {
     },
     dashboardCard: {
       marketCap: "Market Cap",
+      noPoolYet: "No pool yet",
+      volume24h: "24h Volume",
+      holders: "Holders",
       totalReserveValue: "Total Reserve Value",
       reserveValuePartial: "Partial — not every holding could be priced yet",
       reserveAssets: "Reserve Assets",
@@ -116,6 +119,14 @@ export const dictionaries = {
       loading: "Loading...",
       none: "None yet",
       redemptionNotLive: "Not yet live",
+    },
+    treasuryActivity: {
+      title: "Recent bStock purchases",
+      viewFullHistory: "View full history on BscScan",
+      loading: "Loading...",
+      unableToLoad: "Unable to load recent activity.",
+      none: "No bStock purchases in the scanned window yet.",
+      disclaimer: "Recent activity only, not the full history — see BscScan for everything.",
     },
     redeemPanel: {
       comingSoon: "Redeem — Coming Soon",
@@ -256,6 +267,9 @@ export const dictionaries = {
     },
     dashboardCard: {
       marketCap: "市值",
+      noPoolYet: "尚无交易池",
+      volume24h: "24小时交易量",
+      holders: "持有人数",
       totalReserveValue: "储备总价值",
       reserveValuePartial: "部分数据 — 尚未能为全部持仓定价",
       reserveAssets: "储备资产",
@@ -325,6 +339,14 @@ export const dictionaries = {
       loading: "加载中...",
       none: "暂无",
       redemptionNotLive: "尚未上线",
+    },
+    treasuryActivity: {
+      title: "近期 bStock 购入记录",
+      viewFullHistory: "在 BscScan 查看完整记录",
+      loading: "加载中...",
+      unableToLoad: "近期动态加载失败。",
+      none: "扫描窗口内暂无 bStock 购入记录。",
+      disclaimer: "仅展示近期动态，非完整历史 — 完整记录请见 BscScan。",
     },
     redeemPanel: {
       comingSoon: "赎回 — 即将上线",

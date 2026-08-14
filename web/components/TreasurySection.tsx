@@ -4,6 +4,7 @@ import { BackingGrid } from "./BackingGrid";
 import { ReserveCoins } from "./ReserveCoins";
 import { FadeIn } from "./FadeIn";
 import { LiveTreasuryStats } from "./LiveTreasuryStats";
+import { TreasuryActivity } from "./TreasuryActivity";
 import { RedeemPanel } from "./RedeemPanel";
 import { BlockchainBackground } from "./BlockchainBackground";
 import { dictionaries, type Locale } from "@/lib/i18n";
@@ -40,6 +41,8 @@ export function TreasurySection({ locale }: { locale: Locale }) {
         <FadeIn delay={0.2} className="mt-6">
           <CopyAddressButton address={tokenInfo.tokenAddress} label={t.tokenContract} locale={locale} />
         </FadeIn>
+
+        <TreasuryActivity locale={locale} />
 
         <FadeIn delay={0.24} className="mt-6 rounded-lg border border-white/10 bg-white/5 p-6">
           <h3 className="text-sm uppercase tracking-widest text-rsvd-offwhite/40">{t.reserveAssets}</h3>

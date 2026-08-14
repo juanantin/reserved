@@ -21,9 +21,16 @@ export function getReadProvider() {
 export const TOKEN_ABI = [
   "function balanceOf(address account) view returns (uint256)",
   "function totalSupply() view returns (uint256)",
-  "function treasury() view returns (address)",
   "function allowance(address owner, address spender) view returns (uint256)",
   "function approve(address spender, uint256 amount) returns (bool)",
+  "event Transfer(address indexed from, address indexed to, uint256 value)",
+];
+
+// Shared by the holder-count and treasury-activity API routes for reading Transfer logs
+// off arbitrary ERC20s (the token itself, or a bStock) without pulling in TOKEN_ABI.
+export const ERC20_TRANSFER_ABI = [
+  "event Transfer(address indexed from, address indexed to, uint256 value)",
+  "function decimals() view returns (uint8)",
 ];
 
 export const VAULT_ABI = [

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { tokenInfo } from "@/config/token";
 import { getReadProvider, getTokenContract, getTreasuryHoldings } from "@/lib/contracts";
+import { useTotalReserveValue } from "@/lib/useTotalReserveValue";
 import { FadeIn } from "./FadeIn";
 import { dictionaries, type Locale } from "@/lib/i18n";
 
@@ -13,6 +14,7 @@ export function LiveTreasuryStats({ locale }: { locale: Locale }) {
   const [supply, setSupply] = useState<string | null>(null);
   const [reserves, setReserves] = useState<ReserveLine[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const { value: reserveValueUsd, incomplete: reserveValueIncomplete } = useTotalReserveValue();
   const t = dictionaries[locale].treasury;
   const dc = dictionaries[locale].dashboardCard;
 
@@ -52,22 +54,30 @@ export function LiveTreasuryStats({ locale }: { locale: Locale }) {
   // reusing the "pro-rata, on-chain, any time" line that was written for one.
   const facts = [
     {
+      label: dc.totalReserveValue,
+      value: reserveValueUsd !== null ? `$${reserveValueUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : failed ? t.unableToLoad : t.loading,
+      note: reserveValueUsd !== null && reserveValueIncomplete ? dc.reserveValuePartial : null,
+    },
+    {
       label: t.reserveAssetsHeld,
       value: failed ? t.unableToLoad : reserves === null ? t.loading : reserves.length === 0 ? t.none : dc.assetCount(reserves.length),
+      note: null,
     },
-    { label: t.redemption, value: t.redemptionNotLive },
+    { label: t.redemption, value: t.redemptionNotLive, note: null },
     {
       label: t.circulatingSupply,
       value: failed ? t.unableToLoad : supply !== null ? `${Number(supply).toLocaleString()} ${tokenInfo.ticker}` : t.loading,
+      note: null,
     },
   ];
 
   return (
-    <div className="mt-10 grid gap-4 sm:grid-cols-3">
+    <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {facts.map((fact, i) => (
         <FadeIn key={fact.label} delay={i * 0.08} className="rounded-lg border border-white/10 bg-white/5 p-6">
           <div className="text-xs uppercase tracking-widest text-rsvd-offwhite/40">{fact.label}</div>
           <div className="mt-2 text-lg font-semibold text-rsvd-gold">{fact.value}</div>
+          {fact.note && <div className="mt-1 text-[10px] text-rsvd-offwhite/40">{fact.note}</div>}
         </FadeIn>
       ))}
 
