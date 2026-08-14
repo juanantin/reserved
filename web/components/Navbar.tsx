@@ -59,13 +59,13 @@ function resolveHref(href: string, locale: Locale): string {
 function WalletButton({ locale, className }: { locale: Locale; className?: string }) {
   const { address, wrongNetwork, connecting, connect, disconnect, switchToBsc } = useWallet();
   const t = dictionaries[locale].wallet;
-  const base = `rounded-md px-4 py-2 text-sm font-semibold transition-colors focus-gold ${className ?? ""}`;
+  const base = `rounded-md px-3 py-1.5 text-sm font-semibold transition-colors focus-gold ${className ?? ""}`;
 
   if (!tokenInfo.tokenAddress) {
     return (
       <a
         href="#tokenomics"
-        className={`rounded-md border border-rsvd-gold/40 px-4 py-2 text-sm font-semibold text-rsvd-gold/80 transition-colors hover:border-rsvd-gold hover:text-rsvd-gold focus-gold ${className ?? ""}`}
+        className={`rounded-md border border-rsvd-gold/40 px-3 py-1.5 text-sm font-semibold text-rsvd-gold/80 transition-colors hover:border-rsvd-gold hover:text-rsvd-gold focus-gold ${className ?? ""}`}
         title={t.dashboardComingSoon}
       >
         {t.dashboardComingSoon}
@@ -111,7 +111,7 @@ function LangSwitcher({ locale, className, hrefOverride }: { locale: Locale; cla
   return (
     <a
       href={hrefOverride ?? t.href}
-      className={`rounded-md border border-white/10 px-3 py-2 text-xs font-semibold text-rsvd-offwhite/70 transition-colors hover:border-rsvd-gold/50 hover:text-rsvd-gold ${className ?? ""}`}
+      className={`rounded-md border border-white/10 px-2.5 py-1.5 text-xs font-semibold text-rsvd-offwhite/70 transition-colors hover:border-rsvd-gold/50 hover:text-rsvd-gold ${className ?? ""}`}
     >
       {t.label}
     </a>
@@ -133,7 +133,7 @@ export function Navbar({ locale, langHrefOverride }: { locale: Locale; langHrefO
           <span className="text-base font-semibold tracking-wide">RESERVED</span>
         </a>
 
-        <ul className="hidden items-center gap-8 text-sm text-rsvd-offwhite/80 md:flex">
+        <ul className="hidden items-center gap-4 whitespace-nowrap text-sm text-rsvd-offwhite/80 lg:flex xl:gap-6">
           {navLinks.map((link) => (
             <li key={link.href}>
               <a href={resolveHref(link.href, locale)} className="transition-colors hover:text-rsvd-gold focus-gold">
@@ -143,15 +143,15 @@ export function Navbar({ locale, langHrefOverride }: { locale: Locale; langHrefO
           ))}
         </ul>
 
-        <div className="hidden items-center gap-3 md:flex">
-          <SocialLinks locale={locale} />
+        <div className="hidden items-center gap-2 lg:flex">
+          <SocialLinks locale={locale} className="hidden xl:flex" />
           <LangSwitcher locale={locale} hrefOverride={langHrefOverride} />
           <WalletButton locale={locale} />
         </div>
 
         <button
           type="button"
-          className="focus-gold rounded-md border border-white/20 p-2 text-rsvd-offwhite md:hidden"
+          className="focus-gold rounded-md border border-white/20 p-2 text-rsvd-offwhite lg:hidden"
           aria-label={open ? "Close menu" : "Open menu"}
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
@@ -161,7 +161,7 @@ export function Navbar({ locale, langHrefOverride }: { locale: Locale; langHrefO
       </div>
 
       {open && (
-        <nav className="border-t border-white/10 bg-rsvd-black px-6 py-4 md:hidden">
+        <nav className="border-t border-white/10 bg-rsvd-black px-6 py-4 lg:hidden">
           <ul className="flex flex-col gap-4 text-sm text-rsvd-offwhite/80">
             {navLinks.map((link) => (
               <li key={link.href}>

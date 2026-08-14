@@ -49,18 +49,43 @@ async function fetchDexscreener(tokenAddress: string) {
   }
 }
 
-// Bounded, recent-window holder count — NOT a full historical scan. There is no indexer
-// behind this site, so "every holder ever" would mean walking the chain from the
-// contract's genesis block on every cache refresh, which only gets more expensive as the
-// token ages and risks timing out the serverless function outright. Scanning the last
-// ~30k blocks (roughly a day on BSC) and counting addresses that both appeared in that
-// window and currently hold a non-zero balance is a live, honest sample — not a claim of
-// completeness. `complete` says whether the scan actually reached genesis (true only for
-// a token young enough that 30k blocks covers its whole life so far).
+// BscScan itself tracks holder count from its own indexed history — the real number,
+// not a bounded sample — via the Etherscan V2 unified API's tokeninfo action. Requires
+// ETHERSCAN_API_KEY set in this site's own deployment env (separate from the contracts
+// repo's .env — same key works, since it's the unified multichain API, but Vercel needs
+// its own copy). No key configured, or the response not carrying a holder count on
+// whatever tier the key has, both fall through to the on-chain estimate below rather
+// than failing outright.
+async function fetchHoldersFromBscscan(tokenAddress: string): Promise<number | null> {
+  const apiKey = process.env.ETHERSCAN_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const url = `https://api.etherscan.io/v2/api?chainid=56&module=token&action=tokeninfo&contractaddress=${tokenAddress}&apikey=${apiKey}`;
+    const res = await fetch(url, { next: { revalidate: REVALIDATE_SECONDS } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const result = Array.isArray(data?.result) ? data.result[0] : data?.result;
+    const holders = Number(result?.holders ?? result?.holderCount);
+    return Number.isFinite(holders) && holders > 0 ? holders : null;
+  } catch {
+    return null;
+  }
+}
+
+// Bounded, recent-window holder count — the fallback when BscScan's key isn't
+// configured or its response doesn't carry a holder count on this key's tier. NOT a
+// full historical scan: there is no indexer behind this site, so "every holder ever"
+// would mean walking the chain from the contract's genesis block on every cache
+// refresh, which only gets more expensive as the token ages and risks timing out the
+// serverless function outright. Scanning the last ~30k blocks (roughly a day on BSC)
+// and counting addresses that both appeared in that window and currently hold a
+// non-zero balance is a live, honest sample — not a claim of completeness. `complete`
+// says whether the scan actually reached genesis (true only for a token young enough
+// that 30k blocks covers its whole life so far).
 const HOLDER_SCAN_MAX_BLOCKS = 30_000;
 const LOG_STEP = 2_000;
 
-async function countHolders(tokenAddress: string) {
+async function countHoldersOnChain(tokenAddress: string) {
   const provider = getReadProvider();
   const token = new ethers.Contract(tokenAddress, TOKEN_ABI, provider);
   const head = await provider.getBlockNumber();
@@ -96,8 +121,14 @@ async function countHolders(tokenAddress: string) {
   return { count: nonZero, complete: !anyWindowFailed && from === 0 };
 }
 
+async function getHolders(tokenAddress: string) {
+  const fromBscscan = await fetchHoldersFromBscscan(tokenAddress);
+  if (fromBscscan !== null) return { count: fromBscscan, complete: true };
+  return countHoldersOnChain(tokenAddress);
+}
+
 const cachedDexscreener = unstable_cache(fetchDexscreener, ["dexscreener-stats"], { revalidate: REVALIDATE_SECONDS });
-const cachedHolders = unstable_cache(countHolders, ["holder-count"], { revalidate: REVALIDATE_SECONDS });
+const cachedHolders = unstable_cache(getHolders, ["holder-count"], { revalidate: REVALIDATE_SECONDS });
 
 export async function GET() {
   if (!tokenInfo.tokenAddress) {
