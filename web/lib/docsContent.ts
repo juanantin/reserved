@@ -73,7 +73,10 @@ const en: DocsSection[] = [
         "bStocks the treasury acquires are held directly at RSVD's own contract address — there is no separate vault contract. That means anyone can check exactly what's held, and how much, on BscScan's \"Tokens\" tab for that address, at any time, rather than trusting a claimed figure."
       ),
       p(
-        "Fee collection into BNB, described above, is confirmed live and automatic from the very first trade. Using that accumulated BNB to acquire bStocks is the next step in the same pipeline — we'll cite the transaction that does it the first time it happens, the same way everything above is cited, rather than describe it ahead of confirming it."
+        "The design: every trade against the RSVD pool generates a swap fee, the token contract harvests that fee in BNB (confirmed live and automatic, from the very first trade — see Liquidity above), and that BNB is what funds buying a basket of bStocks, landing at the same treasury address anyone can already check. Fee in, bStocks out, same contract the whole way — not a separate keeper wallet or a converter contract handling money in between."
+      ),
+      p(
+        "What's independently confirmed on-chain versus what's the documented design, stated plainly: fee harvesting into BNB is proven, cited above. bStocks arriving at the treasury is proven — the redeem transaction below shows four of them sitting there and being paid out. That the harvested BNB specifically is what purchases those bStocks — as opposed to some other funding source — hasn't yet been observed in a cited transaction the way everything else on this page has. We'll cite that transaction the first time we see it, the same way as everywhere else here, rather than round the design up to a confirmed fact ahead of proof."
       ),
       p(
         "Redemption is confirmed live. In tx 0xaa57e40d…ead9fb, a holder called burn(185,458.208224…) on their own RSVD balance, and in that same transaction the token contract sent them a pro-rata share of every bStock the treasury held at the time — CRCLB, NVDAB, SNDKB and MUB all moved from the treasury address to the burner's wallet, cited directly from that transaction's logs, not described ahead of proof. This site's Redeem button calls the same burn(uint256) function."
@@ -177,7 +180,10 @@ const zh: DocsSection[] = [
         "资金库收购的 bStocks 直接持有在 RSVD 自身的合约地址上 —— 不存在单独的金库合约。这意味着任何人都可以随时在该地址的 BscScan “Tokens” 标签页中核实具体持有了什么、持有多少，而无需信任某个声称的数字。"
       ),
       p(
-        "如上文所述，手续费以 BNB 形式的自动收取，已确认自第一笔交易起便实时自动发生。使用这部分累积的 BNB 收购 bStocks 是同一流程的下一步 —— 这一步首次发生时，我们会像上文一样引用具体交易作为依据，而不会在确认之前提前描述。"
+        "设计如下：每一笔针对 RSVD 交易池的交易都会产生一笔交易手续费，代币合约会以 BNB 形式收取该手续费（已确认实时自动发生，自第一笔交易起即是如此 —— 详见上文“流动性”部分），而这部分 BNB 正是用于购入一篮子 bStocks 的资金来源，购入后落地于同一个任何人都已可核实的资金库地址。手续费进来，bStocks 出去，全程都在同一个合约内完成 —— 中间没有单独的 keeper 钱包或转换合约经手资金。"
+      ),
+      p(
+        "明确区分哪些已在链上独立核实、哪些仍是记录在案的设计：手续费自动收取为 BNB 已获证实，如上文所引用。bStocks 抵达资金库同样已获证实 —— 下文的赎回交易显示其中四支正持有在资金库中并已被支付出去。而“收取的 BNB 正是用于购入这些 bStocks 的资金”这一环节，尚未像本页其他内容那样，通过一笔被引用的具体交易得到直接观察确认。一旦我们看到这样的交易，会以本页一贯的方式引用它，而不会在证实之前就把设计拔高为既成事实。"
       ),
       p(
         "赎回功能已确认上线。在交易 0xaa57e40d…ead9fb 中，一位持有者对自己的 RSVD 余额调用了 burn(185,458.208224…)，而在同一笔交易中，代币合约按比例向其支付了当时资金库持有的每一支 bStock —— CRCLB、NVDAB、SNDKB 与 MUB 均从资金库地址转移到了该销毁者的钱包，这些数据直接引用自该交易的日志，而非在得到证实之前先行描述。本网站的“赎回”按钮调用的正是同一个 burn(uint256) 函数。"
