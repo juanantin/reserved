@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { tokenInfo } from "@/config/token";
-import { getReadProvider, getTokenContract, getVaultContract } from "@/lib/contracts";
+import { getReadProvider, getTokenContract, getTreasuryHoldings } from "@/lib/contracts";
 import { useWallet } from "@/lib/useWallet";
 import { dictionaries, type Locale } from "@/lib/i18n";
 
@@ -13,48 +13,46 @@ function shortAddr(addr: string) {
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 }
 
+// burn() destroys the caller's own balance directly and the contract pays out a
+// pro-rata share of every bStock it holds in that same transaction — confirmed by a
+// real, executed burn (see docsContent.ts's "treasury" section for the cited tx). No
+// allowance step: unlike a burnFrom-based design, there is nothing to approve first.
+//
+// The preview below is a client-side estimate — (amount / totalSupply) x each current
+// treasury holding — computed from the same balanceOf reads used everywhere else on
+// this site, not a call into the contract's own redemption math. It'll be close but the
+// contract's own arithmetic (rounding, the exact supply at the instant of the burn) is
+// authoritative; this is a preview, not a quote.
 export function RedeemPanel({ locale }: { locale: Locale }) {
   const { address, wrongNetwork, connecting, error: walletError, connect, switchToBsc, getSigner } = useWallet();
   const t = dictionaries[locale].redeemPanel;
   const tw = dictionaries[locale].wallet;
 
   const [balance, setBalance] = useState<bigint | null>(null);
-  const [allowance, setAllowance] = useState<bigint | null>(null);
   const [amountInput, setAmountInput] = useState("");
   const [preview, setPreview] = useState<PreviewLine[] | null>(null);
-  const [busy, setBusy] = useState<"approve" | "redeem" | null>(null);
+  const [busy, setBusy] = useState<"redeem" | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
-  const refreshBalance = useCallback(async () => {
+  const refreshBalance = async () => {
     if (!address) return;
     const provider = getReadProvider();
     const token = getTokenContract(provider);
-    const [bal, allow]: [bigint, bigint] = await Promise.all([
-      token.balanceOf(address),
-      token.allowance(address, tokenInfo.vaultAddress),
-    ]);
+    const bal: bigint = await token.balanceOf(address);
     setBalance(bal);
-    setAllowance(allow);
-  }, [address]);
+  };
 
-  // Mirrors refreshBalance's body rather than calling it directly, so the state
-  // update happens inside this effect's own async closure (satisfies
-  // react-hooks/set-state-in-effect). refreshBalance itself is still used
-  // directly from the approve/redeem handlers below, which is fine outside an effect.
   useEffect(() => {
-    if (!address) return;
     let cancelled = false;
     async function load() {
+      if (!address) {
+        if (!cancelled) setBalance(null);
+        return;
+      }
       const provider = getReadProvider();
       const token = getTokenContract(provider);
-      const [bal, allow]: [bigint, bigint] = await Promise.all([
-        token.balanceOf(address as string),
-        token.allowance(address, tokenInfo.vaultAddress),
-      ]);
-      if (!cancelled) {
-        setBalance(bal);
-        setAllowance(allow);
-      }
+      const bal: bigint = await token.balanceOf(address);
+      if (!cancelled) setBalance(bal);
     }
     load();
     return () => {
@@ -77,21 +75,22 @@ export function RedeemPanel({ locale }: { locale: Locale }) {
         return;
       }
       const provider = getReadProvider();
-      const vault = getVaultContract(provider);
-      const [tokens, amounts]: [string[], bigint[]] = await vault.previewRedeem(amountWei);
-      if (cancelled) return;
-      const lines = await Promise.all(
-        tokens.map(async (t: string, i: number) => {
-          let symbol = shortAddr(t);
-          try {
-            const meta = new ethers.Contract(t, ["function symbol() view returns (string)"], provider);
-            symbol = await meta.symbol();
-          } catch {
-            // Non-standard or unreadable token metadata — fall back to the address.
-          }
-          return { token: t, symbol, amount: ethers.formatUnits(amounts[i], 18) };
-        })
-      );
+      const token = getTokenContract(provider);
+      const [totalSupply, holdings]: [bigint, Awaited<ReturnType<typeof getTreasuryHoldings>>] = await Promise.all([
+        token.totalSupply(),
+        getTreasuryHoldings(provider),
+      ]);
+      if (cancelled || totalSupply === BigInt(0)) return;
+
+      const lines = holdings
+        .filter((h) => h.balance > BigInt(0))
+        .map((h) => ({
+          token: h.address,
+          symbol: h.symbol,
+          // mulDiv in wei, not floating point — the amount can be a meaningful share of
+          // a small treasury, so precision matters more here than in a rough USD figure.
+          amount: ethers.formatUnits((h.balance * amountWei) / totalSupply, 18),
+        }));
       if (!cancelled) setPreview(lines.filter((l) => Number(l.amount) > 0));
     }
     // Debounced — this fires on every keystroke otherwise, hammering the
@@ -115,12 +114,6 @@ export function RedeemPanel({ locale }: { locale: Locale }) {
     }
   })();
 
-  // allowance starts null while its balanceOf/allowance read is in flight —
-  // treat that as "unknown", not "no approval needed". Defaulting to false
-  // here would show the Redeem button before we actually know the vault has
-  // approval, letting someone click it into a guaranteed-revert.
-  const allowanceUnknown = allowance === null;
-  const needsApproval = allowance !== null && amountWei > BigInt(0) && allowance < amountWei;
   const insufficientBalance = balance !== null && amountWei > BigInt(0) && amountWei > balance;
 
   // ethers surfaces a short, human-readable reason on most revert/rejection
@@ -134,31 +127,13 @@ export function RedeemPanel({ locale }: { locale: Locale }) {
     return fallback;
   }
 
-  const handleApprove = async () => {
-    setStatus(null);
-    setBusy("approve");
-    try {
-      const signer = await getSigner();
-      const token = getTokenContract(signer);
-      const tx = await token.approve(tokenInfo.vaultAddress, amountWei);
-      setStatus(t.approvalSubmitted);
-      await tx.wait();
-      setStatus(t.approved);
-      await refreshBalance();
-    } catch (error) {
-      setStatus(describeError(error, t.approvalFailed));
-    } finally {
-      setBusy(null);
-    }
-  };
-
   const handleRedeem = async () => {
     setStatus(null);
     setBusy("redeem");
     try {
       const signer = await getSigner();
-      const vault = getVaultContract(signer);
-      const tx = await vault.redeem(amountWei);
+      const token = getTokenContract(signer);
+      const tx = await token.burn(amountWei);
       setStatus(t.redeemSubmitted);
       await tx.wait();
       setStatus(t.redeemed);
@@ -171,7 +146,7 @@ export function RedeemPanel({ locale }: { locale: Locale }) {
     }
   };
 
-  if (!tokenInfo.tokenAddress || !tokenInfo.vaultAddress) {
+  if (!tokenInfo.tokenAddress) {
     return (
       <button
         type="button"
@@ -250,6 +225,7 @@ export function RedeemPanel({ locale }: { locale: Locale }) {
               </li>
             ))}
           </ul>
+          <p className="mt-2 text-[10px] text-rsvd-offwhite/40">{t.previewDisclaimer}</p>
         </div>
       )}
       {preview && preview.length === 0 && amountWei > BigInt(0) && (
@@ -259,33 +235,14 @@ export function RedeemPanel({ locale }: { locale: Locale }) {
       {insufficientBalance && <p className="mt-3 text-sm text-red-400">{t.exceedsBalance}</p>}
 
       <div className="mt-4 flex gap-3">
-        {amountWei > BigInt(0) && allowanceUnknown ? (
-          <button
-            type="button"
-            disabled
-            className="cursor-not-allowed rounded-md bg-rsvd-gold px-6 py-3 text-sm font-semibold text-rsvd-black opacity-50"
-          >
-            {t.checkingApproval}
-          </button>
-        ) : needsApproval ? (
-          <button
-            type="button"
-            onClick={handleApprove}
-            disabled={busy !== null || amountWei === BigInt(0) || insufficientBalance}
-            className="rounded-md bg-rsvd-gold px-6 py-3 text-sm font-semibold text-rsvd-black transition-opacity hover:opacity-90 focus-gold disabled:opacity-50"
-          >
-            {busy === "approve" ? t.approving : t.approve(tokenInfo.ticker)}
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={handleRedeem}
-            disabled={busy !== null || amountWei === BigInt(0) || insufficientBalance}
-            className="rounded-md bg-rsvd-gold px-6 py-3 text-sm font-semibold text-rsvd-black transition-opacity hover:opacity-90 focus-gold disabled:opacity-50"
-          >
-            {busy === "redeem" ? t.redeeming : t.redeem}
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={handleRedeem}
+          disabled={busy !== null || amountWei === BigInt(0) || insufficientBalance}
+          className="rounded-md bg-rsvd-gold px-6 py-3 text-sm font-semibold text-rsvd-black transition-opacity hover:opacity-90 focus-gold disabled:opacity-50"
+        >
+          {busy === "redeem" ? t.redeeming : t.redeem}
+        </button>
       </div>
 
       {status && <p className="mt-3 text-sm text-rsvd-offwhite/70">{status}</p>}

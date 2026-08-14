@@ -10,6 +10,10 @@ import type { Locale } from "./i18n";
 // Launch tx (token opens the pool, seeds liquidity, buys, and collects its first fee,
 // all in one transaction — cited throughout this file):
 // 0x9444fa2aeb525201da10c683826a14526df8f59630dbffc23f4c29adb0d44355
+//
+// Redeem tx (a holder burns RSVD; the token contract pays out four bStocks — CRCLB,
+// NVDAB, SNDKB, MUB — directly to the burner's wallet in the same transaction):
+// 0xaa57e40df7f9dab410e19af39a3bae34704053ec11d5ca7dc03a612e3eead9fb
 
 export type DocsBlock = { type: "p"; text: string } | { type: "ul"; items: string[] };
 export type DocsSection = { id: string; title: string; blocks: DocsBlock[] };
@@ -39,7 +43,7 @@ const en: DocsSection[] = [
       ),
       ul([
         "No transfer tax. Trading costs only the pool's own swap fee — the pool's PoolCreated event confirms a fee of 100 (PancakeSwap V3's units, equal to 0.01%) — not anything charged by the token itself on top.",
-        "Burn (via ERC20Burnable) is the mechanism a redemption feature would use to remove RSVD from supply against a treasury payout — see Treasury below for where that actually stands today.",
+        "Calling burn(uint256) on your own balance does more than remove RSVD from supply: the contract pays out a pro-rata share of every bStock the treasury holds, to you, in that same transaction — confirmed by a real, executed burn (tx 0xaa57e40d…ead9fb). See Treasury below for what that transaction actually shows.",
       ]),
     ],
   },
@@ -72,7 +76,10 @@ const en: DocsSection[] = [
         "Fee collection into BNB, described above, is confirmed live and automatic from the very first trade. Using that accumulated BNB to acquire bStocks is the next step in the same pipeline — we'll cite the transaction that does it the first time it happens, the same way everything above is cited, rather than describe it ahead of confirming it."
       ),
       p(
-        "Redemption — burning RSVD to claim a pro-rata share of whatever the treasury currently holds — is planned, and is what this site's Redeem button is built to do once it's live. It is not live today: there is currently no contract function that pays out reserve assets against a burn, so burning RSVD right now does not return anything. Said plainly here so the button's \"Coming Soon\" state isn't the only place that's clear."
+        "Redemption is confirmed live. In tx 0xaa57e40d…ead9fb, a holder called burn(185,458.208224…) on their own RSVD balance, and in that same transaction the token contract sent them a pro-rata share of every bStock the treasury held at the time — CRCLB, NVDAB, SNDKB and MUB all moved from the treasury address to the burner's wallet, cited directly from that transaction's logs, not described ahead of proof. This site's Redeem button calls the same burn(uint256) function."
+      ),
+      p(
+        "One thing that transaction doesn't settle: the exact formula the contract uses (share of supply at the instant of the burn, rounding behavior, and so on). The site's own \"you will receive\" preview is a client-side estimate computed the same simple way — your balance's share of total supply, times current holdings — not a call into the contract's own math, so treat it as an estimate rather than a guaranteed quote."
       ),
     ],
   },
@@ -93,7 +100,7 @@ const en: DocsSection[] = [
     title: "Security",
     blocks: [
       p(
-        "Directly verified on-chain, cited by transaction above: the liquidity position is owned by the token contract's own address, not a wallet or an NFT; fee collection into BNB happens automatically, confirmed on the first trade after launch; the full supply was minted exactly once, at launch, straight into the pool."
+        "Directly verified on-chain, cited by transaction above: the liquidity position is owned by the token contract's own address, not a wallet or an NFT; fee collection into BNB happens automatically, confirmed on the first trade after launch; the full supply was minted exactly once, at launch, straight into the pool; burning RSVD pays out a pro-rata share of the treasury's bStock holdings to the burner, confirmed by a real executed burn."
       ),
       p(
         "Not yet independently confirmed: the contract's source hasn't been reviewed line-by-line here, so stronger claims — \"no owner can ever withdraw the liquidity,\" \"no mint function exists,\" \"nothing is pausable\" — aren't things this page stands behind with the same confidence as the paragraph above. We'd rather list that as an open question than round it up to something it isn't yet."
@@ -111,7 +118,7 @@ const en: DocsSection[] = [
         "Custodial trust, one layer up: bStocks are ultimately backed by Binance/BTech Holdings' Abu Dhabi SPV custody, tracked via Binance's Proof of Collateral — this is \"verifiable,\" not \"trustless.\"",
         "PancakeSwap liquidity for individual bStock pairs may be thin, especially for newly issued ones — large trades can have real price impact regardless of the on-chain behavior described above.",
         "Not community-governed beyond the non-binding vote described above.",
-        "Redemption is not live yet — see Treasury above. Holding RSVD today is not currently redeemable for treasury assets by any on-chain mechanism.",
+        "Redemption pays out whatever the treasury holds at the moment you burn — if it holds little or nothing of a given bStock, your share of that asset is little or nothing too. See Treasury above for how to check current holdings before redeeming.",
         "RSVD represents a claim on a reserve of tokenized-equity exposure. This page is informational only, not financial or legal advice, and nothing here is an offer to sell securities.",
       ]),
     ],
@@ -140,7 +147,7 @@ const zh: DocsSection[] = [
       ),
       ul([
         "完全不收取转账税。交易成本仅为池子自身的手续费 —— 池子的 PoolCreated 事件确认费率为 100（PancakeSwap V3 单位，等于 0.01%）—— 并非代币层面额外收取的费用。",
-        "销毁（通过 ERC20Burnable）是未来赎回功能用于在资金库支付后从总供应量中移除 RSVD 的机制 —— 该功能目前的实际状态详见下方“资金库”部分。",
+        "对自己的余额调用 burn(uint256) 所做的不只是从总供应量中移除 RSVD：合约会在同一笔交易中，按比例将资金库持有的每一支 bStock 支付给您 —— 已由一笔真实执行的销毁交易确认（交易哈希 0xaa57e40d…ead9fb）。该交易的具体内容详见下方“资金库”部分。",
       ]),
     ],
   },
@@ -173,7 +180,10 @@ const zh: DocsSection[] = [
         "如上文所述，手续费以 BNB 形式的自动收取，已确认自第一笔交易起便实时自动发生。使用这部分累积的 BNB 收购 bStocks 是同一流程的下一步 —— 这一步首次发生时，我们会像上文一样引用具体交易作为依据，而不会在确认之前提前描述。"
       ),
       p(
-        "赎回 —— 销毁 RSVD 以按比例领取资金库当前持有资产的份额 —— 处于规划阶段，也是本网站“赎回”按钮在功能上线后要实现的效果。目前尚未上线：当前不存在任何在销毁时支付储备资产的合约函数，因此现在销毁 RSVD 不会返回任何资产。在此明确说明，而不仅仅依赖按钮上的“即将推出”状态。"
+        "赎回功能已确认上线。在交易 0xaa57e40d…ead9fb 中，一位持有者对自己的 RSVD 余额调用了 burn(185,458.208224…)，而在同一笔交易中，代币合约按比例向其支付了当时资金库持有的每一支 bStock —— CRCLB、NVDAB、SNDKB 与 MUB 均从资金库地址转移到了该销毁者的钱包，这些数据直接引用自该交易的日志，而非在得到证实之前先行描述。本网站的“赎回”按钮调用的正是同一个 burn(uint256) 函数。"
+      ),
+      p(
+        "这笔交易本身无法说明的是：合约所使用的精确计算公式（销毁那一刻的供应量占比、取整方式等细节）。网站自身的“预计可获得”预览，是以同样简单的方式在客户端计算得出 —— 您的余额占总供应量的比例，乘以当前持仓 —— 并非调用合约自身的计算逻辑，因此请将其视为估算值，而非有保证的报价。"
       ),
     ],
   },
@@ -192,7 +202,7 @@ const zh: DocsSection[] = [
     title: "安全性",
     blocks: [
       p(
-        "已在链上直接核实、并在上文引用具体交易作为依据的内容：流动性头寸由代币合约自身地址持有，而非钱包或 NFT；手续费以 BNB 形式自动收取，已在启动后第一笔交易中得到确认；全部供应量已在启动时一次性铸造，直接进入交易池。"
+        "已在链上直接核实、并在上文引用具体交易作为依据的内容：流动性头寸由代币合约自身地址持有，而非钱包或 NFT；手续费以 BNB 形式自动收取，已在启动后第一笔交易中得到确认；全部供应量已在启动时一次性铸造，直接进入交易池；销毁 RSVD 会按比例向销毁者支付资金库持有的 bStock，已由一笔真实执行的销毁交易确认。"
       ),
       p(
         "尚未独立核实的内容：本页尚未对合约源码逐行审查，因此诸如“任何所有者都永远无法提取流动性”“不存在增发函数”“不存在任何可暂停的功能”等更强的表述，其确定程度不及上一段所列内容。我们选择将其列为待核实的问题，而非将其拔高为尚未达到的结论。"
@@ -210,7 +220,7 @@ const zh: DocsSection[] = [
         "上一层的托管信任：bStocks 最终由币安 / BTech Holdings 位于阿布扎比的 SPV 托管支撑，并通过币安的储备证明进行追踪 —— 这是“可验证”，而非“无需信任”。",
         "个别 bStock 交易对在 PancakeSwap 上的流动性可能较薄，尤其是新发行的品种 —— 无论上述链上行为如何，大额交易仍可能造成实际的价格冲击。",
         "除上述非约束性投票外，并未实现社区治理。",
-        "赎回功能尚未上线 —— 详见上方“资金库”部分。目前持有 RSVD 并不能通过任何链上机制兑换资金库资产。",
+        "赎回所支付的是您销毁那一刻资金库实际持有的资产 —— 若资金库某支 bStock 持仓很少甚至为零，您在该资产上分得的份额也会相应很少或为零。赎回前请先参考上方“资金库”部分核实当前持仓。",
         "RSVD 代表对一篮子代币化股票敞口储备的权益凭证。本页面仅供参考，不构成财务或法律建议，页面中的任何内容均不构成证券要约。",
       ]),
     ],

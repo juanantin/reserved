@@ -7,20 +7,20 @@ import { dictionaries, type Locale } from "@/lib/i18n";
 const icons = [ShieldCheck, Lock, Landmark, Vault, KeyRound];
 
 // "Verifiable reserve" (index 1) is the one claim among these that has a real,
-// checkable on-chain artifact — the vault contract itself — so it's the one that
-// gets the actual explorer link, only rendered once there's a real address to point
-// at (never a placeholder/fabricated link before the vault is deployed).
+// checkable on-chain artifact — the treasury lives directly on the token contract,
+// not a separate vault — so it's the one that gets the actual explorer link, only
+// rendered once there's a real address to point at.
 const VERIFIABLE_RESERVE_INDEX = 1;
 
-// "No one can withdraw it" (index 4) is the strongest trust claim on this page — no
-// owner/keeper withdraw function exists anywhere in the vault or treasury converter
-// contracts (verified by the test suite, see docs). It links to the docs Security
-// section rather than restating the full argument here.
+// "Burn to redeem" (index 4) links to the docs Security section rather than
+// restating it here — that section says plainly what's independently verified
+// (burn() pays out pro-rata, confirmed on-chain) versus what isn't yet (whether any
+// owner-only withdraw path exists; the source hasn't been reviewed line-by-line).
 const SECURE_INDEX = 4;
 
 export function TransparencySection({ locale }: { locale: Locale }) {
   const t = dictionaries[locale].transparency;
-  const vaultExplorerUrl = tokenInfo.vaultAddress ? `${tokenInfo.explorerBaseUrl}${tokenInfo.vaultAddress}` : "";
+  const tokenExplorerUrl = tokenInfo.tokenAddress ? `${tokenInfo.explorerBaseUrl}${tokenInfo.tokenAddress}` : "";
   const securityDocsUrl = locale === "zh" ? "/zh/docs#security" : "/docs#security";
 
   return (
@@ -42,9 +42,9 @@ export function TransparencySection({ locale }: { locale: Locale }) {
                   <div>
                     <div className="font-semibold">{feature.title}</div>
                     <p className="mt-1 text-sm text-rsvd-offwhite/60">{feature.description}</p>
-                    {i === VERIFIABLE_RESERVE_INDEX && vaultExplorerUrl && (
+                    {i === VERIFIABLE_RESERVE_INDEX && tokenExplorerUrl && (
                       <a
-                        href={vaultExplorerUrl}
+                        href={tokenExplorerUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-rsvd-gold transition-colors hover:text-rsvd-gold/80 focus-gold"

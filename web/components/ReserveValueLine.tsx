@@ -10,9 +10,8 @@ export function ReserveValueLine({ locale }: { locale: Locale }) {
   const { value, incomplete, failed } = useTotalReserveValue();
   const dc = dictionaries[locale].dashboardCard;
 
-  // Not deployed yet — the hook would otherwise sit on "..." forever rather than
-  // resolving, since there's no vault to read from. Same bail-out DashboardCard uses.
-  if (!tokenInfo.vaultAddress) return null;
+  // Not deployed yet. Same bail-out DashboardCard uses.
+  if (!tokenInfo.tokenAddress) return null;
 
   return (
     <div className="mt-8 border-t border-white/10 pt-6">

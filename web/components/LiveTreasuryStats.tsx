@@ -40,9 +40,9 @@ export function LiveTreasuryStats({ locale }: { locale: Locale }) {
 
   if (!tokenInfo.tokenAddress) return null;
 
-  // No vault contract holds an approval to pay out bStocks on burn — there is nowhere
-  // for redeem() to live under this design, so it stays labeled honestly rather than
-  // reusing the "pro-rata, on-chain, any time" line that was written for one.
+  // Confirmed live: burning RSVD pays out a pro-rata share of every bStock the
+  // treasury holds, in the same transaction — see RedeemPanel and docsContent.ts's
+  // "treasury" section for the cited, executed transaction this is based on.
   const facts = [
     {
       label: dc.totalReserveValue,
@@ -54,7 +54,7 @@ export function LiveTreasuryStats({ locale }: { locale: Locale }) {
       value: failed ? t.unableToLoad : reserves === null ? t.loading : reserves.length === 0 ? t.none : dc.assetCount(reserves.length),
       note: null,
     },
-    { label: t.redemption, value: t.redemptionNotLive, note: null },
+    { label: t.redemption, value: t.redemptionLive, note: null },
     {
       label: t.circulatingSupply,
       value: failed ? t.unableToLoad : supply !== null ? `${Number(supply).toLocaleString()} ${tokenInfo.ticker}` : t.loading,

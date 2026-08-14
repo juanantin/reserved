@@ -23,6 +23,10 @@ export const TOKEN_ABI = [
   "function totalSupply() view returns (uint256)",
   "function allowance(address owner, address spender) view returns (uint256)",
   "function approve(address spender, uint256 amount) returns (bool)",
+  // Burning triggers a pro-rata payout of the treasury's bStock holdings to the caller
+  // — confirmed by a real executed transaction (see docsContent.ts's "treasury"
+  // section). No allowance needed: this burns the caller's own balance directly.
+  "function burn(uint256 amount)",
   "event Transfer(address indexed from, address indexed to, uint256 value)",
 ];
 
@@ -31,13 +35,6 @@ export const TOKEN_ABI = [
 export const ERC20_TRANSFER_ABI = [
   "event Transfer(address indexed from, address indexed to, uint256 value)",
   "function decimals() view returns (uint8)",
-];
-
-export const VAULT_ABI = [
-  "function reserveAssetCount() view returns (uint256)",
-  "function getReserveBalances() view returns (address[] tokens, uint256[] balances)",
-  "function previewRedeem(uint256 rsvdAmount) view returns (address[] tokens, uint256[] amounts)",
-  "function redeem(uint256 rsvdAmount)",
 ];
 
 // Small stand-alone fragment for reading name/symbol/decimals off arbitrary
@@ -82,10 +79,6 @@ export const GOVERNANCE_VOTE_ABI = [
 
 export function getTokenContract(runner: ethers.ContractRunner) {
   return new ethers.Contract(tokenInfo.tokenAddress, TOKEN_ABI, runner);
-}
-
-export function getVaultContract(runner: ethers.ContractRunner) {
-  return new ethers.Contract(tokenInfo.vaultAddress, VAULT_ABI, runner);
 }
 
 export function getGovernanceVoteContract(runner: ethers.ContractRunner) {
