@@ -18,16 +18,19 @@ export const tokenInfo = {
   protocolFeeLive: false,
 
   // Set once each contract is deployed and verified.
-  tokenAddress: "",
+  tokenAddress: "0x5C8fB70C1Ec327434F0AC05FcE3791c10436Cb60",
   vaultAddress: "",
 
   // Set once a PancakeSwap pool exists. Used to read live price off the pair's
   // reserves (see DashboardCard) — not just for the buy/chart links below.
+  // Distinct from tokenAddress: this is the pool's own address, still unknown here.
   pairAddress: "",
 
-  // Set once a PancakeSwap pool exists / the token is listed somewhere.
-  buyUrl: "",
-  chartUrl: "",
+  // outputCurrency alone is enough for PancakeSwap's swap UI to route a buy even
+  // before a pool is confirmed here; dexscreener resolves a bare token address to
+  // its top pair, so neither link needs pairAddress to be set.
+  buyUrl: "https://pancakeswap.finance/swap?outputCurrency=0x5C8fB70C1Ec327434F0AC05FcE3791c10436Cb60&chain=bsc",
+  chartUrl: "https://dexscreener.com/bsc/0x5C8fB70C1Ec327434F0AC05FcE3791c10436Cb60",
   explorerBaseUrl: "https://bscscan.com/address/",
 
   // Redemption happens directly on this site now (see RedeemPanel) — no external
