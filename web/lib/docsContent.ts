@@ -14,6 +14,12 @@ import type { Locale } from "./i18n";
 // Redeem tx (a holder burns RSVD; the token contract pays out four bStocks — CRCLB,
 // NVDAB, SNDKB, MUB — directly to the burner's wallet in the same transaction):
 // 0xaa57e40df7f9dab410e19af39a3bae34704053ec11d5ca7dc03a612e3eead9fb
+//
+// The token address is a proxy (confirmed by BscScan's own proxy detection), with its
+// implementation at 0x776d3A522a9F61FD40eDE4604e870Ff288b53AeB. See the "upgradeability"
+// section — every "confirmed" claim elsewhere in this file describes current behavior
+// under that implementation, not a permanent guarantee, for as long as upgrade control
+// exists.
 
 export type DocsBlock = { type: "p"; text: string } | { type: "ul"; items: string[] };
 export type DocsSection = { id: string; title: string; blocks: DocsBlock[] };
@@ -31,6 +37,24 @@ const en: DocsSection[] = [
       ),
       p(
         "This isn't a DAO, and the treasury isn't community-operated day to day. \"Vote the next bStock\" (see Governance below) is a real, on-chain, non-binding signal — not a claim that holders decide what gets bought."
+      ),
+      p(
+        "One qualifier that applies to every claim in this document, stated up front rather than buried: see Upgradeability directly below before treating anything else here as permanent."
+      ),
+    ],
+  },
+  {
+    id: "upgradeability",
+    title: "Upgradeability: not fully locked down yet",
+    blocks: [
+      p(
+        "0x5C8fB70C1Ec327434F0AC05FcE3791c10436Cb60 is a proxy, not a standalone contract — confirmed by BscScan's own proxy detection, which shows its implementation living at a separate address, 0x776d3A522a9F61FD40eDE4604e870Ff288b53AeB. Every call to the token routes through to whatever contract that address currently points at."
+      ),
+      p(
+        "That matters for everything else on this page: a proxy's admin can redeploy the implementation at any time, changing what burn() does, whether a mint function exists, how the liquidity position is handled — anything — while the token's address, balance history and holder base stay exactly the same. Every claim described elsewhere in these docs as \"confirmed\" or \"verified\" describes what the current implementation does, checked against a real cited transaction. None of it is a claim about what the contract can be made to do in the future."
+      ),
+      p(
+        "As of this writing, upgrade control has not been renounced. The project has stated this is deliberate, not an oversight: the proxy is being kept upgradeable while testing is still underway, with the stated intent to renounce it once that's complete. We'd rather say that plainly here than let the confident, cited tone of the rest of this page imply more permanence than currently exists. This section will be updated the moment renouncement happens, cited the same way as everything else in this file."
       ),
     ],
   },
@@ -103,7 +127,7 @@ const en: DocsSection[] = [
     title: "Security",
     blocks: [
       p(
-        "Directly verified on-chain, cited by transaction above: the liquidity position is owned by the token contract's own address, not a wallet or an NFT; fee collection into BNB happens automatically, confirmed on the first trade after launch; the full supply was minted exactly once, at launch, straight into the pool; burning RSVD pays out a pro-rata share of the treasury's bStock holdings to the burner, confirmed by a real executed burn."
+        "Directly verified on-chain, cited by transaction above: the liquidity position is owned by the token contract's own address, not a wallet or an NFT; fee collection into BNB happens automatically, confirmed on the first trade after launch; the full supply was minted exactly once, at launch, straight into the pool; burning RSVD pays out a pro-rata share of the treasury's bStock holdings to the burner, confirmed by a real executed burn. See Upgradeability above first, though: every item in this list describes the current implementation behind the token's proxy, not a permanent guarantee, until upgrade control is renounced."
       ),
       p(
         "Not yet independently confirmed: the contract's source hasn't been reviewed line-by-line here, so stronger claims — \"no owner can ever withdraw the liquidity,\" \"no mint function exists,\" \"nothing is pausable\" — aren't things this page stands behind with the same confidence as the paragraph above. We'd rather list that as an open question than round it up to something it isn't yet."
@@ -118,6 +142,7 @@ const en: DocsSection[] = [
     title: "Risks & disclaimers",
     blocks: [
       ul([
+        "The token is upgradeable and upgrade control has not been renounced yet (see Upgradeability above) — until it is, an admin key can change how this contract behaves, including everything else described on this page.",
         "Custodial trust, one layer up: bStocks are ultimately backed by Binance/BTech Holdings' Abu Dhabi SPV custody, tracked via Binance's Proof of Collateral — this is \"verifiable,\" not \"trustless.\"",
         "PancakeSwap liquidity for individual bStock pairs may be thin, especially for newly issued ones — large trades can have real price impact regardless of the on-chain behavior described above.",
         "Not community-governed beyond the non-binding vote described above.",
@@ -138,6 +163,24 @@ const zh: DocsSection[] = [
       ),
       p(
         "这不是一个 DAO，资金库日常运作也并非由社区管理。下文治理部分提到的“为下一支 bStock 投票”功能，是真实的、链上的、非约束性信号 —— 并不代表持有者可以决定实际购买什么。"
+      ),
+      p(
+        "有一条限定说明适用于本文档中的每一项陈述，在此先明确提出，而非放在文末带过：请先阅读下方紧接的“可升级性”部分，再将本页其余内容视为永久不变。"
+      ),
+    ],
+  },
+  {
+    id: "upgradeability",
+    title: "可升级性：尚未完全锁定",
+    blocks: [
+      p(
+        "0x5C8fB70C1Ec327434F0AC05FcE3791c10436Cb60 是一个代理合约，而非独立合约 —— 这一点已由 BscScan 自身的代理检测确认，其显示实现合约位于另一独立地址 0x776d3A522a9F61FD40eDE4604e870Ff288b53AeB。对代币的每一次调用，都会转发至该地址当前指向的合约。"
+      ),
+      p(
+        "这一点关系到本页其余的每一项内容：代理合约的管理员可以随时更换实现合约，从而改变 burn() 的行为、是否存在增发函数、流动性头寸的处理方式 —— 任何方面都可能改变，而代币地址、余额历史与持有人基础则保持不变。本文档其他部分所说的“已确认”或“已核实”，指的都是当前实现合约、经由真实交易核实后的行为，并不构成对该合约未来行为的承诺。"
+      ),
+      p(
+        "截至本文撰写时，升级权限尚未放弃。项目方表示这是有意为之，而非疏漏：在测试仍在进行期间，代理合约被有意保留为可升级状态，计划在测试完成后放弃该权限。我们选择在此明确说明这一点，而不是让本页其余部分自信、有据可查的语气，暗示出目前尚不存在的永久性保证。一旦放弃升级权限的操作发生，本部分将以本文件一贯的方式引用具体交易并更新。"
       ),
     ],
   },
@@ -208,7 +251,7 @@ const zh: DocsSection[] = [
     title: "安全性",
     blocks: [
       p(
-        "已在链上直接核实、并在上文引用具体交易作为依据的内容：流动性头寸由代币合约自身地址持有，而非钱包或 NFT；手续费以 BNB 形式自动收取，已在启动后第一笔交易中得到确认；全部供应量已在启动时一次性铸造，直接进入交易池；销毁 RSVD 会按比例向销毁者支付资金库持有的 bStock，已由一笔真实执行的销毁交易确认。"
+        "已在链上直接核实、并在上文引用具体交易作为依据的内容：流动性头寸由代币合约自身地址持有，而非钱包或 NFT；手续费以 BNB 形式自动收取，已在启动后第一笔交易中得到确认；全部供应量已在启动时一次性铸造，直接进入交易池；销毁 RSVD 会按比例向销毁者支付资金库持有的 bStock，已由一笔真实执行的销毁交易确认。不过请先参考上文“可升级性”部分：以上每一项描述的都是代币代理合约当前所指向实现合约的行为，而非永久性保证 —— 直到升级权限被放弃为止。"
       ),
       p(
         "尚未独立核实的内容：本页尚未对合约源码逐行审查，因此诸如“任何所有者都永远无法提取流动性”“不存在增发函数”“不存在任何可暂停的功能”等更强的表述，其确定程度不及上一段所列内容。我们选择将其列为待核实的问题，而非将其拔高为尚未达到的结论。"
@@ -223,6 +266,7 @@ const zh: DocsSection[] = [
     title: "风险与免责声明",
     blocks: [
       ul([
+        "代币目前是可升级的，且升级权限尚未放弃（详见上文“可升级性”部分）—— 在此之前，管理员密钥可以改变该合约的行为，包括本页描述的其他一切内容。",
         "上一层的托管信任：bStocks 最终由币安 / BTech Holdings 位于阿布扎比的 SPV 托管支撑，并通过币安的储备证明进行追踪 —— 这是“可验证”，而非“无需信任”。",
         "个别 bStock 交易对在 PancakeSwap 上的流动性可能较薄，尤其是新发行的品种 —— 无论上述链上行为如何，大额交易仍可能造成实际的价格冲击。",
         "除上述非约束性投票外，并未实现社区治理。",
