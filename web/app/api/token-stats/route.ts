@@ -49,13 +49,30 @@ async function fetchDexscreener(tokenAddress: string) {
   }
 }
 
-// BscScan itself tracks holder count from its own indexed history — the real number,
-// not a bounded sample — via the Etherscan V2 unified API's tokeninfo action. Requires
-// ETHERSCAN_API_KEY set in this site's own deployment env (separate from the contracts
-// repo's .env — same key works, since it's the unified multichain API, but Vercel needs
-// its own copy). No key configured, or the response not carrying a holder count on
-// whatever tier the key has, both fall through to the on-chain estimate below rather
-// than failing outright.
+// GoPlus Labs' token-security API — free, keyless (generous rate limit on the public
+// tier), purpose-built for exactly this: it's what a lot of wallets and DEX front ends
+// use for their own "holders" and risk stats. Tried first since it needs no setup on
+// this site's end at all. A missing/malformed field just falls through to the next
+// source rather than being treated as a real zero.
+async function fetchHoldersFromGoPlus(tokenAddress: string): Promise<number | null> {
+  try {
+    const url = `https://api.gopluslabs.io/api/v1/token_security/56?contract_addresses=${tokenAddress.toLowerCase()}`;
+    const res = await fetch(url, { next: { revalidate: REVALIDATE_SECONDS } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const entry = data?.result?.[tokenAddress.toLowerCase()];
+    const holders = Number(entry?.holder_count);
+    return Number.isFinite(holders) && holders > 0 ? holders : null;
+  } catch {
+    return null;
+  }
+}
+
+// BscScan itself tracks holder count from its own indexed history via the Etherscan V2
+// unified API's tokeninfo action. Requires ETHERSCAN_API_KEY set in this site's own
+// deployment env (separate from the contracts repo's .env — same key works, since it's
+// the unified multichain API, but Vercel needs its own copy). Optional: GoPlus above is
+// tried first and needs no key at all, so this is a secondary source, not a requirement.
 async function fetchHoldersFromBscscan(tokenAddress: string): Promise<number | null> {
   const apiKey = process.env.ETHERSCAN_API_KEY;
   if (!apiKey) return null;
@@ -121,8 +138,12 @@ async function countHoldersOnChain(tokenAddress: string) {
 }
 
 async function getHolders(tokenAddress: string) {
+  const fromGoPlus = await fetchHoldersFromGoPlus(tokenAddress);
+  if (fromGoPlus !== null) return { count: fromGoPlus, complete: true };
+
   const fromBscscan = await fetchHoldersFromBscscan(tokenAddress);
   if (fromBscscan !== null) return { count: fromBscscan, complete: true };
+
   return countHoldersOnChain(tokenAddress);
 }
 
