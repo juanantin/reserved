@@ -3,15 +3,12 @@
 import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { tokenInfo } from "@/config/token";
-import { getReadProvider, getTokenContract, getTreasuryHoldings } from "@/lib/contracts";
+import { getReadProvider, getTokenContract } from "@/lib/contracts";
 import { useWallet } from "@/lib/useWallet";
 import { useTotalReserveValue } from "@/lib/useTotalReserveValue";
 import { useTokenStats } from "@/lib/useTokenStats";
 import { Logo } from "./Logo";
-import { HistoricalValueChart } from "./HistoricalValueChart";
 import { dictionaries, type Locale } from "@/lib/i18n";
-
-type ReserveLine = { symbol: string; balance: string };
 
 // Monochrome gold shades only — no off-brand colors for per-asset visual variety.
 const MONOGRAM_SHADES = [1, 0.75, 0.55, 0.4];
@@ -31,21 +28,18 @@ function Monogram({ symbol, index }: { symbol: string; index: number }) {
 // A floating dashboard card in the hero — real on-chain figures styled after
 // theindex.finance's homepage widget (headline stat, secondary stats, holdings
 // list, connected-wallet panel), kept in Reserved's dark/gold palette rather
-// than copying their light theme. Their reference also includes a "Historical
-// Value" chart, explicitly labeled "DEMO" data — that needs real indexed
-// event history (a subgraph/indexer) to do honestly, which is separate
-// infrastructure work, not a UI change, so it's deliberately left out rather
-// than faked.
+// than copying their light theme.
 export function DashboardCard({ locale }: { locale: Locale }) {
   const { address, wrongNetwork } = useWallet();
   const t = dictionaries[locale].dashboardCard;
 
   const [supply, setSupply] = useState<number | null>(null);
-  const [reserves, setReserves] = useState<ReserveLine[] | null>(null);
-  const { value: reserveValueUsd, incomplete: reserveValueIncomplete } = useTotalReserveValue();
+  const { value: reserveValueUsd, incomplete: reserveValueIncomplete, holdings, failed: reserveFailed } = useTotalReserveValue();
   const { marketCapUsd, volume24hUsd, holders, holdersComplete, loading: statsLoading, failed: statsFailed } = useTokenStats();
   const [userBalance, setUserBalance] = useState<number | null>(null);
   const [failed, setFailed] = useState(false);
+
+  const reserves = holdings ? holdings.filter((h) => h.balance > 0) : null;
 
   useEffect(() => {
     if (!tokenInfo.tokenAddress) return;
@@ -55,19 +49,8 @@ export function DashboardCard({ locale }: { locale: Locale }) {
       try {
         const provider = getReadProvider();
         const token = getTokenContract(provider);
-
-        const [supplyWei, holdings]: [bigint, Awaited<ReturnType<typeof getTreasuryHoldings>>] = await Promise.all([
-          token.totalSupply(),
-          getTreasuryHoldings(provider),
-        ]);
-        const supplyNum = Number(ethers.formatUnits(supplyWei, 18));
-
-        const lines = holdings.map((h) => ({ symbol: h.symbol, balance: ethers.formatUnits(h.balance, 18) }));
-
-        if (!cancelled) {
-          setSupply(supplyNum);
-          setReserves(lines.filter((l) => Number(l.balance) > 0));
-        }
+        const supplyWei: bigint = await token.totalSupply();
+        if (!cancelled) setSupply(Number(ethers.formatUnits(supplyWei, 18)));
       } catch {
         if (!cancelled) setFailed(true);
       }
@@ -147,7 +130,7 @@ export function DashboardCard({ locale }: { locale: Locale }) {
         <div className="mt-1 truncate font-mono text-2xl font-bold text-rsvd-gold">
           {reserveValueUsd !== null
             ? `$${reserveValueUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
-            : failed
+            : reserveFailed
               ? "—"
               : "..."}
         </div>
@@ -159,11 +142,9 @@ export function DashboardCard({ locale }: { locale: Locale }) {
       <div className="border-b border-white/10 px-6 py-5 text-center">
         <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">{t.reserveAssets}</div>
         <div className="mt-1 font-mono text-lg font-bold text-rsvd-offwhite">
-          {reserves !== null ? reserves.length : failed ? "—" : "..."}
+          {reserves !== null ? reserves.length : reserveFailed ? "—" : "..."}
         </div>
       </div>
-
-      <HistoricalValueChart locale={locale} />
 
       {reserves && reserves.length > 0 && (
         <div className="border-b border-white/10 px-6 py-5">
@@ -178,11 +159,20 @@ export function DashboardCard({ locale }: { locale: Locale }) {
                 <div className="min-w-0">
                   <div className="truncate text-xs font-semibold text-rsvd-offwhite">{r.symbol}</div>
                   <div className="truncate font-mono text-xs text-rsvd-gold">
-                    {Number(r.balance).toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                    {r.balance.toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                  </div>
+                  <div className="truncate font-mono text-[10px] text-rsvd-offwhite/40">
+                    {r.valueUsd !== null ? `$${r.valueUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : t.priceUnavailable}
                   </div>
                 </div>
               </div>
             ))}
+          </div>
+          <div className="mt-2 flex items-baseline justify-between border-t border-white/10 pt-2">
+            <span className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">{t.total}</span>
+            <span className="font-mono text-sm font-semibold text-rsvd-gold">
+              {reserveValueUsd !== null ? `$${reserveValueUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : "..."}
+            </span>
           </div>
         </div>
       )}
@@ -201,7 +191,7 @@ export function DashboardCard({ locale }: { locale: Locale }) {
             <div className="mt-3 border-t border-rsvd-gold/10 pt-3">
               <div className="text-[10px] uppercase tracking-widest text-rsvd-offwhite/40">{t.share}</div>
               <div className="mt-1 font-mono text-sm font-semibold text-rsvd-offwhite">
-                {sharePct !== null ? `${sharePct.toFixed(4)}%` : "—"}
+                {sharePct !== null ? `${sharePct.toFixed(4)}%` : failed ? "—" : "..."}
               </div>
             </div>
           </>

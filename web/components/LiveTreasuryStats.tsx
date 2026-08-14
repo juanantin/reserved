@@ -3,20 +3,19 @@
 import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { tokenInfo } from "@/config/token";
-import { getReadProvider, getTokenContract, getTreasuryHoldings } from "@/lib/contracts";
+import { getReadProvider, getTokenContract } from "@/lib/contracts";
 import { useTotalReserveValue } from "@/lib/useTotalReserveValue";
 import { FadeIn } from "./FadeIn";
 import { dictionaries, type Locale } from "@/lib/i18n";
 
-type ReserveLine = { token: string; symbol: string; balance: string };
-
 export function LiveTreasuryStats({ locale }: { locale: Locale }) {
   const [supply, setSupply] = useState<string | null>(null);
-  const [reserves, setReserves] = useState<ReserveLine[] | null>(null);
   const [failed, setFailed] = useState(false);
-  const { value: reserveValueUsd, incomplete: reserveValueIncomplete } = useTotalReserveValue();
+  const { value: reserveValueUsd, incomplete: reserveValueIncomplete, holdings } = useTotalReserveValue();
   const t = dictionaries[locale].treasury;
   const dc = dictionaries[locale].dashboardCard;
+
+  const reserves = holdings ? holdings.filter((h) => h.balance > 0) : null;
 
   useEffect(() => {
     if (!tokenInfo.tokenAddress) return;
@@ -26,16 +25,8 @@ export function LiveTreasuryStats({ locale }: { locale: Locale }) {
       try {
         const provider = getReadProvider();
         const token = getTokenContract(provider);
-
-        const [totalSupply, holdings] = await Promise.all([
-          token.totalSupply() as Promise<bigint>,
-          getTreasuryHoldings(provider),
-        ]);
-        if (cancelled) return;
-        setSupply(ethers.formatUnits(totalSupply, 18));
-
-        const lines = holdings.map((h) => ({ token: h.address, symbol: h.symbol, balance: ethers.formatUnits(h.balance, 18) }));
-        setReserves(lines.filter((l) => Number(l.balance) > 0));
+        const totalSupply: bigint = await token.totalSupply();
+        if (!cancelled) setSupply(ethers.formatUnits(totalSupply, 18));
       } catch {
         if (!cancelled) setFailed(true);
       }
@@ -86,12 +77,22 @@ export function LiveTreasuryStats({ locale }: { locale: Locale }) {
           <div className="text-xs uppercase tracking-widest text-rsvd-offwhite/40">{dc.vaultHoldings}</div>
           <ul className="mt-3 space-y-2">
             {reserves.map((r) => (
-              <li key={r.token} className="flex justify-between font-mono text-sm text-rsvd-gold">
-                <span>{r.symbol}</span>
-                <span>{Number(r.balance).toLocaleString(undefined, { maximumFractionDigits: 6 })}</span>
+              <li key={r.address} className="flex items-baseline justify-between gap-3 font-mono text-sm text-rsvd-gold">
+                <span className="shrink-0">{r.symbol}</span>
+                <span className="h-px flex-1 bg-white/10" />
+                <span className="shrink-0 text-rsvd-offwhite/70">{r.balance.toLocaleString(undefined, { maximumFractionDigits: 6 })}</span>
+                <span className="w-24 shrink-0 text-right">
+                  {r.valueUsd !== null ? `$${r.valueUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : dc.priceUnavailable}
+                </span>
               </li>
             ))}
           </ul>
+          <div className="mt-3 flex items-baseline justify-between border-t border-white/10 pt-3 font-mono text-sm">
+            <span className="uppercase tracking-widest text-rsvd-offwhite/40">{dc.total}</span>
+            <span className="font-semibold text-rsvd-gold">
+              {reserveValueUsd !== null ? `$${reserveValueUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : "..."}
+            </span>
+          </div>
         </div>
       )}
     </div>
