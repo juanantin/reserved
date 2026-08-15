@@ -46,8 +46,12 @@ export const tokenInfo = {
   xUrl: "https://x.com/ReservedFund_",
   telegramUrl: "https://t.me/ReservedPortal",
 
-  // Set once ReservedGovernanceVote is deployed (see contracts/scripts/deploy-governance-vote.ts).
-  governanceVoteAddress: "",
+  // ReservedGovernanceVote — non-binding signal only. Reads RSVD balance to gate
+  // eligibility and record votes; has no access to the token, treasury, or pool, so
+  // even if the deployed contract's behavior differs from what was reviewed on
+  // claude/launch-tooling (as happened with the token itself), the blast radius here
+  // is a vote button working or failing, not funds.
+  governanceVoteAddress: "0x7268F3AE4Db3DeE37aA98bA83D00AF5c26EF6AB6",
 };
 
 // bStock allowlist the keeper is authorized to acquire (see TreasuryConverter.sol's
