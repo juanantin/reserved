@@ -8,12 +8,12 @@ const sora = Sora({
   subsets: ["latin"],
 });
 
-const title = "Reserved (RSVD) — Real stocks. On-chain. Reserved.";
+const title = "Reserve Holdings (RHLD) — Real stocks. On-chain. Verifiable.";
 const description =
-  "Reserved is an on-chain treasury that acquires and holds tokenized stocks for the long term, on BNB Chain.";
+  "Reserve Holdings is an on-chain treasury that acquires and holds tokenized stocks for the long term, on BNB Chain.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://reserved.example"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://reserveholdings.example"),
   title,
   description,
   openGraph: {

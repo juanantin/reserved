@@ -2,8 +2,8 @@
 // available; the UI shows a disabled/"coming soon" state for anything blank rather
 // than implying RSVD is live, tradable, or deployed before it actually is.
 export const tokenInfo = {
-  name: "Reserved",
-  ticker: "RSVD",
+  name: "Reserve Holdings",
+  ticker: "RHLD",
   chain: "BNB Chain",
   chainId: 56,
   fixedSupply: "1,000,000,000",
@@ -44,7 +44,8 @@ export const tokenInfo = {
 
   // Community links — set once these exist.
   xUrl: "https://x.com/ReservedFund_",
-  telegramUrl: "https://t.me/ReservedPortal",
+  // Hidden for now — will be added once the new Telegram is set up.
+  telegramUrl: "",
 
   // ReservedGovernanceVote — non-binding signal only. Reads RSVD balance to gate
   // eligibility and record votes; has no access to the token, treasury, or pool, so

@@ -9,8 +9,8 @@ import { TransparencySection } from "@/components/TransparencySection";
 import { GovernanceSection } from "@/components/GovernanceSection";
 import { Footer } from "@/components/Footer";
 
-const title = "Reserved (RSVD) — 真实股票，链上运行，稳健守护。";
-const description = "Reserved 是一个链上资金库，长期收购并持有代币化股票，运行于 BNB Chain。";
+const title = "Reserve Holdings (RHLD) — 真实股票，链上运行，稳健守护。";
+const description = "Reserve Holdings 是一个链上资金库，长期收购并持有代币化股票，运行于 BNB Chain。";
 
 export const metadata: Metadata = {
   title,
