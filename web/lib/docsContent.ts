@@ -100,6 +100,9 @@ const en: DocsSection[] = [
         "This isn't a planned feature — it's already happened. A holder redeemed 185,458 RHOLD and received four bStocks back — CRCLB, NVDAB, SNDKB and MUB — all in that same transaction. This site's Redeem button calls that exact same function."
       ),
       p(
+        "This site's Redeem button is one way to call it, connecting your wallet here — but it's not the only way. Because burn() is a plain public function on the token contract, it can be called directly from BscScan's own \"Write Contract\" tab for the token, connecting a wallet there instead, with no dependency on this website at all."
+      ),
+      p(
         "One thing that transaction doesn't settle: the precise rounding behavior of the contract's own math. The site's \"you will receive\" preview is a simple client-side estimate — your balance's share of supply, times current holdings — not a call into the contract itself, so treat it as an estimate, not a guaranteed quote."
       ),
     ],
@@ -110,6 +113,9 @@ const en: DocsSection[] = [
     blocks: [
       p(
         "A price can fall to zero. A redeemable claim on a reserve of real stock can't — as long as that reserve holds something, and redemption stays open to everyone. If RHOLD ever traded below the value of what it can actually be redeemed for, buying it and redeeming immediately would be risk-free profit — exactly the kind of gap markets tend to close on their own."
+      ),
+      p(
+        "That's arbitrage doing its job: anyone who spots RHOLD trading under the treasury's per-token backing has an incentive to buy and redeem until the price is pushed back up to that level. The floor isn't enforced by a promise — it's enforced by whoever notices the gap first and profits from closing it, which tends to keep the market price sitting at or above what the treasury actually backs each token with."
       ),
       p(
         "Two things keep that logic honest, worth saying plainly rather than skipping past. Redemption only ever pays out whatever the treasury actually holds at that moment — thin on a given bStock means your share of that one is thin too, and you can check current holdings before you redeem (see The treasury above). And the whole argument assumes the contract keeps working the way it works today — see Trust model below for why that's a real qualifier here, not boilerplate."
@@ -264,6 +270,9 @@ const zh: DocsSection[] = [
         "这不是一项计划中的功能 —— 它已经真实发生过。一位持有者销毁了 185,458 枚 RHOLD，并在同一笔交易中收到了四支 bStock 的返还 —— CRCLB、NVDAB、SNDKB 与 MUB。本网站的“赎回”按钮调用的正是同一个函数。"
       ),
       p(
+        "本网站的“赎回”按钮是调用该函数的一种方式，需要在本站连接钱包 —— 但并非唯一方式。由于 burn() 是代币合约上一个公开函数，也可以直接在 BscScan 该代币的“Write Contract”标签页中调用，在那里连接钱包即可，完全不依赖本网站。"
+      ),
+      p(
         "这笔交易本身无法说明的是：合约自身计算逻辑的精确取整方式。网站上的“预计可获得”预览，只是客户端的简单估算 —— 您的余额占总供应量的比例，乘以当前持仓 —— 并非调用合约本身的计算逻辑，因此请将其视为估算值，而非有保证的报价。"
       ),
     ],
@@ -274,6 +283,9 @@ const zh: DocsSection[] = [
     blocks: [
       p(
         "价格可以跌到零。但一份可赎回、指向真实股票储备的权益凭证不会 —— 只要该储备中仍持有资产，且赎回渠道对所有人开放。如果 RHOLD 的交易价格低于其实际可赎回价值，那么买入并立即赎回就等于无风险套利，而这正是市场往往会自行抹平的价差。"
+      ),
+      p(
+        "这正是套利机制在发挥作用：一旦有人发现 RHOLD 的交易价格低于资金库为每枚代币提供的支撑价值，就有动机买入并赎回，直到价格被重新推高至该水平。这道底价并非靠承诺来维持，而是靠最先发现这一价差、并从中套利的人来维持 —— 这往往会使市场价格维持在资金库为每枚代币提供的支撑价值之上或与之持平。"
       ),
       p(
         "有两点需要坦率说明，而不是一带而过：赎回所支付的，始终是资金库在那一刻实际持有的资产 —— 若某支 bStock 持仓较少，您在该资产上分得的份额也会相应较少，赎回前您可以先核实当前持仓（详见上文“资金库”部分）。而整套逻辑的前提，是合约能持续按照目前的方式运作 —— 详见下文“信任模型”部分，了解为什么这在这里是一条真实的限定条件，而非套话。"
