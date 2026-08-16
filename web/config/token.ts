@@ -43,7 +43,7 @@ export const tokenInfo = {
   redeemUrl: "",
 
   // Community links — set once these exist.
-  xUrl: "https://x.com/ReservedFund_",
+  xUrl: "https://x.com/reserveholdings",
   // Hidden for now — will be added once the new Telegram is set up.
   telegramUrl: "",
 
