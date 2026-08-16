@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { DocsPage } from "@/components/DocsPage";
 
 const title = "文档 — Reserve Holdings (RHOLD)";
-const description = "Reserve Holdings 的实际运作方式，逐个合约说明。";
+const description = "Reserve Holdings 实际运作方式的通俗讲解 —— 说清楚机制，而非营销话术。";
 
 export const metadata: Metadata = {
   title,

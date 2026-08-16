@@ -218,7 +218,7 @@ export const dictionaries = {
     },
     docsPage: {
       title: "Documentation",
-      subtitle: "How Reserve Holdings actually works, contract by contract — not marketing copy.",
+      subtitle: "How Reserve Holdings actually works — the mechanism behind it, plainly explained.",
       onThisPage: "On this page",
       backToSite: "← Back to site",
     },
@@ -433,7 +433,7 @@ export const dictionaries = {
     },
     docsPage: {
       title: "文档",
-      subtitle: "Reserve Holdings 的实际运作方式，逐个合约说明 — 而非宣传文案。",
+      subtitle: "Reserve Holdings 实际运作方式的通俗讲解 —— 说清楚机制，而非营销话术。",
       onThisPage: "本页目录",
       backToSite: "← 返回首页",
     },
