@@ -130,7 +130,7 @@ export function Navbar({ locale, langHrefOverride }: { locale: Locale; langHrefO
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <a href={locale === "zh" ? "/zh" : "/"} className="flex items-center gap-2 focus-gold" onClick={() => setOpen(false)}>
           <Logo size={32} />
-          <span className="text-base font-semibold tracking-wide">RESERVED</span>
+          <span className="text-base font-semibold tracking-wide">RESERVE HOLDINGS</span>
         </a>
 
         <ul className="hidden items-center gap-4 whitespace-nowrap text-sm text-rsvd-offwhite/80 lg:flex xl:gap-6">

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { DocsPage } from "@/components/DocsPage";
 
-const title = "文档 — Reserve Holdings (RHLD)";
+const title = "文档 — Reserve Holdings (RHOLD)";
 const description = "Reserve Holdings 的实际运作方式，逐个合约说明。";
 
 export const metadata: Metadata = {

@@ -33,7 +33,7 @@ export const dictionaries = {
       titlePrefix: "The on-chain treasury of",
       titleGold: "tokenized stocks.",
       taglineLine1: "Real stocks. On-chain. Verifiable.",
-      ctaBuy: "Buy $RHLD",
+      ctaBuy: "Buy $RHOLD",
       ctaViewTreasury: "View Treasury",
       poweredByPrefix: "Powered by",
       poweredByLink: "Binance bStocks",
@@ -43,7 +43,7 @@ export const dictionaries = {
       eyebrow: "Verifiable Reserve",
       headlinePrefix: "Backed by real bStocks.",
       headlineGold: "The reserve is the floor.",
-      body: "RHLD is a fixed-supply token backed by a reserve of real, tokenized equities held directly on the token contract. Every holding is checkable on-chain, block by block — and any holder can burn RHLD to redeem a pro-rata share of it, confirmed by a real executed transaction (see the docs).",
+      body: "RHOLD is a fixed-supply token backed by a reserve of real, tokenized equities held directly on the token contract. Every holding is checkable on-chain, block by block — and any holder can burn RHOLD to redeem a pro-rata share of it, confirmed by a real executed transaction (see the docs).",
     },
     dashboardCard: {
       marketCap: "Market Cap",
@@ -59,7 +59,7 @@ export const dictionaries = {
       total: "Total",
       yourShareOfReserve: "Your pro-rata share of the reserve",
       yourShareDisclaimer:
-        "Computed live from your RHLD balance's share of total supply × current treasury holdings — not a quote from a redeem call. Redemption is not live yet (see the Treasury section), so this is a projection of what your share represents today, not an amount you can currently claim.",
+        "Computed live from your RHOLD balance's share of total supply × current treasury holdings — not a quote from a redeem call. Redemption is not live yet (see the Treasury section), so this is a projection of what your share represents today, not an amount you can currently claim.",
       yourPosition: "Your position",
       connectToSeePosition: "Connect to see your position",
       share: "Share",
@@ -75,25 +75,25 @@ export const dictionaries = {
       highlights: [
         {
           title: "Every trade funds the vault",
-          body: "Trading fees accrue to protocol-owned liquidity and flow into the treasury. RHLD itself charges nothing on transfers — the fee sits at the pool, which is what keeps the token a plain ERC20 that every venue can handle.",
+          body: "Trading fees accrue to protocol-owned liquidity and flow into the treasury. RHOLD itself charges nothing on transfers — the fee sits at the pool, which is what keeps the token a plain ERC20 that every venue can handle.",
         },
         {
           title: "It buys real bStocks",
-          body: "The keeper bot converts that RHLD to BNB, then swaps for allowlisted bStocks on PancakeSwap — every swap checked against a TWAP price floor so it can't be sandwiched in one transaction. The bStocks land in the vault as backing.",
+          body: "The keeper bot converts that RHOLD to BNB, then swaps for allowlisted bStocks on PancakeSwap — every swap checked against a TWAP price floor so it can't be sandwiched in one transaction. The bStocks land in the vault as backing.",
         },
         {
           title: "Backing only grows",
-          body: "Redeemed RHLD is burned, never re-minted, so supply only shrinks. Fee revenue keeps flowing into the vault on top of that, so backing per token trends up, not down.",
+          body: "Redeemed RHOLD is burned, never re-minted, so supply only shrinks. Fee revenue keeps flowing into the vault on top of that, so backing per token trends up, not down.",
         },
       ],
       diagram: {
-        trade: { title: "Trade RHLD", subtitle: "Buy or sell on the open market" },
+        trade: { title: "Trade RHOLD", subtitle: "Buy or sell on the open market" },
         tax: { title: "3% protocol fee", subtitle: "Taken in BNB at the pool, not by the token" },
         keeper: { title: "Keeper bot", subtitle: "Turns BNB into bStocks" },
         swapDex: { title: "Swap on PancakeSwap", subtitle: "bStocks / USDT pools", eyebrow: "Primary — on-chain" },
         swapCex: { title: "Buy via Binance", subtitle: "Withdraw as BEP-20", eyebrow: "Fallback — high slippage" },
         vault: { title: "Vault contract", subtitle: "Holds bStocks on-chain" },
-        redeem: { title: "Redeem", subtitle: "Burn RHLD for pro-rata share" },
+        redeem: { title: "Redeem", subtitle: "Burn RHOLD for pro-rata share" },
       },
     },
     tokenomics: {
@@ -112,7 +112,7 @@ export const dictionaries = {
         { label: "Redemption", value: "Pro-rata, confirmed on-chain" },
         { label: "Custody", value: "Binance Proof of Collateral" },
       ],
-      tokenContract: "RHLD token contract (also the treasury)",
+      tokenContract: "RHOLD token contract (also the treasury)",
       vaultContract: "Vault contract",
       reserveAssets: "Reserve assets",
       circulatingSupply: "Circulating supply",
@@ -165,7 +165,7 @@ export const dictionaries = {
         { title: "100% Reserved", description: "Treasury assets 1:1 backed by tokenized stocks, verified via Binance Proof of Collateral." },
         {
           title: "Burn to redeem, confirmed on-chain",
-          description: "Burning RHLD pays out a pro-rata share of every bStock the treasury holds, in the same transaction — confirmed by a real, executed burn (see the docs). Whether any additional owner-only withdraw path exists has not been independently confirmed from source; see Security in the docs for exactly what's verified.",
+          description: "Burning RHOLD pays out a pro-rata share of every bStock the treasury holds, in the same transaction — confirmed by a real, executed burn (see the docs). Whether any additional owner-only withdraw path exists has not been independently confirmed from source; see Security in the docs for exactly what's verified.",
         },
       ],
       viewVaultOnChain: "View token contract on BscScan",
@@ -176,7 +176,7 @@ export const dictionaries = {
       badge: "Non-binding signal",
       cardTitle: "Basket governance",
       cardBody:
-        "RHLD holders who connect a wallet holding at least 100,000 RHLD can vote on which blue-chip stock the reserve should prioritize once Binance issues a bStock for it — see \"Vote the next\" in the Treasury section above. It's non-binding signaling, on-chain and verifiable, not a claim that the treasury is fully DAO-governed: the keeper still decides what actually gets bought.",
+        "RHOLD holders who connect a wallet holding at least 100,000 RHOLD can vote on which blue-chip stock the reserve should prioritize once Binance issues a bStock for it — see \"Vote the next\" in the Treasury section above. It's non-binding signaling, on-chain and verifiable, not a claim that the treasury is fully DAO-governed: the keeper still decides what actually gets bought.",
     },
     footer: {
       disclaimer: (ticker: string) =>
@@ -201,7 +201,7 @@ export const dictionaries = {
     voteNext: {
       title: "Vote the next bStock",
       description:
-        "Non-binding signal for which blue-chip stock the reserve should prioritize once Binance issues a bStock for it. On-chain, verifiable, and gated by RHLD balance — not staked, you keep full custody of your tokens.",
+        "Non-binding signal for which blue-chip stock the reserve should prioritize once Binance issues a bStock for it. On-chain, verifiable, and gated by RHOLD balance — not staked, you keep full custody of your tokens.",
       comingSoon: "Voting opens once the governance contract is deployed.",
       connectToVote: "Connect Wallet to Vote",
       connecting: "Connecting...",
@@ -220,7 +220,7 @@ export const dictionaries = {
       title: "Documentation",
       subtitle: "How Reserve Holdings actually works, contract by contract — not marketing copy.",
       onThisPage: "On this page",
-      backToSite: "← Back to reserved",
+      backToSite: "← Back to site",
     },
     langSwitcher: { label: "中文", href: "/zh" },
   },
@@ -251,7 +251,7 @@ export const dictionaries = {
       titlePrefix: "链上资金库，",
       titleGold: "持有代币化股票。",
       taglineLine1: "真实股票，链上运行，稳健守护。",
-      ctaBuy: "购买 $RHLD",
+      ctaBuy: "购买 $RHOLD",
       ctaViewTreasury: "查看资金库",
       poweredByPrefix: "由",
       poweredByLink: "币安 bStocks",
@@ -261,7 +261,7 @@ export const dictionaries = {
       eyebrow: "可验证储备",
       headlinePrefix: "由真实 bStocks 背书。",
       headlineGold: "储备即是底线。",
-      body: "RHLD 是固定总量的代币，背后由直接持有在代币合约地址上的真实代币化股票储备支撑。每一笔持仓均可逐块在链上核实 —— 任何持有者均可销毁 RHLD 按比例赎回相应份额，这一点已由一笔真实执行的交易确认（详见文档），而不仅仅是说明。",
+      body: "RHOLD 是固定总量的代币，背后由直接持有在代币合约地址上的真实代币化股票储备支撑。每一笔持仓均可逐块在链上核实 —— 任何持有者均可销毁 RHOLD 按比例赎回相应份额，这一点已由一笔真实执行的交易确认（详见文档），而不仅仅是说明。",
     },
     dashboardCard: {
       marketCap: "市值",
@@ -277,7 +277,7 @@ export const dictionaries = {
       total: "总计",
       yourShareOfReserve: "您按比例应得的储备份额",
       yourShareDisclaimer:
-        "根据您的 RHLD 余额占总供应量的比例 × 当前资金库持仓实时计算得出 —— 并非来自赎回调用的报价。赎回功能尚未上线（见资金库部分），因此这只是您当前份额所代表数值的预测，并非您现在可以领取的金额。",
+        "根据您的 RHOLD 余额占总供应量的比例 × 当前资金库持仓实时计算得出 —— 并非来自赎回调用的报价。赎回功能尚未上线（见资金库部分），因此这只是您当前份额所代表数值的预测，并非您现在可以领取的金额。",
       yourPosition: "您的持仓",
       connectToSeePosition: "连接钱包查看持仓",
       share: "占比",
@@ -293,25 +293,25 @@ export const dictionaries = {
       highlights: [
         {
           title: "每笔交易都在充实金库",
-          body: "交易手续费归属于协议自持的流动性，并流入资金库。RHLD 代币本身不对转账收取任何费用 —— 费用发生在池子层面，这正是它能保持为标准 ERC20、被所有平台正常支持的原因。",
+          body: "交易手续费归属于协议自持的流动性，并流入资金库。RHOLD 代币本身不对转账收取任何费用 —— 费用发生在池子层面，这正是它能保持为标准 ERC20、被所有平台正常支持的原因。",
         },
         {
           title: "买入真实的 bStocks",
-          body: "Keeper 机器人将这笔 RHLD 兑换为 BNB，再通过 PancakeSwap 换成已获准的 bStocks —— 每笔兑换都会对照 TWAP 价格下限进行校验，防止单笔交易被夹击套利。购入的 bStocks 存入金库，作为储备支撑。",
+          body: "Keeper 机器人将这笔 RHOLD 兑换为 BNB，再通过 PancakeSwap 换成已获准的 bStocks —— 每笔兑换都会对照 TWAP 价格下限进行校验，防止单笔交易被夹击套利。购入的 bStocks 存入金库，作为储备支撑。",
         },
         {
           title: "储备只增不减",
-          body: "被赎回的 RHLD 会被销毁、永不增发，因此总量只会减少。手续费收入持续注入金库，单币背后的储备呈上升趋势，而非下降。",
+          body: "被赎回的 RHOLD 会被销毁、永不增发，因此总量只会减少。手续费收入持续注入金库，单币背后的储备呈上升趋势，而非下降。",
         },
       ],
       diagram: {
-        trade: { title: "交易 RHLD", subtitle: "在公开市场买入或卖出" },
+        trade: { title: "交易 RHOLD", subtitle: "在公开市场买入或卖出" },
         tax: { title: "3% 协议手续费", subtitle: "在池子层面以 BNB 收取，而非由代币收取" },
         keeper: { title: "Keeper 机器人", subtitle: "将 BNB 转换为 bStocks" },
         swapDex: { title: "通过 PancakeSwap 兑换", subtitle: "bStocks / USDT 交易池", eyebrow: "主要方式 — 链上" },
         swapCex: { title: "通过 Binance 购买", subtitle: "以 BEP-20 形式提现", eyebrow: "备用方案 — 高滑点时" },
         vault: { title: "金库合约", subtitle: "链上持有 bStocks" },
-        redeem: { title: "赎回", subtitle: "销毁 RHLD 换取按比例份额" },
+        redeem: { title: "赎回", subtitle: "销毁 RHOLD 换取按比例份额" },
       },
     },
     tokenomics: {
@@ -330,7 +330,7 @@ export const dictionaries = {
         { label: "赎回方式", value: "按比例赎回，已链上确认" },
         { label: "托管方", value: "币安储备证明（Proof of Collateral）" },
       ],
-      tokenContract: "RHLD 代币合约（同时也是资金库）",
+      tokenContract: "RHOLD 代币合约（同时也是资金库）",
       vaultContract: "金库合约",
       reserveAssets: "储备资产",
       circulatingSupply: "流通总量",
@@ -380,7 +380,7 @@ export const dictionaries = {
         { title: "100% 储备", description: "资金库资产由代币化股票 1:1 支撑，经币安储备证明验证。" },
         {
           title: "销毁即可赎回，已链上确认",
-          description: "销毁 RHLD 会在同一笔交易中按比例支付资金库持有的每一支 bStock —— 已由一笔真实执行的销毁交易确认（详见文档）。是否还存在其他仅所有者可用的提取途径，尚未通过源码独立核实；具体已核实内容详见文档中的“安全性”部分。",
+          description: "销毁 RHOLD 会在同一笔交易中按比例支付资金库持有的每一支 bStock —— 已由一笔真实执行的销毁交易确认（详见文档）。是否还存在其他仅所有者可用的提取途径，尚未通过源码独立核实；具体已核实内容详见文档中的“安全性”部分。",
         },
       ],
       viewVaultOnChain: "在 BscScan 上查看代币合约",
@@ -391,7 +391,7 @@ export const dictionaries = {
       badge: "非约束性信号",
       cardTitle: "资产篮治理",
       cardBody:
-        "连接钱包且持有至少 100,000 RHLD 的持有者，可以为币安尚未发行 bStock 的蓝筹股投票，表达储备下一步应优先收购哪一支 — 见上方资金库板块的“为下一支投票”。这是链上可验证的非约束性信号，并不代表资金库已完全由 DAO 治理：实际购入决策仍由 keeper 执行。",
+        "连接钱包且持有至少 100,000 RHOLD 的持有者，可以为币安尚未发行 bStock 的蓝筹股投票，表达储备下一步应优先收购哪一支 — 见上方资金库板块的“为下一支投票”。这是链上可验证的非约束性信号，并不代表资金库已完全由 DAO 治理：实际购入决策仍由 keeper 执行。",
     },
     footer: {
       disclaimer: (ticker: string) =>
@@ -416,7 +416,7 @@ export const dictionaries = {
     voteNext: {
       title: "为下一支 bStock 投票",
       description:
-        "针对币安尚未发行 bStock 的蓝筹股，表达储备应优先收购哪一支的非约束性信号。链上、可验证，并根据 RHLD 持仓设定门槛 — 代币无需质押，您始终完全掌控自己的代币。",
+        "针对币安尚未发行 bStock 的蓝筹股，表达储备应优先收购哪一支的非约束性信号。链上、可验证，并根据 RHOLD 持仓设定门槛 — 代币无需质押，您始终完全掌控自己的代币。",
       comingSoon: "治理合约部署后即可开放投票。",
       connectToVote: "连接钱包以投票",
       connecting: "连接中...",
@@ -435,7 +435,7 @@ export const dictionaries = {
       title: "文档",
       subtitle: "Reserve Holdings 的实际运作方式，逐个合约说明 — 而非宣传文案。",
       onThisPage: "本页目录",
-      backToSite: "← 返回 reserved",
+      backToSite: "← 返回首页",
     },
     langSwitcher: { label: "EN", href: "/" },
   },

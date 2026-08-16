@@ -88,7 +88,7 @@ export function DashboardCard({ locale }: { locale: Locale }) {
     <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-2xl border border-rsvd-gold/20 bg-rsvd-black/70 shadow-2xl backdrop-blur-sm">
       <div className="flex items-center gap-2 border-b border-white/10 px-6 py-4">
         <Logo size={20} />
-        <span className="text-sm font-semibold tracking-wide">RESERVED</span>
+        <span className="text-sm font-semibold tracking-wide">RESERVE HOLDINGS</span>
       </div>
 
       <div className="border-b border-white/10 px-6 py-6 text-center">

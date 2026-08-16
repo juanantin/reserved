@@ -14,7 +14,7 @@ export function Footer({ locale }: { locale: Locale }) {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <Logo size={22} />
-            <span className="font-semibold text-rsvd-offwhite/80">RESERVED</span>
+            <span className="font-semibold text-rsvd-offwhite/80">RESERVE HOLDINGS</span>
           </div>
           <LinksBar locale={locale} />
         </div>

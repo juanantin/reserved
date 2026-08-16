@@ -8,7 +8,7 @@ const sora = Sora({
   subsets: ["latin"],
 });
 
-const title = "Reserve Holdings (RHLD) — Real stocks. On-chain. Verifiable.";
+const title = "Reserve Holdings (RHOLD) — Real stocks. On-chain. Verifiable.";
 const description =
   "Reserve Holdings is an on-chain treasury that acquires and holds tokenized stocks for the long term, on BNB Chain.";
 

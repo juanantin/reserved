@@ -3,7 +3,7 @@
 // than implying RSVD is live, tradable, or deployed before it actually is.
 export const tokenInfo = {
   name: "Reserve Holdings",
-  ticker: "RHLD",
+  ticker: "RHOLD",
   chain: "BNB Chain",
   chainId: 56,
   fixedSupply: "1,000,000,000",
