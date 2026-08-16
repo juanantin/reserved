@@ -156,7 +156,6 @@ const en: DocsSection[] = [
       p("For anyone who wants to check any of this directly rather than take the page's word for it:"),
       ul([
         "RHOLD token: 0x5C8fB70C1Ec327434F0AC05FcE3791c10436Cb60",
-        "Current implementation (behind the proxy): 0x776d3A522a9F61FD40eDE4604e870Ff288b53AeB",
         "Governance vote contract: 0x7268F3AE4Db3DeE37aA98bA83D00AF5c26EF6AB6",
       ]),
       p("Prices shown on this site come from DexScreener, with the PancakeSwap pool itself as a fallback."),
@@ -324,7 +323,6 @@ const zh: DocsSection[] = [
       p("如果您想亲自核实，而不是仅凭本页文字判断，可以查看以下地址："),
       ul([
         "RHOLD 代币：0x5C8fB70C1Ec327434F0AC05FcE3791c10436Cb60",
-        "当前实现合约（代理背后）：0x776d3A522a9F61FD40eDE4604e870Ff288b53AeB",
         "治理投票合约：0x7268F3AE4Db3DeE37aA98bA83D00AF5c26EF6AB6",
       ]),
       p("本站展示的价格来自 DexScreener，并以 PancakeSwap 交易池自身数据作为备用来源。"),
