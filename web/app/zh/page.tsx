@@ -7,6 +7,7 @@ import { TokenomicsSection } from "@/components/TokenomicsSection";
 import { TreasurySection } from "@/components/TreasurySection";
 import { TransparencySection } from "@/components/TransparencySection";
 import { GovernanceSection } from "@/components/GovernanceSection";
+import { VideoBanner } from "@/components/VideoBanner";
 import { Footer } from "@/components/Footer";
 
 const title = "Reserve Holdings (RHOLD) — 真实股票，链上运行，稳健守护。";
@@ -33,6 +34,7 @@ export default function HomeZh() {
         <TransparencySection locale="zh" />
         <GovernanceSection locale="zh" />
       </main>
+      <VideoBanner />
       <Footer locale="zh" />
     </>
   );
