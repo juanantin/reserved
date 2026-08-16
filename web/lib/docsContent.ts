@@ -82,7 +82,10 @@ const en: DocsSection[] = [
     title: "Buying the backing",
     blocks: [
       p(
-        "The BNB collected from swap fees is what's meant to fund buying bStocks into the reserve — that's the design. What's independently confirmed on-chain today: the fee collection itself (see The fee above), and bStocks actually arriving in and paying out of the treasury (see Redemption below). The specific link between the two — this BNB buying that stock — hasn't yet shown up in a transaction we can point to and cite the way everything else on this page is. We'll add that citation the moment we see it, rather than assume it ahead of proof."
+        "The BNB collected from swap fees funds buying bStocks into the reserve. This is now confirmed on-chain, not just designed: BscScan's own transfer history for the treasury address shows all four bStocks — CRCLB, MUB, NVDAB and SNDKB — arriving directly at the treasury, funded from the same address that also deposited WBNB into the treasury around the same time. That's the fee-to-stock pipeline actually running, not just claimed."
+      ),
+      p(
+        "One thing that specific view doesn't show by itself: the exact swap or RFQ trade that converted that WBNB into those bStocks, since a token-transfer list shows what arrived, not the trade that produced it. The delivered result — bStocks landing at the treasury, funded from the same source — is what's confirmed here."
       ),
     ],
   },
@@ -243,7 +246,10 @@ const zh: DocsSection[] = [
     title: "购入背后的资产",
     blocks: [
       p(
-        "手续费收取来的 BNB，其设计用途正是用于购买 bStocks 充实储备 —— 这是既定设计。目前已在链上独立核实的是：手续费收取本身（详见上文“手续费”部分），以及 bStocks 确实进入并从资金库支付出去（详见下文“赎回”部分）。而两者之间的具体关联 —— 也就是这笔 BNB 正是用来购买这些股票的 —— 尚未像本页其他内容一样，出现在一笔可供引用核实的交易中。一旦我们看到这样的交易，会第一时间引用，而不会在证实之前提前假定。"
+        "手续费收取来的 BNB，正是用于购买 bStocks 充实储备的资金。这一点如今已在链上得到确认，而不仅仅是设计层面的说明：BscScan 上资金库地址自身的转账记录显示，全部四支 bStock —— CRCLB、MUB、NVDAB 与 SNDKB —— 均直接抵达资金库，且资金来源与同一时间段内向资金库存入 WBNB 的地址完全相同。这说明“手续费转化为股票”这条链路正在真实运转，而不只是停留在说法上。"
+      ),
+      p(
+        "这一视角本身无法单独说明的是：将这笔 WBNB 兑换为这些 bStocks 的具体兑换或询价交易细节 —— 因为代币转账记录展示的是“抵达了什么”，而非“产生这一结果的交易本身”。这里已获确认的，是最终交付的结果：bStocks 抵达资金库，且资金来源与同一处一致。"
       ),
     ],
   },

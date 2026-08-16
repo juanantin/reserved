@@ -61,7 +61,7 @@ export function Hero({ locale }: { locale: Locale }) {
                 href="https://www.binance.com/en/bstocks-landing"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-full border border-rsvd-gold/40 px-3 py-1 text-sm font-semibold text-rsvd-gold transition-colors hover:border-rsvd-gold hover:bg-rsvd-gold/10 focus-gold"
+                className="rounded-full border border-rsvd-gold/40 px-5 py-2 text-base font-semibold text-rsvd-gold transition-colors hover:border-rsvd-gold hover:bg-rsvd-gold/10 focus-gold"
               >
                 {t.poweredByLink}
               </a>
