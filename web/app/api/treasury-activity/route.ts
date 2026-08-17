@@ -10,13 +10,14 @@ import { getReadProvider, ERC20_TRANSFER_ABI } from "@/lib/contracts";
 export const dynamic = "force-dynamic";
 const REVALIDATE_SECONDS = 180;
 
-// Scans from the token's actual launch block (tx 0x9444fa2a...d44355, see
-// docsContent.ts) rather than a trailing window — same fix, same reason, as
-// token-stats/route.ts's holder count: a fixed trailing window looks fine on day one
-// and then silently misses everything once the token outlives the window. Exact while
-// the token is this young; will need a real indexer once history grows past what a
-// serverless function can scan in one request.
-const LAUNCH_BLOCK = 115_905_080;
+// Ideally scans from the token's actual launch block rather than a trailing window —
+// same fix, same reason, as token-stats/route.ts's holder count: a fixed trailing
+// window looks fine on day one and then silently misses everything once the token
+// outlives the window. The token relaunched at a new address and this file doesn't
+// have that contract's launch block yet, so TRAILING_BLOCKS below is a temporary
+// stopgap — see token-stats/route.ts for the same note. Swap in an exact LAUNCH_BLOCK
+// the moment it's known.
+const TRAILING_BLOCKS = 400_000; // roughly several days of BSC blocks — stopgap only
 const LOG_STEP = 2_000;
 
 type Purchase = {
@@ -71,7 +72,7 @@ async function scanAsset(
 async function scanTreasuryActivity(tokenAddress: string) {
   const provider = getReadProvider();
   const head = await provider.getBlockNumber();
-  const from = LAUNCH_BLOCK;
+  const from = Math.max(0, head - TRAILING_BLOCKS);
 
   const perAsset = await Promise.all(reserveAssets.map((asset) => scanAsset(provider, from, head, tokenAddress, asset)));
   const purchases = perAsset

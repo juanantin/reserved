@@ -8,18 +8,12 @@ import type { Locale } from "./i18n";
 // a real on-chain transaction where one exists, and anything that's design rather than
 // observed fact says so plainly rather than getting rounded up to a stronger claim.
 //
-// Launch tx (token opens the pool, seeds liquidity, buys, and collects its first fee,
-// all in one transaction — cited throughout this file):
-// 0x9444fa2aeb525201da10c683826a14526df8f59630dbffc23f4c29adb0d44355
-//
-// Redeem tx (a holder burns RHOLD; the token contract pays out four bStocks — CRCLB,
-// NVDAB, SNDKB, MUB — directly to the burner's wallet in the same transaction):
-// 0xaa57e40df7f9dab410e19af39a3bae34704053ec11d5ca7dc03a612e3eead9fb
-//
-// The token address is a proxy (confirmed by BscScan's own proxy detection), with its
-// implementation at 0x776d3A522a9F61FD40eDE4604e870Ff288b53AeB. See "Trust model" —
-// every "confirmed" claim elsewhere in this file describes current behavior under that
-// implementation, not a permanent guarantee, for as long as upgrade control exists.
+// Token relaunched at a new address: 0x9b0c5e8C457D2420899712FD698fc333E08D4B7D. The
+// prior deployment's launch tx, redeem tx and proxy/implementation citations described
+// that earlier contract's history, not this one's, so they've been pulled rather than
+// left pointing at a different contract's transactions. Re-add citations here — launch
+// tx, a redeem tx, whether this contract is upgradeable — the moment they're available
+// for this address, the same way every other claim in this file is sourced.
 
 export type DocsBlock = { type: "p"; text: string } | { type: "ul"; items: string[] };
 export type DocsSection = { id: string; title: string; blocks: DocsBlock[] };
@@ -60,7 +54,7 @@ const en: DocsSection[] = [
     title: "The fee — not a tax",
     blocks: [
       p(
-        "RHOLD doesn't charge a tax on transfers. That's not actually possible on the kind of pool it trades on — the pool demands the full amount on every swap, no exceptions. What funds the reserve instead is simpler: the ordinary swap fee every trade already pays into the pool. RHOLD's own contract collects that fee itself, automatically, in BNB, on every trade — live from the very first trade after launch, no manual step in between."
+        "RHOLD doesn't charge a tax on transfers. That's not actually possible on the kind of pool it trades on — the pool demands the full amount on every swap, no exceptions. What funds the reserve instead is simpler: the ordinary swap fee every trade already pays into the pool. RHOLD's own contract is built to collect that fee itself, automatically, in BNB, on every trade, with no manual step in between."
       ),
       p(
         "A second fee is planned on top of that: a small protocol fee, taken in BNB by a swap hook and routed straight to the reserve. It hasn't shipped yet. This page will say so the moment it does — the same way it's saying plainly now that it hasn't."
@@ -82,10 +76,7 @@ const en: DocsSection[] = [
     title: "Buying the backing",
     blocks: [
       p(
-        "The BNB collected from swap fees funds buying bStocks into the reserve. This is now confirmed on-chain, not just designed: BscScan's own transfer history for the treasury address shows all four bStocks — CRCLB, MUB, NVDAB and SNDKB — arriving directly at the treasury, funded from the same address that also deposited WBNB into the treasury around the same time. That's the fee-to-stock pipeline actually running, not just claimed."
-      ),
-      p(
-        "One thing that specific view doesn't show by itself: the exact swap or RFQ trade that converted that WBNB into those bStocks, since a token-transfer list shows what arrived, not the trade that produced it. The delivered result — bStocks landing at the treasury, funded from the same source — is what's confirmed here."
+        "The BNB collected from swap fees is what's meant to fund buying bStocks into the reserve — that's the design. This exact pipeline was directly observed running on the project's prior deployment, with bStocks and the WBNB that funded them arriving at the treasury from the same address. We'll confirm the same thing here, cited against this contract's own transfer history, as soon as it's observable."
       ),
     ],
   },
@@ -97,7 +88,7 @@ const en: DocsSection[] = [
         "Anyone holding RHOLD can call burn() on their own balance, any time — no approval needed, no permission to ask for, no waiting period. In the same transaction, the contract sends back a pro-rata share of everything the treasury holds: every bStock it's sitting on, split by exactly your share of total supply at that moment."
       ),
       p(
-        "This isn't a planned feature — it's already happened. A holder redeemed 185,458 RHOLD and received four bStocks back — CRCLB, NVDAB, SNDKB and MUB — all in that same transaction. This site's Redeem button calls that exact same function."
+        "This isn't a hypothetical: the same burn-to-redeem mechanism was directly observed working on the project's prior deployment — a holder redeemed RHOLD and received bStocks back, pro-rata, in the same transaction. This site's Redeem button calls that same function on the current contract; we'll cite a fresh redeem transaction for this address as soon as one's observable, same as everywhere else on this page."
       ),
       p(
         "This site's Redeem button is one way to call it, connecting your wallet here — but it's not the only way. Because burn() is a plain public function on the token contract, it can be called directly from BscScan's own \"Write Contract\" tab for the token, connecting a wallet there instead, with no dependency on this website at all."
@@ -139,10 +130,10 @@ const en: DocsSection[] = [
     title: "Trust model",
     blocks: [
       ul([
-        "Liquidity lives at the token contract's own address, not a wallet or a transferable NFT — confirmed on-chain from the launch transaction.",
-        "Fee collection into the treasury is automatic and on-chain, confirmed from the very first trade after launch — no manual step, no separate wallet handling it in between.",
-        "Redemption is open to anyone, any time, and already proven working — see Redemption & the floor above.",
-        "The token is upgradeable, and upgrade control hasn't been given up yet. An admin can currently change how any of the above works — burn, fees, the pool position, anything — without the token's address, balance history, or holder base changing at all. The project has said this is deliberate while testing is underway, with the stated intent to renounce it once that's done. Weigh this against everything else on this page; it'll be updated the moment it changes.",
+        "Liquidity is designed to live at the token contract's own address, not a wallet or a transferable NFT — that was directly confirmed on the project's prior deployment; pending the same confirmation for this contract's own launch.",
+        "Fee collection into the treasury is designed to be automatic and on-chain, with no manual step and no separate wallet handling it — confirmed working this way on the prior deployment; pending the same confirmation here.",
+        "Redemption is open to anyone, any time, by design — already proven working on the prior deployment; pending a fresh redeem transaction cited against this contract.",
+        "Whether this contract is upgradeable — like the project's prior deployment was, with upgrade control not yet renounced there — hasn't been confirmed here yet. This is the single most important open question on this page right now, and it'll be answered plainly the moment it's checked.",
         "Not yet independently confirmed: whether an owner has any path to withdraw the pool's underlying liquidity (as opposed to just the fees it earns), and whether a mint function exists anywhere in the contract. The source hasn't been reviewed line-by-line here, so no stronger claim than that is made.",
         "No third-party security audit yet, and no legal review of securities classification. Every claim on this page is checked against a cited on-chain transaction where one is cited — not a completed audit.",
         "One layer of custodial trust further out: bStocks are ultimately backed by Binance/BTech Holdings' Abu Dhabi SPV custody, tracked via Binance's Proof of Collateral. That's verifiable, not trustless.",
@@ -155,8 +146,8 @@ const en: DocsSection[] = [
     blocks: [
       p("For anyone who wants to check any of this directly rather than take the page's word for it:"),
       ul([
-        "RHOLD token: 0x5C8fB70C1Ec327434F0AC05FcE3791c10436Cb60",
-        "Governance vote contract: 0x7268F3AE4Db3DeE37aA98bA83D00AF5c26EF6AB6",
+        "RHOLD token: 0x9b0c5e8C457D2420899712FD698fc333E08D4B7D",
+        "Governance vote contract: 0x3daa17ceFB41F76aabD2F45034433A8996147506",
       ]),
       p("Prices shown on this site come from DexScreener, with the PancakeSwap pool itself as a fallback."),
     ],
@@ -173,7 +164,7 @@ const en: DocsSection[] = [
         "What if everyone redeems at once? The reserve unwinds pro-rata, in whatever order people redeem in — whatever's left keeps backing whoever hasn't redeemed yet. That's an orderly exit, not a failure mode, assuming the contract keeps working as described (see Trust model above)."
       ),
       p(
-        "Can the team run off with the reserve? Not through any path confirmed so far — bStocks sit at the token's own contract address, not a separate wallet the team controls, and redemption requires nobody's permission. The honest caveat is the same one repeated through this page: the contract is upgradeable, and that control hasn't been given up yet."
+        "Can the team run off with the reserve? Not through any path confirmed so far — bStocks sit at the token's own contract address, not a separate wallet the team controls, and redemption requires nobody's permission. Whether this contract is upgradeable, and if so whether that control has been given up, is the open question tracked in Trust model above — check there for the current answer rather than assuming either way."
       ),
       p("Is this audited? Not yet, by a third party — see Trust model above."),
       p(
@@ -186,7 +177,7 @@ const en: DocsSection[] = [
     title: "Risks & disclaimers",
     blocks: [
       ul([
-        "The token is upgradeable and upgrade control hasn't been renounced yet — see Trust model above.",
+        "Whether this contract is upgradeable, and the status of upgrade control if so, hasn't been independently confirmed yet for this deployment — see Trust model above.",
         "Custodial trust one layer up: bStocks are backed by Binance/BTech Holdings' custody, verifiable via Proof of Collateral, not trustless.",
         "Individual bStock liquidity on PancakeSwap can be thin, especially for newly issued ones — large trades can move price regardless of what's described above.",
         "Not community-governed beyond the non-binding vote described above.",
@@ -229,7 +220,7 @@ const zh: DocsSection[] = [
     title: "手续费 —— 不是税",
     blocks: [
       p(
-        "RHOLD 不对转账收取任何税费。这在它所交易的这类交易池上其实也无法实现 —— 该交易池要求每一笔兑换都必须收到全额，没有例外。为储备提供资金的，其实是每笔交易本就要支付给交易池的普通兑换手续费：RHOLD 合约会自动、直接以 BNB 的形式收取这笔手续费，自启动后的第一笔交易起即已生效，中间没有任何人工步骤。"
+        "RHOLD 不对转账收取任何税费。这在它所交易的这类交易池上其实也无法实现 —— 该交易池要求每一笔兑换都必须收到全额，没有例外。为储备提供资金的，其实是每笔交易本就要支付给交易池的普通兑换手续费：RHOLD 合约的设计是自动、直接以 BNB 的形式收取这笔手续费，中间没有任何人工步骤。"
       ),
       p(
         "在此之上，还计划加入第二层手续费：由一个兑换钩子（swap hook）以 BNB 形式收取的小额协议费，并直接划入储备。目前这一功能尚未上线。一旦上线，本页会第一时间说明 —— 就像现在明确说明它尚未上线一样。"
@@ -251,10 +242,7 @@ const zh: DocsSection[] = [
     title: "购入背后的资产",
     blocks: [
       p(
-        "手续费收取来的 BNB，正是用于购买 bStocks 充实储备的资金。这一点如今已在链上得到确认，而不仅仅是设计层面的说明：BscScan 上资金库地址自身的转账记录显示，全部四支 bStock —— CRCLB、MUB、NVDAB 与 SNDKB —— 均直接抵达资金库，且资金来源与同一时间段内向资金库存入 WBNB 的地址完全相同。这说明“手续费转化为股票”这条链路正在真实运转，而不只是停留在说法上。"
-      ),
-      p(
-        "这一视角本身无法单独说明的是：将这笔 WBNB 兑换为这些 bStocks 的具体兑换或询价交易细节 —— 因为代币转账记录展示的是“抵达了什么”，而非“产生这一结果的交易本身”。这里已获确认的，是最终交付的结果：bStocks 抵达资金库，且资金来源与同一处一致。"
+        "手续费收取来的 BNB，其设计用途正是用于购买 bStocks 充实储备 —— 这是既定设计。这条链路已在项目此前的部署上被直接观察到真实运转：bStocks 与为其提供资金的 WBNB，均来自同一地址抵达资金库。一旦本合约自身的转账记录可供核实，我们会以同样的方式在此确认。"
       ),
     ],
   },
@@ -266,7 +254,7 @@ const zh: DocsSection[] = [
         "任何持有 RHOLD 的人都可以随时对自己的余额调用 burn() —— 无需授权，无需向任何人申请许可，也无需等待。在同一笔交易中，合约会按您当时占总供应量的确切比例，返还资金库持有的每一种资产：资金库当时持有的每一支 bStock，都会按比例支付给您。"
       ),
       p(
-        "这不是一项计划中的功能 —— 它已经真实发生过。一位持有者销毁了 185,458 枚 RHOLD，并在同一笔交易中收到了四支 bStock 的返还 —— CRCLB、NVDAB、SNDKB 与 MUB。本网站的“赎回”按钮调用的正是同一个函数。"
+        "这并非纸上谈兵：同样的“销毁即赎回”机制已在项目此前的部署上被直接观察到真实运转 —— 一位持有者销毁 RHOLD 后，在同一笔交易中按比例收到了 bStock 返还。本网站的“赎回”按钮在当前合约上调用的正是同一函数；一旦有可供核实的赎回交易，我们会以本页一贯的方式为本合约引用具体交易。"
       ),
       p(
         "本网站的“赎回”按钮是调用该函数的一种方式，需要在本站连接钱包 —— 但并非唯一方式。由于 burn() 是代币合约上一个公开函数，也可以直接在 BscScan 该代币的“Write Contract”标签页中调用，在那里连接钱包即可，完全不依赖本网站。"
@@ -306,10 +294,10 @@ const zh: DocsSection[] = [
     title: "信任模型",
     blocks: [
       ul([
-        "流动性持有在代币合约自身地址上，而非某个钱包或可转让的 NFT —— 已由启动交易在链上确认。",
-        "手续费自动、在链上收入资金库，自启动后第一笔交易起即已确认生效 —— 没有人工步骤，中间也没有单独的钱包经手。",
-        "赎回功能向所有人、随时开放，并且已被证明确实可用 —— 详见上文“赎回与底价”部分。",
-        "该代币目前是可升级的，且升级权限尚未放弃。这意味着管理员目前可以改变上述任何一项的运作方式 —— 销毁、手续费、交易池头寸，几乎任何方面 —— 而代币地址、余额历史与持有人基础都不会因此发生变化。项目方表示，这是在测试期间有意为之，并计划在测试完成后放弃该权限。请将这一点与本页其他内容一并权衡；一旦发生变化，本部分会第一时间更新。",
+        "流动性按设计应持有在代币合约自身地址上，而非某个钱包或可转让的 NFT —— 这一点已在项目此前的部署上直接确认；本合约自身启动交易的同等确认尚待进行。",
+        "手续费按设计应自动、在链上收入资金库，没有人工步骤、也不经过单独的钱包 —— 已在此前的部署上确认按此方式运作；本合约的同等确认尚待进行。",
+        "赎回功能按设计向所有人、随时开放 —— 已在此前的部署上证明确实可用；本合约仍待引用一笔具体的赎回交易加以确认。",
+        "本合约是否可升级 —— 如同项目此前的部署那样，且那次部署的升级权限尚未放弃 —— 目前尚未就本合约得到确认。这是当前本页最重要的待确认问题，一旦核实会第一时间如实说明。",
         "尚未独立核实的内容：所有者是否存在任何提取交易池标的流动性（而非仅仅是其产生的手续费）的途径，以及合约中是否存在任何增发函数。本页尚未对合约源码进行逐行审查，因此不会作出超出上述范围的更强表述。",
         "尚无第三方安全审计，也未进行证券属性的法律合规审查。本页对每一项陈述的核实标准，都是已对照所引用的链上交易核实，而非已完成审计。",
         "更外一层的托管信任：bStocks 最终由币安 / BTech Holdings 位于阿布扎比的 SPV 托管支撑，并通过币安的储备证明（Proof of Collateral）进行追踪 —— 这是“可验证”，而非“无需信任”。",
@@ -322,8 +310,8 @@ const zh: DocsSection[] = [
     blocks: [
       p("如果您想亲自核实，而不是仅凭本页文字判断，可以查看以下地址："),
       ul([
-        "RHOLD 代币：0x5C8fB70C1Ec327434F0AC05FcE3791c10436Cb60",
-        "治理投票合约：0x7268F3AE4Db3DeE37aA98bA83D00AF5c26EF6AB6",
+        "RHOLD 代币：0x9b0c5e8C457D2420899712FD698fc333E08D4B7D",
+        "治理投票合约：0x3daa17ceFB41F76aabD2F45034433A8996147506",
       ]),
       p("本站展示的价格来自 DexScreener，并以 PancakeSwap 交易池自身数据作为备用来源。"),
     ],
@@ -338,7 +326,7 @@ const zh: DocsSection[] = [
         "如果所有人同时赎回会怎样？储备会按持有者赎回的先后顺序，按比例逐步清算 —— 剩余部分继续为尚未赎回的持有者提供支撑。假设合约按本页描述持续正常运作（详见上文“信任模型”），这是一种有序退出，而非失败情形。"
       ),
       p(
-        "项目方会卷走储备资产吗？就目前已核实的情况看，没有任何途径可以做到 —— bStocks 持有在代币自身的合约地址上，而非项目方控制的单独钱包，且赎回无需任何人许可。需要坦率说明的限定条件与本页反复提到的一致：该合约目前是可升级的，升级权限尚未放弃。"
+        "项目方会卷走储备资产吗？就目前已核实的情况看，没有任何途径可以做到 —— bStocks 持有在代币自身的合约地址上，而非项目方控制的单独钱包，且赎回无需任何人许可。本合约是否可升级、若可升级其升级权限现状如何，是上文“信任模型”部分正在追踪的待确认问题 —— 请以那里的最新说明为准，而非预先假定答案。"
       ),
       p("这个项目经过审计吗？尚未经过第三方审计 —— 详见上文“信任模型”部分。"),
       p("协议费上线后会有什么变化？每笔交易流入资金库的 BNB 会在交易池手续费原有基础上进一步增加 —— 详见上文“手续费”部分。"),
@@ -349,7 +337,7 @@ const zh: DocsSection[] = [
     title: "风险与免责声明",
     blocks: [
       ul([
-        "代币目前是可升级的，升级权限尚未放弃 —— 详见上文“信任模型”部分。",
+        "本合约是否可升级、若可升级其升级权限现状如何，就本次部署而言尚未独立核实 —— 详见上文“信任模型”部分。",
         "更外一层的托管信任：bStocks 由币安 / BTech Holdings 托管支撑，可通过储备证明核实，但并非无需信任。",
         "个别 bStock 在 PancakeSwap 上的流动性可能较薄，尤其是新发行的品种 —— 无论上述链上机制如何，大额交易仍可能显著影响价格。",
         "除上述非约束性投票外，并未实现社区治理。",

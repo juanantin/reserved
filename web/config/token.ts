@@ -12,10 +12,9 @@ export const tokenInfo = {
   // pool's own swap fee. A treasury fee returns via an Infinity hook, at which point
   // this becomes the hook fee plus the pool fee.
   //
-  // 1 = 0.01%. Confirmed against the live pool's own PoolCreated event (fee: 100 in
-  // PancakeSwap V3's raw units — see docsContent.ts's "liquidity" section for the
-  // launch transaction this was read from), not assumed from what earlier scripts
-  // defaulted to requesting.
+  // 1 = 0.01%. This was confirmed against the prior deployment's own PoolCreated event
+  // (fee: 100 in PancakeSwap V3's raw units); pending the same confirmation for this
+  // contract's own pool once its PoolCreated event is observable.
   poolFeeBps: 1,
   // Charged by the swap hook, in BNB, and routed to the treasury. The token itself
   // charges nothing on transfers. Ships after the token and pool — see the docs.
@@ -23,19 +22,19 @@ export const tokenInfo = {
   protocolFeeLive: false,
 
   // Set once each contract is deployed and verified.
-  tokenAddress: "0x5C8fB70C1Ec327434F0AC05FcE3791c10436Cb60",
+  tokenAddress: "0x9b0c5e8C457D2420899712FD698fc333E08D4B7D",
   vaultAddress: "",
 
   // Set once a PancakeSwap pool exists. Used to read live price off the pair's
   // reserves (see DashboardCard) — not just for the buy/chart links below.
-  // Distinct from tokenAddress: this is the pool's own address, still unknown here.
-  pairAddress: "",
+  // Distinct from tokenAddress: this is the pool's own address.
+  pairAddress: "0x0daef0e968c5cec2d7dde156cb733b032f66be31",
 
   // outputCurrency alone is enough for PancakeSwap's swap UI to route a buy even
   // before a pool is confirmed here; dexscreener resolves a bare token address to
   // its top pair, so neither link needs pairAddress to be set.
-  buyUrl: "https://pancakeswap.finance/swap?outputCurrency=0x5C8fB70C1Ec327434F0AC05FcE3791c10436Cb60&chain=bsc",
-  chartUrl: "https://dexscreener.com/bsc/0x5C8fB70C1Ec327434F0AC05FcE3791c10436Cb60",
+  buyUrl: "https://pancakeswap.finance/swap?outputCurrency=0x9b0c5e8C457D2420899712FD698fc333E08D4B7D&chain=bsc",
+  chartUrl: "https://dexscreener.com/bsc/0x0daef0e968c5cec2d7dde156cb733b032f66be31",
   explorerBaseUrl: "https://bscscan.com/address/",
 
   // Redemption happens directly on this site now (see RedeemPanel) — no external
@@ -47,12 +46,12 @@ export const tokenInfo = {
   // Hidden for now — will be added once the new Telegram is set up.
   telegramUrl: "",
 
-  // ReservedGovernanceVote — non-binding signal only. Reads RSVD balance to gate
+  // ReservedGovernanceVote — non-binding signal only. Reads RHOLD balance to gate
   // eligibility and record votes; has no access to the token, treasury, or pool, so
   // even if the deployed contract's behavior differs from what was reviewed on
   // claude/launch-tooling (as happened with the token itself), the blast radius here
   // is a vote button working or failing, not funds.
-  governanceVoteAddress: "0x7268F3AE4Db3DeE37aA98bA83D00AF5c26EF6AB6",
+  governanceVoteAddress: "0x3daa17ceFB41F76aabD2F45034433A8996147506",
 };
 
 // bStock allowlist the keeper is authorized to acquire (see TreasuryConverter.sol's

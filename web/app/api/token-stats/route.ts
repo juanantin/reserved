@@ -90,22 +90,24 @@ async function fetchHoldersFromBscscan(tokenAddress: string): Promise<number | n
 }
 
 // Fallback when BscScan's key isn't configured or its response doesn't carry a holder
-// count on this key's tier. Scans from the token's actual launch block (tx
-// 0x9444fa2a...d44355, see docsContent.ts) rather than a trailing window — an earlier
-// version scanned only the last ~30k blocks, which looked fine on day one and then
-// silently undercounted (down to 0) the moment the token got older than the window,
-// since the launch mint itself fell out of range. Scanning from true genesis is exact
-// while the token is this young; as it ages this scan gets slower every cache refresh,
-// and at some point (months of history, not days) this needs a real indexer instead of
-// a wider window. `complete` is true only when every chunk of the scan succeeded.
-const LAUNCH_BLOCK = 115_905_080;
+// count on this key's tier. Ideally scans from the token's actual launch block (see
+// docsContent.ts for why an exact block beats a trailing window: an earlier version
+// scanned only the last ~30k blocks, which looked fine on day one and then silently
+// undercounted, down to 0, the moment the token outlived the window, since the launch
+// mint itself fell out of range). The token relaunched at a new address and this file
+// doesn't have that contract's launch block yet, so TRAILING_BLOCKS is a temporary
+// stopgap — swap it for an exact LAUNCH_BLOCK constant, same pattern as before, the
+// moment that block number is known; a trailing window will silently start
+// undercounting again once the token outlives it. `complete` is true only when every
+// chunk of the scan succeeded.
+const TRAILING_BLOCKS = 400_000; // roughly several days of BSC blocks — stopgap only
 const LOG_STEP = 2_000;
 
 async function countHoldersOnChain(tokenAddress: string) {
   const provider = getReadProvider();
   const token = new ethers.Contract(tokenAddress, TOKEN_ABI, provider);
   const head = await provider.getBlockNumber();
-  const from = LAUNCH_BLOCK;
+  const from = Math.max(0, head - TRAILING_BLOCKS);
 
   const holders = new Set<string>();
   let anyWindowFailed = false;
