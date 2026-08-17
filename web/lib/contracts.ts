@@ -82,9 +82,23 @@ export const GOVERNANCE_VOTE_ABI = [
 // enough windows (e.g. a few hundred thousand blocks / 2000-block windows) can add up to
 // well over a minute of round trips to a public RPC and blow past a serverless function's
 // execution timeout — which shows up as the whole route failing silently, not as a slow
-// but eventually-correct response. A window that errors is swallowed (anyWindowFailed
-// flips true) rather than failing the whole scan, matching the existing best-effort
-// behavior of the two routes that use this.
+// but eventually-correct response.
+//
+// Each window gets one retry after a short backoff before being counted as failed. A
+// free public RPC serving a burst of concurrent eth_getLogs calls from a serverless
+// function is exactly the kind of load that gets soft-throttled (a dropped/rejected
+// request here and there, not a hard outage) — without a retry, that shows up as
+// `complete: false` and a count that undercounts by whatever those dropped windows held,
+// same symptom as the trailing-window bug this file's callers already had to fix once.
+async function queryFilterOnce(contract: ethers.Contract, filter: ReturnType<ethers.Contract["filters"][string]>, start: number, end: number) {
+  try {
+    return await contract.queryFilter(filter, start, end);
+  } catch {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    return contract.queryFilter(filter, start, end);
+  }
+}
+
 export async function queryFilterWindowed(
   contract: ethers.Contract,
   filter: ReturnType<ethers.Contract["filters"][string]>,
@@ -105,7 +119,7 @@ export async function queryFilterWindowed(
     const batch = windows.slice(i, i + concurrency);
     const results = await Promise.all(
       batch.map(([start, end]) =>
-        contract.queryFilter(filter, start, end).catch(() => {
+        queryFilterOnce(contract, filter, start, end).catch(() => {
           anyWindowFailed = true;
           return [] as (ethers.EventLog | ethers.Log)[];
         })
