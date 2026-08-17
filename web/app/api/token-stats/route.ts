@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 import { ethers } from "ethers";
 import { tokenInfo } from "@/config/token";
-import { getReadProvider, TOKEN_ABI } from "@/lib/contracts";
+import { getReadProvider, TOKEN_ABI, queryFilterWindowed } from "@/lib/contracts";
 
 // Runs server-side on a cache, not per-visitor: DexScreener's API and the Transfer-log
 // scan below are each one round trip per revalidation window, not one per page load.
@@ -100,7 +100,15 @@ async function fetchHoldersFromBscscan(tokenAddress: string): Promise<number | n
 // moment that block number is known; a trailing window will silently start
 // undercounting again once the token outlives it. `complete` is true only when every
 // chunk of the scan succeeded.
-const TRAILING_BLOCKS = 400_000; // roughly several days of BSC blocks — stopgap only
+//
+// TRAILING_BLOCKS is deliberately not huge: a wide window scanned one window at a time
+// is what caused holders to stop showing entirely right after this relaunch — 200
+// sequential getLogs round trips to a public RPC is enough to blow a serverless
+// function's execution timeout, which fails the whole route rather than just being
+// slow. queryFilterWindowed below fetches windows several-at-a-time instead of one at a
+// time, and this window is sized to comfortably cover a token that's hours to ~2 days
+// old without needing an enormous number of windows.
+const TRAILING_BLOCKS = 200_000;
 const LOG_STEP = 2_000;
 
 async function countHoldersOnChain(tokenAddress: string) {
@@ -109,21 +117,14 @@ async function countHoldersOnChain(tokenAddress: string) {
   const head = await provider.getBlockNumber();
   const from = Math.max(0, head - TRAILING_BLOCKS);
 
+  const { logs, anyWindowFailed } = await queryFilterWindowed(token, token.filters.Transfer(), from, head, LOG_STEP);
+
   const holders = new Set<string>();
-  let anyWindowFailed = false;
-  for (let start = from; start <= head; start += LOG_STEP) {
-    const end = Math.min(start + LOG_STEP - 1, head);
-    try {
-      const logs = await token.queryFilter(token.filters.Transfer(), start, end);
-      for (const log of logs) {
-        const args = (log as ethers.EventLog).args;
-        if (!args) continue;
-        holders.add(args[0] as string);
-        holders.add(args[1] as string);
-      }
-    } catch {
-      anyWindowFailed = true;
-    }
+  for (const log of logs) {
+    const args = (log as ethers.EventLog).args;
+    if (!args) continue;
+    holders.add(args[0] as string);
+    holders.add(args[1] as string);
   }
   holders.delete(ethers.ZeroAddress);
 

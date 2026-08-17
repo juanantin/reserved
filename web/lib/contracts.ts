@@ -77,6 +77,46 @@ export const GOVERNANCE_VOTE_ABI = [
   "function castVote(uint256 candidateId)",
 ];
 
+// Scans a block range for a single event filter in fixed-size windows, run
+// concurrency-at-a-time instead of one giant sequential await loop. A serial loop over
+// enough windows (e.g. a few hundred thousand blocks / 2000-block windows) can add up to
+// well over a minute of round trips to a public RPC and blow past a serverless function's
+// execution timeout — which shows up as the whole route failing silently, not as a slow
+// but eventually-correct response. A window that errors is swallowed (anyWindowFailed
+// flips true) rather than failing the whole scan, matching the existing best-effort
+// behavior of the two routes that use this.
+export async function queryFilterWindowed(
+  contract: ethers.Contract,
+  filter: ReturnType<ethers.Contract["filters"][string]>,
+  from: number,
+  head: number,
+  step: number,
+  concurrency = 8
+): Promise<{ logs: (ethers.EventLog | ethers.Log)[]; anyWindowFailed: boolean }> {
+  const windows: Array<[number, number]> = [];
+  for (let start = from; start <= head; start += step) {
+    windows.push([start, Math.min(start + step - 1, head)]);
+  }
+
+  const logs: (ethers.EventLog | ethers.Log)[] = [];
+  let anyWindowFailed = false;
+
+  for (let i = 0; i < windows.length; i += concurrency) {
+    const batch = windows.slice(i, i + concurrency);
+    const results = await Promise.all(
+      batch.map(([start, end]) =>
+        contract.queryFilter(filter, start, end).catch(() => {
+          anyWindowFailed = true;
+          return [] as (ethers.EventLog | ethers.Log)[];
+        })
+      )
+    );
+    for (const r of results) logs.push(...r);
+  }
+
+  return { logs, anyWindowFailed };
+}
+
 export function getTokenContract(runner: ethers.ContractRunner) {
   return new ethers.Contract(tokenInfo.tokenAddress, TOKEN_ABI, runner);
 }

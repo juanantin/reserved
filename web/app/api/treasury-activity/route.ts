@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 import { ethers } from "ethers";
 import { tokenInfo, reserveAssets } from "@/config/token";
-import { getReadProvider, ERC20_TRANSFER_ABI } from "@/lib/contracts";
+import { getReadProvider, ERC20_TRANSFER_ABI, queryFilterWindowed } from "@/lib/contracts";
 
 // Same reasoning as token-stats: a cached server route, not a per-visitor client scan,
 // and cached via unstable_cache (not route-level `revalidate`) so a build with no RPC
@@ -15,9 +15,12 @@ const REVALIDATE_SECONDS = 180;
 // window looks fine on day one and then silently misses everything once the token
 // outlives the window. The token relaunched at a new address and this file doesn't
 // have that contract's launch block yet, so TRAILING_BLOCKS below is a temporary
-// stopgap — see token-stats/route.ts for the same note. Swap in an exact LAUNCH_BLOCK
-// the moment it's known.
-const TRAILING_BLOCKS = 400_000; // roughly several days of BSC blocks — stopgap only
+// stopgap — see token-stats/route.ts for the same note, including why this window is
+// sized to stay well clear of a serverless timeout (each of the 5 assets below scans
+// concurrently with the others, and each one's own window scan is itself
+// concurrency-batched via queryFilterWindowed rather than sequential). Swap in an exact
+// LAUNCH_BLOCK the moment it's known.
+const TRAILING_BLOCKS = 200_000;
 const LOG_STEP = 2_000;
 
 type Purchase = {
@@ -45,26 +48,22 @@ async function scanAsset(
     // existing bStock allowlist, which is 18dp throughout.
   }
 
+  // concurrency 4: five assets already scan in parallel via Promise.all below, so this
+  // keeps peak concurrent RPC calls (5 assets x 4) reasonable for a public endpoint.
+  const { logs } = await queryFilterWindowed(erc20, erc20.filters.Transfer(null, tokenAddress), from, head, LOG_STEP, 4);
+
   const results: Purchase[] = [];
-  for (let start = from; start <= head; start += LOG_STEP) {
-    const end = Math.min(start + LOG_STEP - 1, head);
-    try {
-      const logs = await erc20.queryFilter(erc20.filters.Transfer(null, tokenAddress), start, end);
-      for (const log of logs) {
-        const args = (log as ethers.EventLog).args;
-        if (!args) continue;
-        results.push({
-          symbol: asset.symbol,
-          asset: asset.address,
-          amount: ethers.formatUnits(args[2] as bigint, decimals),
-          from: args[0] as string,
-          txHash: log.transactionHash,
-          blockNumber: log.blockNumber,
-        });
-      }
-    } catch {
-      // Best-effort — a failed window is skipped rather than failing the whole scan.
-    }
+  for (const log of logs) {
+    const args = (log as ethers.EventLog).args;
+    if (!args) continue;
+    results.push({
+      symbol: asset.symbol,
+      asset: asset.address,
+      amount: ethers.formatUnits(args[2] as bigint, decimals),
+      from: args[0] as string,
+      txHash: log.transactionHash,
+      blockNumber: log.blockNumber,
+    });
   }
   return results;
 }
